@@ -1,7 +1,8 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Audio;
 
-public class AudioManager : MonoBehaviour
+public class AudioManager : NetworkBehaviour
 {
     public static AudioManager instance;
     public AudioClip backgroundMusic;
@@ -14,16 +15,21 @@ public class AudioManager : MonoBehaviour
             instance = this;
             DontDestroyOnLoad(this);
             audioSource = GetComponent<AudioSource>();
-            audioSource.clip = backgroundMusic;
-            audioSource.loop = true;
-            audioSource.playOnAwake = false;
-            audioSource.volume = 0.5f;
-            audioSource.Play();
+            PlayBackgroundMusic();
         }
         else
         {
             Destroy(gameObject);
         }
-        
+    }
+
+    private void PlayBackgroundMusic()
+    {
+        if (!IsServer) return;
+        audioSource.clip = backgroundMusic;
+        audioSource.loop = true;
+        audioSource.playOnAwake = false;
+        audioSource.volume = 0.5f;
+        audioSource.Play();
     }
 }

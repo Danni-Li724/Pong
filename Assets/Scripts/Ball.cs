@@ -1,6 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class Ball : MonoBehaviour
+public class Ball : NetworkBehaviour
 {
     public float speed = 5f;
     private Rigidbody2D rb;
@@ -14,9 +15,11 @@ public class Ball : MonoBehaviour
    
     void Start()
        {
-         
            rb = GetComponent<Rigidbody2D>();
-           Launch();
+           if (IsServer)
+           {
+               Launch();
+           }
        }
    
        void Launch()
@@ -34,6 +37,7 @@ public class Ball : MonoBehaviour
    
        private void OnCollisionEnter2D(Collision2D collision)
        {
+           if (!IsServer) return;
            if (collision.gameObject.CompareTag("GoalLeft"))
            {
                OnPlayer2Scored?.Invoke();
@@ -46,10 +50,23 @@ public class Ball : MonoBehaviour
            if (collision.gameObject.CompareTag("Player1"))
            {
                OnPlayer1Hit?.Invoke();
+               ChangeBackgroundColorClientRpc(1);
            }
            if (collision.gameObject.CompareTag("Player2"))
            {
                OnPlayer2Hit?.Invoke();
+               ChangeBackgroundColorClientRpc(2);
            }
+       }
+
+       [ClientRpc]
+       void ChangeBackgroundColorClientRpc(int playerHit)
+       {
+           if (psychedelicBackground == null) return;
+
+           if (playerHit == 1)
+               psychedelicBackground.SwitchToPlayer1Colors();
+           else if (playerHit == 2)
+               psychedelicBackground.SwitchToPlayer2Colors();
        }
 }

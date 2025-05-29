@@ -1,10 +1,11 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ScoreManager : MonoBehaviour
+public class ScoreManager : NetworkBehaviour
 {
-    public int player1Score = 0;
-    public int player2Score = 0;
+    public NetworkVariable<int> player1Score = new();
+    public NetworkVariable<int> player2Score = new();
 
     public Text player1ScoreText;
     public Text player2ScoreText;
@@ -29,16 +30,23 @@ public class ScoreManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        UpdateUI();
+    }
+
     private void Player1Scored()
     {
-        player1Score++;
+        if (!IsServer) return;
+        player1Score.Value++;
         UpdateUI();
         ball.ResetBall();
     }
 
     public void Player2Scored()
     {
-        player2Score++;
+        if (!IsServer) return;
+        player2Score.Value++;
         UpdateUI();
         ball.ResetBall();
     }
