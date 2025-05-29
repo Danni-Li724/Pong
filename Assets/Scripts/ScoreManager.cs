@@ -6,12 +6,9 @@ public class ScoreManager : NetworkBehaviour
 {
     public NetworkVariable<int> player1Score = new NetworkVariable<int>();
     public NetworkVariable<int> player2Score = new NetworkVariable<int>();
-
     public Text player1ScoreText;
     public Text player2ScoreText;
-
     public Ball ball;
-    
     private void OnEnable()
     {
         if (ball != null)
@@ -20,7 +17,6 @@ public class ScoreManager : NetworkBehaviour
             ball.OnPlayer2Scored += Player2Scored;
         }
     }
-
     private void OnDisable()
     {
         if (ball != null)
@@ -29,12 +25,10 @@ public class ScoreManager : NetworkBehaviour
             ball.OnPlayer2Scored -= Player2Scored;
         }
     }
-
     private void Start()
     {
         UpdateUI();
     }
-
     private void Player1Scored()
     {
         if (!IsServer) return;
@@ -42,7 +36,6 @@ public class ScoreManager : NetworkBehaviour
         UpdateUI();
         ball.ResetBall();
     }
-
     public void Player2Scored()
     {
         if (!IsServer) return;
@@ -50,10 +43,11 @@ public class ScoreManager : NetworkBehaviour
         UpdateUI();
         ball.ResetBall();
     }
-
     private void UpdateUI()
     {
         player1ScoreText.text = player1Score.Value.ToString();
         player2ScoreText.text = player2Score.Value.ToString();
     }
+    
+    // 
 }

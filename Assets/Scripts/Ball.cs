@@ -6,13 +6,11 @@ public class Ball : NetworkBehaviour
     public float speed = 5f;
     private Rigidbody2D rb;
     public PsychedelicBackground psychedelicBackground;
-
     // Game events
     public event System.Action OnPlayer1Hit;
     public event System.Action OnPlayer2Hit;
     public event System.Action OnPlayer1Scored;
     public event System.Action OnPlayer2Scored;
-   
     void Start()
        {
            rb = GetComponent<Rigidbody2D>();
@@ -62,12 +60,10 @@ public class Ball : NetworkBehaviour
                ChangeBackgroundColorClientRpc(2);
            }
        }
-
        [ClientRpc]
        void ChangeBackgroundColorClientRpc(int playerHit)
        {
            if (psychedelicBackground == null) return;
-
            if (playerHit == 1)
                psychedelicBackground.SwitchToPlayer1Colors();
            else if (playerHit == 2)
