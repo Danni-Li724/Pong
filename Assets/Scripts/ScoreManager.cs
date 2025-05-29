@@ -4,8 +4,8 @@ using UnityEngine.UI;
 
 public class ScoreManager : NetworkBehaviour
 {
-    public NetworkVariable<int> player1Score = new();
-    public NetworkVariable<int> player2Score = new();
+    public NetworkVariable<int> player1Score = new NetworkVariable<int>();
+    public NetworkVariable<int> player2Score = new NetworkVariable<int>();
 
     public Text player1ScoreText;
     public Text player2ScoreText;
@@ -53,7 +53,7 @@ public class ScoreManager : NetworkBehaviour
 
     private void UpdateUI()
     {
-        player1ScoreText.text = player1Score.ToString();
-        player2ScoreText.text = player2Score.ToString();
+        player1ScoreText.text = player1Score.Value.ToString();
+        player2ScoreText.text = player2Score.Value.ToString();
     }
 }

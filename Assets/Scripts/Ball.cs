@@ -20,6 +20,10 @@ public class Ball : NetworkBehaviour
            {
                Launch();
            }
+           if (psychedelicBackground == null)
+           {
+               psychedelicBackground = FindObjectOfType<PsychedelicBackground>();
+           }
        }
    
        void Launch()
@@ -37,7 +41,7 @@ public class Ball : NetworkBehaviour
    
        private void OnCollisionEnter2D(Collision2D collision)
        {
-           if (!IsServer) return;
+           //if (!IsServer) return;
            if (collision.gameObject.CompareTag("GoalLeft"))
            {
                OnPlayer2Scored?.Invoke();
@@ -49,12 +53,12 @@ public class Ball : NetworkBehaviour
 
            if (collision.gameObject.CompareTag("Player1"))
            {
-               OnPlayer1Hit?.Invoke();
+               //OnPlayer1Hit?.Invoke();
                ChangeBackgroundColorClientRpc(1);
            }
            if (collision.gameObject.CompareTag("Player2"))
            {
-               OnPlayer2Hit?.Invoke();
+               //OnPlayer2Hit?.Invoke();
                ChangeBackgroundColorClientRpc(2);
            }
        }

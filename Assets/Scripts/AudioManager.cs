@@ -15,6 +15,7 @@ public class AudioManager : NetworkBehaviour
             instance = this;
             DontDestroyOnLoad(this);
             audioSource = GetComponent<AudioSource>();
+           
             PlayBackgroundMusic();
         }
         else
@@ -25,7 +26,6 @@ public class AudioManager : NetworkBehaviour
 
     private void PlayBackgroundMusic()
     {
-        if (!IsServer) return;
         audioSource.clip = backgroundMusic;
         audioSource.loop = true;
         audioSource.playOnAwake = false;

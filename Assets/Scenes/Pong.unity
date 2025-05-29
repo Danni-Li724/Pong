@@ -747,7 +747,6 @@ MonoBehaviour:
   - {r: 0.74509805, g: 0.4, b: 0.08627451, a: 0}
   - {r: 0.46666667, g: 1, b: 0.4117647, a: 0}
   - {r: 0.40392157, g: 0.23529412, b: 0.74509805, a: 0}
-  ball: {fileID: 0}
 --- !u!4 &723032652
 Transform:
   m_ObjectHideFlags: 0
@@ -762,73 +761,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &725218084
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 725218086}
-  - component: {fileID: 725218085}
-  m_Layer: 0
-  m_Name: vortex
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &725218085
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 725218084}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1269a3c5337eca84e89f57784d117ae5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  circlePrefab: {fileID: 343546815770935510, guid: aeb8fb25d389ada4abbb2d173bd7a481, type: 3}
-  spawnRate: 0.6
-  expansionSpeed: 0.2
-  fadeSpeed: 0.02
-  defaultColors:
-  - {r: 0.5943396, g: 0.5943396, b: 0.5943396, a: 0}
-  - {r: 0.3333333, g: 0.4196079, b: 0.1843137, a: 1}
-  - {r: 0.6603774, g: 0.5963674, b: 0.252314, a: 1}
-  - {r: 0.27033645, g: 0.42932212, b: 0.7075472, a: 1}
-  - {r: 0.17065683, g: 0.51365167, b: 0.5566038, a: 1}
-  player1Colors:
-  - {r: 0.5849056, g: 0.09104664, b: 0.09104664, a: 0}
-  - {r: 0.8207547, g: 0.7089118, b: 0.06581525, a: 0}
-  - {r: 0.43102577, g: 0.019607853, b: 0.8509804, a: 0}
-  - {r: 0.47681433, g: 0.7169812, b: 0.064257726, a: 1}
-  - {r: 0.3207547, g: 0.17218626, b: 0.095318615, a: 1}
-  player2Colors:
-  - {r: 0.09692062, g: 0.111550994, b: 0.6226415, a: 0}
-  - {r: 0.7264151, g: 0.15419191, b: 0.6302433, a: 0}
-  - {r: 0.745283, g: 0.39819127, b: 0.08788714, a: 0}
-  - {r: 0.46610618, g: 1, b: 0.41037738, a: 0}
-  - {r: 0.40227664, g: 0.23553754, b: 0.745283, a: 1}
-  ball: {fileID: 0}
---- !u!4 &725218086
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 725218084}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1155275403}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &814973145
 GameObject:
@@ -1196,8 +1128,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 725218086}
   - {fileID: 394454888}
+  - {fileID: 1171796869}
   m_Father: {fileID: 1080540040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1159546779
@@ -1305,6 +1237,72 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1171796868
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1171796869}
+  - component: {fileID: 1171796870}
+  m_Layer: 0
+  m_Name: PsychedelicBackground
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1171796869
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1171796868}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1155275403}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1171796870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1171796868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1269a3c5337eca84e89f57784d117ae5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  circlePrefab: {fileID: 343546815770935510, guid: aeb8fb25d389ada4abbb2d173bd7a481, type: 3}
+  spawnRate: 0.6
+  expansionSpeed: 0.2
+  fadeSpeed: 0.02
+  defaultColors:
+  - {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  - {r: 0.5607843, g: 0.7372549, b: 0.5607843, a: 1}
+  - {r: 0.5744734, g: 0.52287287, b: 0.8867924, a: 1}
+  - {r: 0.9716981, g: 0.64818066, b: 0.41709682, a: 1}
+  - {r: 0.5019608, g: 0.5019608, b: 0, a: 1}
+  player1Colors:
+  - {r: 0.5450981, g: 0, b: 0, a: 1}
+  - {r: 0.735849, g: 0.31703556, b: 0.010412939, a: 1}
+  - {r: 0.7735849, g: 0.5666717, b: 0.04743683, a: 1}
+  - {r: 0.88235295, g: 0.254902, b: 0.7875471, a: 1}
+  - {r: 0.3451728, g: 0.13333333, b: 0.54509807, a: 1}
+  player2Colors:
+  - {r: 0, g: 0, b: 0.8039216, a: 1}
+  - {r: 0.11525454, g: 0.6603774, b: 0.13749833, a: 1}
+  - {r: 0.105731584, g: 0.51103616, b: 0.8301887, a: 1}
+  - {r: 0.24870951, g: 0.764151, b: 0.5658337, a: 1}
+  - {r: 1, g: 0.9333334, b: 0.5490196, a: 1}
 --- !u!1 &1404138513
 GameObject:
   m_ObjectHideFlags: 0
@@ -1717,7 +1715,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   leftSpawn: {fileID: 1727189429}
   rightSpawn: {fileID: 1404138518}
-  paddlePrefab: {fileID: 407256030918887381, guid: 191222a78003129488442c24d86152c5, type: 3}
+  player1PaddlePrefab: {fileID: 6031316684274673900, guid: f6c11f18216894746b7ded65de7a8968, type: 3}
+  player2PaddlePrefab: {fileID: 407256030918887381, guid: 191222a78003129488442c24d86152c5, type: 3}
   ballPrefab: {fileID: 3424314573649418201, guid: e59a9002681fe3f4781fc8cff4ac5f71, type: 3}
 --- !u!4 &2014970934
 Transform:
@@ -1916,6 +1915,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ScoreManager
       objectReference: {fileID: 0}
+    - target: {fileID: 2309121956830339150, guid: 7e276f38ff4c67a4384a8123c7f33342, type: 3}
+      propertyPath: ball
+      value: 
+      objectReference: {fileID: 3685205096857706057, guid: e59a9002681fe3f4781fc8cff4ac5f71, type: 3}
     - target: {fileID: 2309121956830339150, guid: 7e276f38ff4c67a4384a8123c7f33342, type: 3}
       propertyPath: player1ScoreText
       value: 
