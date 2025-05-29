@@ -13,68 +13,105 @@ public class PaddleController : NetworkBehaviour
     
     public float topLimit = 4f;
     public float bottomLimit = -4f;
-
-   
-    private void Awake()
+    
+    public override void OnNetworkSpawn()
     {
-        playerInput = new PlayerInput();
-        playerInput.Player.Move.performed += ctx =>
-        {
-            moveInput = ctx.ReadValue<Vector2>();
-            MoveRequest_ServerRpc(moveInput.y);
-        };
-        playerInput.Player.Move.canceled += ctx => 
-        { 
-            moveInput = Vector2.zero;
-            MoveRequest_ServerRpc(0);
-        };
-    }
-   
-    private void OnEnable()
-    {
+        // only initialize input for paddles you own
         if (IsOwner)
         {
+            Debug.Log($"Setting up input for paddle owned by client {OwnerClientId}");
+            playerInput = new PlayerInput();
+            playerInput.Player.Move.performed += ctx =>
+            {
+                moveInput = ctx.ReadValue<Vector2>();
+                MoveRequest_ServerRpc(moveInput.y);
+            };
+            playerInput.Player.Move.canceled += ctx => 
+            { 
+                moveInput = Vector2.zero;
+                MoveRequest_ServerRpc(0);
+            };
             playerInput.Enable();
         }
+        else
+        {
+            Debug.Log($"NOT setting up input for paddle owned by client {OwnerClientId} (I am client {NetworkManager.Singleton.LocalClientId})");
+        }
     }
+
    
+    // private void Awake()
+    // {
+    //     playerInput = new PlayerInput();
+    //     playerInput.Player.Move.performed += ctx =>
+    //     {
+    //         moveInput = ctx.ReadValue<Vector2>();
+    //         // Send input to server if this is your paddle
+    //         if (IsOwner)
+    //         {
+    //             MoveRequest_ServerRpc(moveInput.y);
+    //         }
+    //     };
+    //     playerInput.Player.Move.canceled += ctx => 
+    //     { 
+    //         moveInput = Vector2.zero;
+    //         if (IsOwner)
+    //         {
+    //             MoveRequest_ServerRpc(0);
+    //         }
+    //     };
+    // }
+   
+    // private void OnEnable()
+    // {
+    //     playerInput.Enable();
+    // }
+    
     private void OnDisable()
     {
-        if (IsOwner)
+        if (IsOwner && playerInput != null)
         {
-            playerInput.Enable();
+            playerInput.Disable();
         }
     }
    
-    //void Update()
-    //{
-        //if (!IsOwner) return;
-        //Vector2 movement = new Vector2(0, moveInput.y); 
-        //transform.Translate(movement * moveSpeed * Time.deltaTime);
-           
-       // Vector3 pos = transform.position;
-        //pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
-        //transform.position = pos;
-    //}
-
-    [ServerRpc(RequireOwnership = false)]
-    private void MoveRequest_ServerRpc(float directionY) 
+    void Update()
     {
+        // only the server moves the paddle based on received input
         if (!IsServer) return;
-
-        float delta = directionY * moveSpeed * Time.fixedDeltaTime;
-        Vector3 newPos = transform.position + new Vector3(0, delta, 0);
-        newPos.y = Mathf.Clamp(newPos.y, bottomLimit, topLimit);
-        transform.position = newPos;
+        Vector2 movement = new Vector2(0, moveInput.y); 
+        transform.Translate(movement * moveSpeed * Time.deltaTime);
         
-        MoveUpdate_ClientRpc(newPos); // Sync to other clients
+        Vector3 pos = transform.position;
+        pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
+        transform.position = pos;
     }
     
-    // if no network transform
-    [ClientRpc]
-    private void MoveUpdate_ClientRpc(Vector3 newPos) 
+    [ServerRpc]
+    void MoveRequest_ServerRpc(float inputY)
     {
-        if (IsOwner) return; // Owner already sees it
-        transform.position = newPos;
+        // server receives input and updates moveInput
+        moveInput = new Vector2(0, inputY);
     }
+
+    // [ServerRpc(RequireOwnership = false)]
+    // private void MoveRequest_ServerRpc(float directionY) 
+    // {
+    //     if (!IsServer) return;
+    //
+    //     float delta = directionY * moveSpeed * Time.fixedDeltaTime;
+    //     Vector3 newPos = transform.position + new Vector3(0, delta, 0);
+    //     newPos.y = Mathf.Clamp(newPos.y, bottomLimit, topLimit);
+    //     transform.position = newPos;
+    //     
+    //     MoveUpdate_ClientRpc(newPos); // Sync to other clients
+    // }
+    //
+    // // if no network transform
+    // [ClientRpc]
+    // private void MoveUpdate_ClientRpc(Vector3 newPos) 
+    // {
+    //     if (IsOwner) return; // Owner already sees it
+    //     transform.position = newPos;
+    // }
 }
