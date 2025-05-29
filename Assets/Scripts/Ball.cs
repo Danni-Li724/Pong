@@ -5,7 +5,12 @@ public class Ball : MonoBehaviour
     public float speed = 5f;
     private Rigidbody2D rb;
     public PsychedelicBackground psychedelicBackground;
-    public ScoreManager scoreManager;
+
+    // Game events
+    public event System.Action OnPlayer1Hit;
+    public event System.Action OnPlayer2Hit;
+    public event System.Action OnPlayer1Scored;
+    public event System.Action OnPlayer2Scored;
    
     void Start()
        {
@@ -29,24 +34,22 @@ public class Ball : MonoBehaviour
    
        private void OnCollisionEnter2D(Collision2D collision)
        {
-         
            if (collision.gameObject.CompareTag("GoalLeft"))
            {
-               scoreManager.Player2Scored();
+               OnPlayer2Scored?.Invoke();
            }
            else if (collision.gameObject.CompareTag("GoalRight"))
            {
-               scoreManager.Player1Scored();
+               OnPlayer1Scored?.Invoke();
            }
 
            if (collision.gameObject.CompareTag("Player1"))
            {
-               psychedelicBackground.SwitchToPlayer1Colors();
+               OnPlayer1Hit?.Invoke();
            }
            if (collision.gameObject.CompareTag("Player2"))
            {
-               psychedelicBackground.SwitchToPlayer2Colors();
-               
+               OnPlayer2Hit?.Invoke();
            }
        }
 }

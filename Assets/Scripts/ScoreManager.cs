@@ -10,8 +10,26 @@ public class ScoreManager : MonoBehaviour
     public Text player2ScoreText;
 
     public Ball ball;
+    
+    private void OnEnable()
+    {
+        if (ball != null)
+        {
+            ball.OnPlayer1Scored += Player1Scored;
+            ball.OnPlayer2Scored += Player2Scored;
+        }
+    }
 
-    public void Player1Scored()
+    private void OnDisable()
+    {
+        if (ball != null)
+        {
+            ball.OnPlayer1Scored -= Player1Scored;
+            ball.OnPlayer2Scored -= Player2Scored;
+        }
+    }
+
+    private void Player1Scored()
     {
         player1Score++;
         UpdateUI();

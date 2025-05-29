@@ -18,6 +18,27 @@ public class PsychedelicBackground : MonoBehaviour
       private Color[] currentColors;
       private int currentColorIndex = 0;
       private List<SpriteRenderer> activeRenderers = new List<SpriteRenderer>();
+      
+      public Ball ball;
+      
+      private void OnEnable()
+      {
+         if (ball != null)
+         {
+            ball.OnPlayer1Hit += SwitchToPlayer1Colors;
+            ball.OnPlayer2Hit += SwitchToPlayer2Colors;
+         }
+      }
+
+      private void OnDisable()
+      {
+         if (ball != null)
+         {
+            ball.OnPlayer1Hit -= SwitchToPlayer1Colors;
+            ball.OnPlayer2Hit -= SwitchToPlayer2Colors;
+         }
+      }
+
 
       private void Start()
       {
