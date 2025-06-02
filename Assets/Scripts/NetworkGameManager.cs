@@ -20,6 +20,7 @@ public class NetworkGameManager : NetworkBehaviour
             // spawn paddle 1 for host
             GameObject paddle1 = Instantiate(player1PaddlePrefab, leftSpawn.position, Quaternion.identity);
             paddle1.GetComponent<NetworkObject>().SpawnAsPlayerObject(NetworkManager.Singleton.LocalClientId);
+            playerCount = 1;
         }
     }
     

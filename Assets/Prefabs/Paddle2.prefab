@@ -133,6 +133,9 @@ MonoBehaviour:
   moveSpeed: 50
   topLimit: 40
   bottomLimit: -40
+  leftLimit: -60
+  rightLimit: 60
+  isHorizontalPaddle: 0
 --- !u!61 &2305746122785300982
 BoxCollider2D:
   m_ObjectHideFlags: 0
