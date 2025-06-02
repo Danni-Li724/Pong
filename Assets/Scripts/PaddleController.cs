@@ -11,26 +11,50 @@ public class PaddleController : NetworkBehaviour
     private PlayerInput playerInput;
     private Vector2 moveInput;
     
-    public float topLimit = 4f;
-    public float bottomLimit = -4f;
+    public float topLimit;
+    public float bottomLimit;
+    public float leftLimit;
+    public float rightLimit;
+
+    public bool isHorizontalPaddle;
     
     public override void OnNetworkSpawn()
     {
-        // only initialize input for paddles you own
         if (IsOwner)
         {
             Debug.Log($"Setting up input for paddle owned by client {OwnerClientId}");
+
             playerInput = new PlayerInput();
-            playerInput.Player.Move.performed += ctx =>
+
+            if (isHorizontalPaddle)
             {
-                moveInput = ctx.ReadValue<Vector2>();
-                MoveRequest_ServerRpc(moveInput.y);
-            };
-            playerInput.Player.Move.canceled += ctx => 
-            { 
-                moveInput = Vector2.zero;
-                MoveRequest_ServerRpc(0);
-            };
+                // for top/bottom paddles
+                playerInput.PlayerHorizontal.Move.performed += ctx =>
+                {
+                    moveInput = ctx.ReadValue<Vector2>();
+                    MoveRequest_ServerRpc(moveInput.x); // Use X axis for horizontal movement
+                };
+                playerInput.PlayerHorizontal.Move.canceled += ctx =>
+                {
+                    moveInput = Vector2.zero;
+                    MoveRequest_ServerRpc(0);
+                };
+            }
+            else
+            {
+                // for left/right paddles
+                playerInput.Player.Move.performed += ctx =>
+                {
+                    moveInput = ctx.ReadValue<Vector2>();
+                    MoveRequest_ServerRpc(moveInput.y); // Use Y axis for vertical movement
+                };
+                playerInput.Player.Move.canceled += ctx =>
+                {
+                    moveInput = Vector2.zero;
+                    MoveRequest_ServerRpc(0);
+                };
+            }
+
             playerInput.Enable();
         }
         else
@@ -79,12 +103,20 @@ public class PaddleController : NetworkBehaviour
     {
         // only the server moves the paddle based on received input
         if (!IsServer) return;
-        Vector2 movement = new Vector2(0, moveInput.y); 
-        transform.Translate(movement * moveSpeed * Time.deltaTime);
-        
+        Vector2 verticalMovement = new Vector2(0, moveInput.y);
+        transform.Translate(verticalMovement * moveSpeed * Time.deltaTime);
         Vector3 pos = transform.position;
         pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
         transform.position = pos;
+        
+        if (isHorizontalPaddle)
+        {
+            Vector2 horizontalMovement = new Vector2(0, moveInput.x);
+            transform.Translate(horizontalMovement * moveSpeed * Time.deltaTime);
+            //Vector3 pos = transform.position;
+            pos.x = Mathf.Clamp(pos.x, -leftLimit, rightLimit);
+            transform.position = pos;
+        }
     }
     
     [ServerRpc]

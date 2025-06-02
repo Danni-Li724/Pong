@@ -3,10 +3,14 @@ using UnityEngine;
 
 public class NetworkGameManager : NetworkBehaviour
 {
-    public Transform leftSpawn, rightSpawn;
+    public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
     public GameObject player1PaddlePrefab;
     public GameObject player2PaddlePrefab;
+    public GameObject player3PaddlePrefab;
+    public GameObject player4PaddlePrefab;
     public GameObject ballPrefab;
+
+    private int playerCount = 0;
     
     public override void OnNetworkSpawn()
     {
@@ -21,17 +25,44 @@ public class NetworkGameManager : NetworkBehaviour
     
     void OnClientConnected(ulong clientId)
         {
-            // spawn paddle2 for client
-            //Vector3 spawnPos = NetworkManager.ConnectedClients.Count == 1 ? leftSpawn.position : rightSpawn.position;
-            if (clientId == NetworkManager.Singleton.LocalClientId) return; // prevent host from connecting to self
-            GameObject paddle2 = Instantiate(player2PaddlePrefab, rightSpawn.position, Quaternion.identity);
-            paddle2.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-            
-            // spawn ball when both players join
-            if (NetworkManager.ConnectedClients.Count == 2)
+            if (!IsServer) return;
+
+            if (clientId == NetworkManager.Singleton.LocalClientId) return; // host doesn't reconnect
+
+            GameObject paddleToSpawn = null;
+            Vector3 spawnPosition = Vector3.zero;
+
+            switch (playerCount)
             {
-                GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
-                ball.GetComponent<NetworkObject>().Spawn();
+                case 1: // second player
+                    paddleToSpawn = player2PaddlePrefab;
+                    spawnPosition = rightSpawn.position;
+                    break;
+                case 2: // third player
+                    paddleToSpawn = player3PaddlePrefab;
+                    spawnPosition = topSpawn.position;
+                    break;
+                case 3: // fourth player
+                    paddleToSpawn = player4PaddlePrefab;
+                    spawnPosition = bottomSpawn.position;
+                    break;
+                default:
+                    Debug.LogWarning("More than 4 players attempted to join. Not supported."); // output this to ui text
+                    return;
+            }
+
+            if (paddleToSpawn != null)
+            {
+                GameObject paddle = Instantiate(paddleToSpawn, spawnPosition, Quaternion.identity);
+                paddle.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+                playerCount++;
+
+                // Only spawn ball once (when 2+ players are ready)
+                if (playerCount == 2)
+                {
+                    GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
+                    ball.GetComponent<NetworkObject>().Spawn();
+                }
             }
         }
 }

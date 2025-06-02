@@ -6,6 +6,7 @@ public class Ball : NetworkBehaviour
     public float speed = 5f;
     private Rigidbody2D rb;
     public PsychedelicBackground psychedelicBackground;
+    public ScoreManager scoreManager;
     // Game events
     public event System.Action OnPlayer1Hit;
     public event System.Action OnPlayer2Hit;
@@ -21,6 +22,10 @@ public class Ball : NetworkBehaviour
            if (psychedelicBackground == null)
            {
                psychedelicBackground = FindObjectOfType<PsychedelicBackground>();
+           }
+           if (scoreManager == null)
+           {
+               scoreManager = FindObjectOfType<ScoreManager>();
            }
        }
    
@@ -42,11 +47,13 @@ public class Ball : NetworkBehaviour
            //if (!IsServer) return;
            if (collision.gameObject.CompareTag("GoalLeft"))
            {
-               OnPlayer2Scored?.Invoke();
+               //OnPlayer2Scored?.Invoke();
+               ChangeScoreClientRpc(2);
            }
            else if (collision.gameObject.CompareTag("GoalRight"))
            {
-               OnPlayer1Scored?.Invoke();
+               //OnPlayer1Scored?.Invoke();
+               ChangeScoreClientRpc(1);
            }
 
            if (collision.gameObject.CompareTag("Player1"))
@@ -68,5 +75,14 @@ public class Ball : NetworkBehaviour
                psychedelicBackground.SwitchToPlayer1Colors();
            else if (playerHit == 2)
                psychedelicBackground.SwitchToPlayer2Colors();
+       }
+       [ClientRpc]
+       void ChangeScoreClientRpc(int playerHit)
+       {
+           if (scoreManager == null) return;
+           if (playerHit == 1)
+               scoreManager.Player1Scored();
+           else if (playerHit == 2)
+               scoreManager.Player2Scored();
        }
 }

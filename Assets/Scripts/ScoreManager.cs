@@ -9,36 +9,37 @@ public class ScoreManager : NetworkBehaviour
     public Text player1ScoreText;
     public Text player2ScoreText;
     public Ball ball;
-    private void OnEnable()
-    {
-        if (ball != null)
-        {
-            ball.OnPlayer1Scored += Player1Scored;
-            ball.OnPlayer2Scored += Player2Scored;
-        }
-    }
-    private void OnDisable()
-    {
-        if (ball != null)
-        {
-            ball.OnPlayer1Scored -= Player1Scored;
-            ball.OnPlayer2Scored -= Player2Scored;
-        }
-    }
+    
+    // private void OnEnable()
+    // {
+    //     if (ball != null)
+    //     {
+    //         ball.OnPlayer1Scored += Player1Scored;
+    //         ball.OnPlayer2Scored += Player2Scored;
+    //     }
+    // }
+    // private void OnDisable()
+    // {
+    //     if (ball != null)
+    //     {
+    //         ball.OnPlayer1Scored -= Player1Scored;
+    //         ball.OnPlayer2Scored -= Player2Scored;
+    //     }
+    // }
     private void Start()
     {
         UpdateUI();
     }
-    private void Player1Scored()
+    public void Player1Scored()
     {
-        if (!IsServer) return;
+        //if (!IsServer) return;
         player1Score.Value++;
         UpdateUI();
         ball.ResetBall();
     }
     public void Player2Scored()
     {
-        if (!IsServer) return;
+        //if (!IsServer) return;
         player2Score.Value++;
         UpdateUI();
         ball.ResetBall();

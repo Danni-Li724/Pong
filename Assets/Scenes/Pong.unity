@@ -1759,11 +1759,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 12.165192
+      value: 10.792
+      objectReference: {fileID: 0}
+    - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -40
+      value: -30
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -1803,7 +1811,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5413297451330555969, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 12.165192
+      value: 10.5631
+      objectReference: {fileID: 0}
+    - target: {fileID: 5413297451330555969, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5413297451330555969, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 5413297451330555969, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -1919,6 +1935,10 @@ PrefabInstance:
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
       value: 4163624425
       objectReference: {fileID: 0}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: backgroundMusic
+      value: 
+      objectReference: {fileID: 8300000, guid: 824f2581a64f3724dbc02e98e549cb44, type: 3}
     - target: {fileID: 7815592917303758230, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.60931

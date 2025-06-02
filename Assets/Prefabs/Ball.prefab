@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8115855643575772796}
   - component: {fileID: 6615354512509756167}
   - component: {fileID: -2585846179701377602}
+  - component: {fileID: -4756676138752181466}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -132,6 +133,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   speed: 120
   psychedelicBackground: {fileID: 0}
+  scoreManager: {fileID: 0}
 --- !u!50 &8115855643575772796
 Rigidbody2D:
   serializedVersion: 5
@@ -241,3 +243,20 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &-4756676138752181466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3424314573649418201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80d7c879794dfda4687da0e400131852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 1
+  AutoUpdateKinematicState: 0
+  AutoSetKinematicOnDespawn: 0
