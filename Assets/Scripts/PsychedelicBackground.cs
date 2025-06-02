@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 
 public class PsychedelicBackground : MonoBehaviour
@@ -11,10 +12,11 @@ public class PsychedelicBackground : MonoBehaviour
       public float expansionSpeed;
       public float fadeSpeed;
       
-      [Header("Color Settings")]
-      public Color[] defaultColors;
+      [FormerlySerializedAs("defaultColors")] [Header("Color Settings")]
       public Color[] player1Colors;
       public Color[] player2Colors;
+      public Color[] player3Colors;
+      public Color[] player4Colors;
       private Color[] currentColors;
       private int currentColorIndex = 0;
       private List<SpriteRenderer> activeRenderers = new List<SpriteRenderer>();
@@ -42,7 +44,7 @@ public class PsychedelicBackground : MonoBehaviour
 
       private void Start()
       {
-         currentColors = defaultColors;
+         currentColors = player1Colors;
          // infinite loop coroutine
          StartCoroutine(SpawnLoop());
       }
@@ -109,6 +111,20 @@ public class PsychedelicBackground : MonoBehaviour
       public void SwitchToPlayer2Colors()
       {
          currentColors = player2Colors;
+         currentColorIndex = 0;
+         UpdateActiveRenderersColors();
+      }
+      
+      public void SwitchToPlayer3Colors()
+      {
+         currentColors = player3Colors;
+         currentColorIndex = 0;
+         UpdateActiveRenderersColors();
+      }
+      
+      public void SwitchToPlayer4Colors()
+      {
+         currentColors = player4Colors;
          currentColorIndex = 0;
          UpdateActiveRenderersColors();
       }

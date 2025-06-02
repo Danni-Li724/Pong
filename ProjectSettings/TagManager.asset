@@ -8,6 +8,10 @@ TagManager:
   - Player2
   - GoalLeft
   - GoalRight
+  - Player3
+  - Player4
+  - GoalTop
+  - GoalBottom
   layers:
   - Default
   - TransparentFX

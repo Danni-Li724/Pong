@@ -55,6 +55,17 @@ public class Ball : NetworkBehaviour
                //OnPlayer1Scored?.Invoke();
                ChangeScoreClientRpc(1);
            }
+           
+           if (collision.gameObject.CompareTag("GoalTop"))
+           {
+               //OnPlayer2Scored?.Invoke();
+               ChangeScoreClientRpc(4);
+           }
+           else if (collision.gameObject.CompareTag("GoalBottom"))
+           {
+               //OnPlayer1Scored?.Invoke();
+               ChangeScoreClientRpc(3);
+           }
 
            if (collision.gameObject.CompareTag("Player1"))
            {
@@ -66,23 +77,68 @@ public class Ball : NetworkBehaviour
                //OnPlayer2Hit?.Invoke();
                ChangeBackgroundColorClientRpc(2);
            }
+           
+           if (collision.gameObject.CompareTag("Player3"))
+           {
+               //OnPlayer1Hit?.Invoke();
+               ChangeBackgroundColorClientRpc(3);
+           }
+           if (collision.gameObject.CompareTag("Player4"))
+           {
+               //OnPlayer2Hit?.Invoke();
+               ChangeBackgroundColorClientRpc(4);
+           }
        }
        [ClientRpc]
        void ChangeBackgroundColorClientRpc(int playerHit)
        {
            if (psychedelicBackground == null) return;
-           if (playerHit == 1)
-               psychedelicBackground.SwitchToPlayer1Colors();
-           else if (playerHit == 2)
-               psychedelicBackground.SwitchToPlayer2Colors();
+           // if (playerHit == 1)
+           //     psychedelicBackground.SwitchToPlayer1Colors();
+           // else if (playerHit == 2)
+           //     psychedelicBackground.SwitchToPlayer2Colors();
+           switch (playerHit)
+           {
+               case 1: 
+                   psychedelicBackground.SwitchToPlayer1Colors();
+                   break;
+               case 2: 
+                   psychedelicBackground.SwitchToPlayer2Colors();
+                   break;
+               case 3: 
+                   psychedelicBackground.SwitchToPlayer3Colors();
+                   break;
+               case 4: 
+                   psychedelicBackground.SwitchToPlayer4Colors();
+                   break;
+               default:
+                   return;
+           }
        }
        [ClientRpc]
        void ChangeScoreClientRpc(int playerHit)
        {
            if (scoreManager == null) return;
-           if (playerHit == 1)
-               scoreManager.Player1Scored();
-           else if (playerHit == 2)
-               scoreManager.Player2Scored();
+           // if (playerHit == 1)
+           //     scoreManager.Player1Scored();
+           // else if (playerHit == 2)
+           //     scoreManager.Player2Scored();
+           switch (playerHit)
+           {
+               case 1: 
+                   scoreManager.Player1Scored();
+                   break;
+               case 2: 
+                   scoreManager.Player2Scored();
+                   break;
+               case 3: 
+                   scoreManager.Player3Scored();
+                   break;
+               case 4: 
+                   scoreManager.Player4Scored();
+                   break;
+               default:
+                   return;
+           }
        }
 }

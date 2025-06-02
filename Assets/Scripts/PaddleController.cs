@@ -32,12 +32,12 @@ public class PaddleController : NetworkBehaviour
                 playerInput.PlayerHorizontal.Move.performed += ctx =>
                 {
                     moveInput = ctx.ReadValue<Vector2>();
-                    MoveRequest_ServerRpc(moveInput.x); // Use X axis for horizontal movement
+                    MoveRequest_ServerRpc(moveInput.x, 0); // send x only
                 };
                 playerInput.PlayerHorizontal.Move.canceled += ctx =>
                 {
                     moveInput = Vector2.zero;
-                    MoveRequest_ServerRpc(0);
+                    MoveRequest_ServerRpc(0, 0);
                 };
             }
             else
@@ -46,12 +46,12 @@ public class PaddleController : NetworkBehaviour
                 playerInput.Player.Move.performed += ctx =>
                 {
                     moveInput = ctx.ReadValue<Vector2>();
-                    MoveRequest_ServerRpc(moveInput.y); // Use Y axis for vertical movement
+                    MoveRequest_ServerRpc(0, moveInput.y); // send y only
                 };
                 playerInput.Player.Move.canceled += ctx =>
                 {
                     moveInput = Vector2.zero;
-                    MoveRequest_ServerRpc(0);
+                    MoveRequest_ServerRpc(0, 0);
                 };
             }
 
@@ -101,29 +101,30 @@ public class PaddleController : NetworkBehaviour
    
     void Update()
     {
-        // only the server moves the paddle based on received input
         if (!IsServer) return;
-        Vector2 verticalMovement = new Vector2(0, moveInput.y);
-        transform.Translate(verticalMovement * moveSpeed * Time.deltaTime);
+
         Vector3 pos = transform.position;
-        pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
-        transform.position = pos;
-        
+
         if (isHorizontalPaddle)
         {
-            Vector2 horizontalMovement = new Vector2(0, moveInput.x);
+            Vector2 horizontalMovement = new Vector2(moveInput.x, 0);
             transform.Translate(horizontalMovement * moveSpeed * Time.deltaTime);
-            //Vector3 pos = transform.position;
-            pos.x = Mathf.Clamp(pos.x, -leftLimit, rightLimit);
-            transform.position = pos;
+            pos.x = Mathf.Clamp(transform.position.x, leftLimit, rightLimit);
         }
+        else
+        {
+            Vector2 verticalMovement = new Vector2(0, moveInput.y);
+            transform.Translate(verticalMovement * moveSpeed * Time.deltaTime);
+            pos.y = Mathf.Clamp(transform.position.y, bottomLimit, topLimit);
+        }
+
+        transform.position = pos;
     }
     
     [ServerRpc]
-    void MoveRequest_ServerRpc(float inputY)
+    void MoveRequest_ServerRpc(float inputX, float inputY)
     {
-        // server receives input and updates moveInput
-        moveInput = new Vector2(0, inputY);
+        moveInput = new Vector2(inputX, inputY);
     }
 
     // [ServerRpc(RequireOwnership = false)]
