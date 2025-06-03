@@ -15,7 +15,7 @@ public class Ball : NetworkBehaviour
     void Start()
        {
            rb = GetComponent<Rigidbody2D>();
-           if (IsServer)
+           if (IsServer && rb != null)
            {
                Launch();
            }
