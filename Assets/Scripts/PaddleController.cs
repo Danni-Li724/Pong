@@ -29,12 +29,12 @@ public class PaddleController : NetworkBehaviour
             if (isHorizontalPaddle)
             {
                 // for top/bottom paddles
-                playerInput.PlayerHorizontal.Move.performed += ctx =>
+                playerInput.Player.Move.performed += ctx =>
                 {
                     moveInput = ctx.ReadValue<Vector2>();
                     MoveRequest_ServerRpc(moveInput.x, 0); // send x only
                 };
-                playerInput.PlayerHorizontal.Move.canceled += ctx =>
+                playerInput.Player.Move.canceled += ctx =>
                 {
                     moveInput = Vector2.zero;
                     MoveRequest_ServerRpc(0, 0);

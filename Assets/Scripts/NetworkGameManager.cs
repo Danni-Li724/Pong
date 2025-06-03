@@ -12,6 +12,7 @@ public class NetworkGameManager : NetworkBehaviour
 
     private int playerCount = 0;
     
+    // spaning players
     public override void OnNetworkSpawn()
     {
         if (IsServer)

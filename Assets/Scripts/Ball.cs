@@ -115,7 +115,7 @@ public class Ball : NetworkBehaviour
                    return;
            }
        }
-       [ClientRpc]
+       [ClientRpc(Delivery = RpcDelivery.Reliable)]
        void ChangeScoreClientRpc(int playerHit)
        {
            if (scoreManager == null) return;
@@ -140,5 +140,11 @@ public class Ball : NetworkBehaviour
                default:
                    return;
            }
+       }
+
+       [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+       void ExampleClientRpc()
+       {
+           
        }
 }

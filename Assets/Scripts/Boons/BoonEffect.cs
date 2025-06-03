@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Boons/BoonEffect")]
-public class BoonEffects : ScriptableObject
+public class BoonEffect : ScriptableObject
 {
     public string effecvtName;
     public string description;
