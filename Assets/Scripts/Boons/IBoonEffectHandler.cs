@@ -2,6 +2,6 @@ using UnityEngine;
 
 public interface IBoonEffectHandler
 {
-   void ApplyBoonEffect(GameObject boon, float duration);
+   void ApplyBoonEffect(GameObject target, float duration);
    void RemoveEffect(GameObject target);
 }
