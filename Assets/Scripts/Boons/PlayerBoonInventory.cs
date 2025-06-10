@@ -59,13 +59,13 @@ public class PlayerBoonInventory : NetworkBehaviour
         RemoveBoonFromPlayer(playerID, boonID);
         
         // Apply the boon effect
-        ApplyBoonEffectClientRPC(playerID, boonID, targetPlayerID);
+        //ApplyBoonEffectClientRPC(playerID, boonID, targetPlayerID);
         
         // Update inventory UI
-        UpdateInventoryUIClientRPC(playerID, boonID);
+        //UpdateInventoryUIClientRPC(playerID, boonID);
     }
     
-    [ClientRpc]
+    /*[ClientRpc]
     private void ApplyBoonEffectClientRPC(ulong playerID, string boonID, ulong targetPlayerID)
     {
         var boonEffect = BoonSelectionManager.Instance.GetBoonEffect(boonID);
@@ -103,5 +103,5 @@ public class PlayerBoonInventory : NetworkBehaviour
             }
         }
         return null;
-    }
+    }*/
 }

@@ -14,6 +14,8 @@ public class ScoreManager : NetworkBehaviour
     public Text player4ScoreText;
     public Ball ball;
     
+    public static ScoreManager instance;
+    
     // private void OnEnable()
     // {
     //     if (ball != null)
@@ -30,6 +32,10 @@ public class ScoreManager : NetworkBehaviour
     //         ball.OnPlayer2Scored -= Player2Scored;
     //     }
     // }
+    private void Awake()
+    {
+        instance = this;
+    }
     private void Start()
     {
         UpdateUI();
@@ -71,5 +77,24 @@ public class ScoreManager : NetworkBehaviour
         player3ScoreText.text = player3Score.Value.ToString();
         player4ScoreText.text = player4Score.Value.ToString();
     }
-    // 
+
+    public int GetScore(ulong clientId)
+    {
+        if(clientId == 0) return player1Score.Value;
+        if (clientId == 1) return player2Score.Value;
+        if(clientId == 2) return player3Score.Value;
+        if (clientId == 3) return player4Score.Value;
+        return 0;
+    }
+
+    public bool TrySpendPoints(ulong clientId, int amount)
+    {
+        if (GetScore(clientId) < amount) return false;
+        if(clientId == 0) player1Score.Value -= amount;
+        else if(clientId == 1) player2Score.Value -= amount;
+        else if(clientId == 2) player3Score.Value -= amount;
+        else if(clientId == 3) player4Score.Value -= amount;
+        UpdateUI();
+        return true;
+    }
 }
