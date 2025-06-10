@@ -56,11 +56,11 @@ public class AudioManager : NetworkBehaviour
     public void RequestMusicChangeServerRpc(MusicType musicType, ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
-        if (ScoreManager.instance.TrySpendPoints(clientId, 3))
-        {
-            SwitchMusicClientRPC(musicType);
-        }
-        else
+        // if (ScoreManager.TrySpendPoints(clientId, 3))
+        // {
+        //     SwitchMusicClientRPC(musicType);
+        // }
+        //else
         {
             Debug.Log($"Client {clientId} tried changing music but doesnt have enough points");
         }
