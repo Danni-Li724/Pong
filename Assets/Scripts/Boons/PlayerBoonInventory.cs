@@ -21,7 +21,7 @@ public class PlayerBoonInventory : NetworkBehaviour
         }
     }
     
-    public void AddBoonToPlayer(ulong clientId, string boonId)
+    public void AddBoonToPlayer(ulong clientId, string boonId) // server only
     {
         if (!IsServer) return;
         
@@ -44,7 +44,7 @@ public class PlayerBoonInventory : NetworkBehaviour
         }
     }
     
-    public List<string> GetBoonsForPlayer(ulong clientId)
+    public List<string> GetBoonsForPlayer(ulong clientId) // copy of player's current boons
     {
         return playerBoons.TryGetValue(clientId, out var list) ? new List<string>(list) : new List<string>();
     }
@@ -59,11 +59,45 @@ public class PlayerBoonInventory : NetworkBehaviour
         RemoveBoonFromPlayer(playerID, boonID);
         
         // Apply the boon effect
-        //ApplyBoonEffectClientRPC(playerID, boonID, targetPlayerID);
+        ApplyBoonEffectClientRPC(playerID, boonID, targetPlayerID);
         
         // Update inventory UI
-        //UpdateInventoryUIClientRPC(playerID, boonID);
+       UpdateInventoryUIClientRpc(playerID, boonID);
     }
+
+    [ClientRpc]
+    private void ApplyBoonEffectClientRPC(ulong playerID, string boonID, ulong targetPlayerID)
+    {
+        var boonEffect = BoonSelectionManager.Instance.GetBoonEffect(boonID);
+        if (boonEffect!= null){
+            GameObject targetPlayer = FindPlayerObject(targetPlayerID == 0 ? playerID : targetPlayerID);}
+        
+    }
+
+    [ClientRpc]
+    private void UpdateInventoryUIClientRpc(ulong playerID, string boonID)
+    {
+        // only updating ui on local client
+        if (NetworkManager.Singleton.LocalClientId == playerID)
+        {
+            if (UIPlayerInventory.Instance != null)
+            {
+                UIPlayerInventory.Instance.RemoveBoonFromInventory(boonID);
+            }
+        }
+    }
+
+    private GameObject FindPlayerObject(ulong clientId)
+    {
+        if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var networkClient))
+        {
+            return networkClient.PlayerObject!= null ? networkClient.PlayerObject.gameObject : null;
+        }
+        return null;
+    }
+            
+            
+        
     
     /*[ClientRpc]
     private void ApplyBoonEffectClientRPC(ulong playerID, string boonID, ulong targetPlayerID)
