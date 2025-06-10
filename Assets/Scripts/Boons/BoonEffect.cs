@@ -3,7 +3,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Boons/BoonEffect")]
 public class BoonEffect : ScriptableObject
 {
-    public string effecvtName;
+    public string effectName;
     public string description;
     public Sprite icon;
     public float duration;

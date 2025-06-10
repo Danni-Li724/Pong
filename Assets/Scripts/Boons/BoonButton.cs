@@ -25,7 +25,7 @@ public class BoonButton : MonoBehaviour, IPointerClickHandler
       boonId = effect.name;
         
       if (iconImage != null) iconImage.sprite = effect.icon;
-      if (nameText != null) nameText.text = effect.effecvtName;
+      if (nameText != null) nameText.text = effect.effectName;
       if (descriptionText != null) descriptionText.text = effect.description;
    }
     
@@ -33,6 +33,7 @@ public class BoonButton : MonoBehaviour, IPointerClickHandler
    {
       if (!button.interactable) return;
       BoonSelectionManager.Instance.TrySelectBoon(boonId);
+      Debug.Log(boonId);
    }
     
    public void Disable()

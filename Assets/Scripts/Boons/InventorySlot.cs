@@ -44,7 +44,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler
         else
         {
             if (iconImage != null) iconImage.sprite = currentBoon.icon;
-            if (nameText != null) nameText.text = currentBoon.effecvtName;
+            if (nameText != null) nameText.text = currentBoon.effectName;
             slotButton.interactable = true;
         }
     }

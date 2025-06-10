@@ -94,8 +94,6 @@ public class PlayerBoonInventory : NetworkBehaviour
     
     private GameObject FindPlayerObject(ulong playerID)
     {
-        // This method should find the player GameObject based on playerID
-        // Implementation depends on how you manage player objects
         var networkObjects = FindObjectsOfType<NetworkObject>();
         foreach (var netObj in networkObjects)
         {

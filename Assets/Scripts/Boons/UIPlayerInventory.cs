@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-public class UIPlayerInventory : MonoBehaviour
+public class UIPlayerInventory : MonoBehaviour // local to client
 {
     [SerializeField] private Transform inventoryContainer;
     [SerializeField] private GameObject inventorySlotPrefab;
