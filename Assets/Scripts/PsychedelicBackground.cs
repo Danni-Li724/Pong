@@ -12,7 +12,7 @@ public class PsychedelicBackground : MonoBehaviour
       public float expansionSpeed;
       public float fadeSpeed;
       
-      [FormerlySerializedAs("defaultColors")] [Header("Color Settings")]
+      [Header("Color Settings")]
       public Color[] player1Colors;
       public Color[] player2Colors;
       public Color[] player3Colors;
@@ -20,6 +20,8 @@ public class PsychedelicBackground : MonoBehaviour
       private Color[] currentColors;
       private int currentColorIndex = 0;
       private List<SpriteRenderer> activeRenderers = new List<SpriteRenderer>();
+      
+      private static PsychedelicBackground instance;
       
       //public Ball ball;
       
@@ -40,13 +42,50 @@ public class PsychedelicBackground : MonoBehaviour
             ball.OnPlayer2Hit -= SwitchToPlayer2Colors;
          }
       }*/
+      
+      private void OnEnable()
+      {
+         Ball.OnPlayerHit += HandleColorChange;
+      }
 
+      private void OnDisable()
+      {
+         Ball.OnPlayerHit -= HandleColorChange;
+      }
+      
+      private void Awake()
+      {
+         if (instance == null)
+            instance = this;
+      }
 
       private void Start()
       {
          currentColors = player1Colors;
          // infinite loop coroutine
          StartCoroutine(SpawnLoop());
+      }
+      
+      public static void TriggerGlobalColorChange(int playerId)
+      {
+         var instance = FindObjectOfType<PsychedelicBackground>();
+         if (instance != null)
+         {
+            instance.HandleColorChange(playerId);
+         }
+      }
+      private void HandleColorChange(int playerId)
+      {
+         switch (playerId)
+         {
+            case 1: currentColors = player1Colors; break;
+            case 2: currentColors = player2Colors; break;
+            case 3: currentColors = player3Colors; break;
+            case 4: currentColors = player4Colors; break;
+         }
+
+         currentColorIndex = 0;
+         UpdateActiveRenderersColors();
       }
 
       private IEnumerator SpawnLoop()
@@ -101,33 +140,33 @@ public class PsychedelicBackground : MonoBehaviour
          Destroy(circle);
       }
       
-      public void SwitchToPlayer1Colors()
-      {
-         currentColors = player1Colors;
-         currentColorIndex = 0;
-         UpdateActiveRenderersColors();
-      }
-
-      public void SwitchToPlayer2Colors()
-      {
-         currentColors = player2Colors;
-         currentColorIndex = 0;
-         UpdateActiveRenderersColors();
-      }
-      
-      public void SwitchToPlayer3Colors()
-      {
-         currentColors = player3Colors;
-         currentColorIndex = 0;
-         UpdateActiveRenderersColors();
-      }
-      
-      public void SwitchToPlayer4Colors()
-      {
-         currentColors = player4Colors;
-         currentColorIndex = 0;
-         UpdateActiveRenderersColors();
-      }
+      // public void SwitchToPlayer1Colors()
+      // {
+      //    currentColors = player1Colors;
+      //    currentColorIndex = 0;
+      //    UpdateActiveRenderersColors();
+      // }
+      //
+      // public void SwitchToPlayer2Colors()
+      // {
+      //    currentColors = player2Colors;
+      //    currentColorIndex = 0;
+      //    UpdateActiveRenderersColors();
+      // }
+      //
+      // public void SwitchToPlayer3Colors()
+      // {
+      //    currentColors = player3Colors;
+      //    currentColorIndex = 0;
+      //    UpdateActiveRenderersColors();
+      // }
+      //
+      // public void SwitchToPlayer4Colors()
+      // {
+      //    currentColors = player4Colors;
+      //    currentColorIndex = 0;
+      //    UpdateActiveRenderersColors();
+      // }
 
       private void UpdateActiveRenderersColors()
       {

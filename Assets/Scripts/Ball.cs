@@ -48,6 +48,21 @@ public class Ball : NetworkBehaviour
             case "Player4": OnPlayerHit?.Invoke(4); break;
         }
     }
+
+    private void HandlePaddleHit(int playerId)
+    {
+        if (IsServer)
+        {
+            OnPlayerHit?.Invoke(playerId);
+            TriggerBackgroundChangeClientRpc(playerId);
+        }
+    }
+    
+    [ClientRpc]
+    private void TriggerBackgroundChangeClientRpc(int playerId)
+    {
+        PsychedelicBackground.TriggerGlobalColorChange(playerId);
+    }
     
     //Old code which had too much responsibilities
     /*public float speed = 5f;
