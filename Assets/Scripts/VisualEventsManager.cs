@@ -40,7 +40,7 @@ public class VisualEventsManager : NetworkBehaviour
 
     private void HandlePlayerScored(int playerId)
     {
-        // Optional: add score-specific visuals here
+       //
     }
 
     private void HandlePlayerHit(int playerId)
