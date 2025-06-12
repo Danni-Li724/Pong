@@ -38,6 +38,19 @@ public class VisualEventsManager : NetworkBehaviour
         BallPhysics.OnPlayerScored -= HandlePlayerScored;
     }
 
+    void Start()
+    {
+        GameObject ballGO = GameObject.FindWithTag("Ball");
+        if (ballGO != null)
+        {
+            ballVisuals = ballGO.GetComponentInChildren<BallVisuals>();
+        }
+        else
+        {
+            Debug.LogWarning("Ball visual not found");
+        }
+    }
+
     private void HandlePlayerScored(int playerId)
     {
        //
@@ -81,5 +94,4 @@ public class VisualEventsManager : NetworkBehaviour
            case 1:  break; 
         }
     }
-
 }

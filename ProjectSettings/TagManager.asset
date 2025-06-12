@@ -12,6 +12,7 @@ TagManager:
   - Player4
   - GoalTop
   - GoalBottom
+  - Ball
   layers:
   - Default
   - TransparentFX
