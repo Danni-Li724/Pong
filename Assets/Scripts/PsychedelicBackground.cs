@@ -22,59 +22,18 @@ public class PsychedelicBackground : MonoBehaviour
       private List<SpriteRenderer> activeRenderers = new List<SpriteRenderer>();
       
       private static PsychedelicBackground instance;
-      
-      //public Ball ball;
-      
-      /*private void OnEnable()
-      {
-         if (ball != null)
-         {
-            ball.OnPlayer1Hit += SwitchToPlayer1Colors;
-            ball.OnPlayer2Hit += SwitchToPlayer2Colors;
-         }
-      }
-
-      private void OnDisable()
-      {
-         if (ball != null)
-         {
-            ball.OnPlayer1Hit -= SwitchToPlayer1Colors;
-            ball.OnPlayer2Hit -= SwitchToPlayer2Colors;
-         }
-      }*/
-      
-      private void OnEnable()
-      {
-         Ball.OnPlayerHit += HandleColorChange;
-      }
-
-      private void OnDisable()
-      {
-         Ball.OnPlayerHit -= HandleColorChange;
-      }
-      
       private void Awake()
       {
          if (instance == null)
             instance = this;
       }
-
       private void Start()
       {
          currentColors = player1Colors;
          // infinite loop coroutine
          StartCoroutine(SpawnLoop());
       }
-      
-      public static void TriggerGlobalColorChange(int playerId)
-      {
-         var instance = FindObjectOfType<PsychedelicBackground>();
-         if (instance != null)
-         {
-            instance.HandleColorChange(playerId);
-         }
-      }
-      private void HandleColorChange(int playerId)
+      public void HandleColorChange(int playerId)
       {
          switch (playerId)
          {
@@ -103,10 +62,8 @@ public class PsychedelicBackground : MonoBehaviour
          circle.transform.localScale = Vector3.one;
 
          SpriteRenderer renderer = circle.GetComponent<SpriteRenderer>();
-
          // if randomnising player1Colors
          //renderer.color = player1Colors[Random.Range(0, player1Colors.Length)];
-
          // if appearing in order of array
          Color color = currentColors[currentColorIndex];
          color.a = 1f;
@@ -126,7 +83,6 @@ public class PsychedelicBackground : MonoBehaviour
             alpha -= fadeSpeed * Time.deltaTime;
             // Clamp
             alpha = Mathf.Clamp01(alpha);
-            //scale = Vector3.Min(scale, Vector3.one * 100f);
             circle.transform.localScale = scale;
             Color fadeColor = renderer.color;
             fadeColor.a = alpha;
@@ -139,35 +95,6 @@ public class PsychedelicBackground : MonoBehaviour
          activeRenderers.Remove(renderer);
          Destroy(circle);
       }
-      
-      // public void SwitchToPlayer1Colors()
-      // {
-      //    currentColors = player1Colors;
-      //    currentColorIndex = 0;
-      //    UpdateActiveRenderersColors();
-      // }
-      //
-      // public void SwitchToPlayer2Colors()
-      // {
-      //    currentColors = player2Colors;
-      //    currentColorIndex = 0;
-      //    UpdateActiveRenderersColors();
-      // }
-      //
-      // public void SwitchToPlayer3Colors()
-      // {
-      //    currentColors = player3Colors;
-      //    currentColorIndex = 0;
-      //    UpdateActiveRenderersColors();
-      // }
-      //
-      // public void SwitchToPlayer4Colors()
-      // {
-      //    currentColors = player4Colors;
-      //    currentColorIndex = 0;
-      //    UpdateActiveRenderersColors();
-      // }
-
       private void UpdateActiveRenderersColors()
       {
          for (int i = 0; i < activeRenderers.Count; i++)

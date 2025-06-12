@@ -4,16 +4,10 @@ using UnityEngine.UI;
 
 public class ScoreManager : NetworkBehaviour
 {
-    
-    public NetworkVariable<int> player1Score = new();
+   public NetworkVariable<int> player1Score = new();
     public NetworkVariable<int> player2Score = new();
     public NetworkVariable<int> player3Score = new();
     public NetworkVariable<int> player4Score = new();
-
-    public Text player1ScoreText;
-    public Text player2ScoreText;
-    public Text player3ScoreText;
-    public Text player4ScoreText;
 
     public Ball ball;
 
@@ -25,11 +19,6 @@ public class ScoreManager : NetworkBehaviour
     private void OnDisable()
     {
         Ball.OnPlayerScored -= HandleScore;
-    }
-
-    private void Start()
-    {
-        //UpdateUIClientRpc();
     }
 
     private void HandleScore(int playerId)
@@ -44,17 +33,13 @@ public class ScoreManager : NetworkBehaviour
             case 4: player4Score.Value++; break;
         }
 
-        UpdateUIClientRpc(player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value);
+        // use VisualEventsManager to update UI across all clients
+        if (VisualEventsManager.Instance != null)
+        {
+            VisualEventsManager.Instance.UpdateScoreUIClientRpc(
+                player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value);
+        }
         ball.ResetBall();
-    }
-
-    [ClientRpc]
-    private void UpdateUIClientRpc(int p1, int p2, int p3, int p4)
-    {
-        player1ScoreText.text = p1.ToString();
-        player2ScoreText.text = p2.ToString();
-        player3ScoreText.text = p3.ToString();
-        player4ScoreText.text = p4.ToString();
     }
 
     public int GetScore(ulong clientId)
@@ -80,10 +65,15 @@ public class ScoreManager : NetworkBehaviour
             case 2: player3Score.Value -= amount; break;
             case 3: player4Score.Value -= amount; break;
         }
-
-        UpdateUIClientRpc(player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value);
+        if (VisualEventsManager.Instance != null)
+        {
+            VisualEventsManager.Instance.UpdateScoreUIClientRpc(
+                player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value);
+        }
+        
         return true;
     }
+    
     /*public NetworkVariable<int> player1Score = new NetworkVariable<int>();
     public NetworkVariable<int> player2Score = new NetworkVariable<int>();
     public NetworkVariable<int> player3Score = new NetworkVariable<int>();
