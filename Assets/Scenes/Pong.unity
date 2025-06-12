@@ -2222,6 +2222,7 @@ MonoBehaviour:
   player3ScoreText: {fileID: 5414354724398069326}
   player4ScoreText: {fileID: 5414354722748402481}
   psychedelicBackground: {fileID: 1171796870}
+  ball: {fileID: 0}
 --- !u!4 &1612838194
 Transform:
   m_ObjectHideFlags: 0
@@ -2624,7 +2625,7 @@ MonoBehaviour:
   player2PaddlePrefab: {fileID: 407256030918887381, guid: 191222a78003129488442c24d86152c5, type: 3}
   player3PaddlePrefab: {fileID: 4907245465502924905, guid: 2ed39b7d579c32e468aa21746414241a, type: 3}
   player4PaddlePrefab: {fileID: 6594563948154403240, guid: a2349dc59ee66ad4599a4f34332caa74, type: 3}
-  ballPrefab: {fileID: 3424314573649418201, guid: e59a9002681fe3f4781fc8cff4ac5f71, type: 3}
+  ballPrefab: {fileID: 7170168011991111577, guid: e59a9002681fe3f4781fc8cff4ac5f71, type: 3}
 --- !u!4 &2014970934
 Transform:
   m_ObjectHideFlags: 0

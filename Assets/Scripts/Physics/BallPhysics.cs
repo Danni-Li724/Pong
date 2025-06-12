@@ -1,45 +1,52 @@
-using Unity.Netcode;
 using UnityEngine;
+using Unity.Netcode;
 using System;
 
-public class Ball : NetworkBehaviour
+[RequireComponent(typeof(Rigidbody2D))]
+public class BallPhysics : NetworkBehaviour
 {
     public float speed = 5f;
     private Rigidbody2D rb;
-    
+
     public static event Action<int> OnPlayerHit;
     public static event Action<int> OnPlayerScored;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            Debug.LogError("rb2D not found on " + gameObject.name);
+        }
     }
-    
-    void Start()
+
+    private void Start()
     {
-        if (IsServer && rb != null)
+        if (IsServer)
         {
             Launch();
         }
     }
-    
-    void Launch()
+
+    private void Launch()
     {
         Vector2 direction = new Vector2(UnityEngine.Random.Range(0, 2) == 0 ? -1 : 1, UnityEngine.Random.Range(-1f, 1f)).normalized;
         rb.linearVelocity = direction * speed;
     }
-    
+
     public void ResetBall()
     {
-        if (rb != null) rb.linearVelocity = Vector2.zero;
+        if (!IsServer) return;
+
+        rb.linearVelocity = Vector2.zero;
         transform.position = Vector2.zero;
         Launch();
     }
-    
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (!IsServer) return;
-        
+
         switch (collision.gameObject.tag)
         {
             case "GoalLeft": OnPlayerScored?.Invoke(2); break;

@@ -15,48 +15,53 @@ public class VisualEventsManager : NetworkBehaviour
     [Header("Background Reference")]
     public PsychedelicBackground psychedelicBackground;
 
+    [Header("Ball Visuals Reference")]
+    public BallVisuals ballVisuals;
+
     public static VisualEventsManager Instance { get; private set; }
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     private void OnEnable()
     {
-        Ball.OnPlayerHit += HandlePlayerHit;
-        Ball.OnPlayerScored += HandlePlayerScored;
+        BallPhysics.OnPlayerHit += HandlePlayerHit;
+        BallPhysics.OnPlayerScored += HandlePlayerScored;
     }
 
     private void OnDisable()
     {
-        Ball.OnPlayerHit -= HandlePlayerHit;
-        Ball.OnPlayerScored -= HandlePlayerScored;
+        BallPhysics.OnPlayerHit -= HandlePlayerHit;
+        BallPhysics.OnPlayerScored -= HandlePlayerScored;
     }
+
     private void HandlePlayerScored(int playerId)
     {
+        // Optional: add score-specific visuals here
     }
+
     private void HandlePlayerHit(int playerId)
     {
-        if (IsServer)
-        {
-            TriggerBackgroundChangeClientRpc(playerId);
-        }
+        if (!IsServer) return;
+
+        Debug.Log($"VisualEventsManager: Player {playerId} hit detected");
+        TriggerBackgroundChangeClientRpc(playerId);
+        TriggerBallGradientChangeClientRpc(playerId);
     }
+
     [ClientRpc]
     private void TriggerBackgroundChangeClientRpc(int playerId)
     {
-        if (psychedelicBackground != null)
-        {
-            psychedelicBackground.HandleColorChange(playerId);
-        }
+        psychedelicBackground?.HandleColorChange(playerId);
+    }
+
+    [ClientRpc]
+    private void TriggerBallGradientChangeClientRpc(int playerId)
+    {
+        ballVisuals?.HandleGradientChange(playerId);
     }
 
     [ClientRpc]
@@ -67,8 +72,9 @@ public class VisualEventsManager : NetworkBehaviour
         if (player3ScoreText != null) player3ScoreText.text = p3.ToString();
         if (player4ScoreText != null) player4ScoreText.text = p4.ToString();
     }
-    [ClientRpc]
-    public void TriggerUIEffectClientRpc(int effectId, int playerId)
+
+    [ClientRpc] // future method
+    public void TriggerInventoryUIClientRpc(int effectId, int playerId)
     {
         switch (effectId)
         {
