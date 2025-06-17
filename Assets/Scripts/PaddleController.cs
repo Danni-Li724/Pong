@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 public class PaddleController : NetworkBehaviour
 {
-    public int playerId = 1;
+    private int playerId;
     public float moveSpeed;
     
     private Rigidbody2D rb;
@@ -16,7 +16,13 @@ public class PaddleController : NetworkBehaviour
     public float leftLimit;
     public float rightLimit;
 
-    public bool isHorizontalPaddle;
+    private bool isHorizontalPaddle;
+
+    public void SetPlayerId(int id)
+    {
+        playerId = id;
+        isHorizontalPaddle = (id == 3 || id == 4);
+    }
     
     public override void OnNetworkSpawn()
     {
@@ -63,33 +69,6 @@ public class PaddleController : NetworkBehaviour
         }
     }
 
-   
-    // private void Awake()
-    // {
-    //     playerInput = new PlayerInput();
-    //     playerInput.Player.Move.performed += ctx =>
-    //     {
-    //         moveInput = ctx.ReadValue<Vector2>();
-    //         // Send input to server if this is your paddle
-    //         if (IsOwner)
-    //         {
-    //             MoveRequest_ServerRpc(moveInput.y);
-    //         }
-    //     };
-    //     playerInput.Player.Move.canceled += ctx => 
-    //     { 
-    //         moveInput = Vector2.zero;
-    //         if (IsOwner)
-    //         {
-    //             MoveRequest_ServerRpc(0);
-    //         }
-    //     };
-    // }
-   
-    // private void OnEnable()
-    // {
-    //     playerInput.Enable();
-    // }
     
     private void OnDisable()
     {
@@ -121,30 +100,9 @@ public class PaddleController : NetworkBehaviour
         transform.position = pos;
     }
     
-    [ServerRpc]
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
     void MoveRequest_ServerRpc(float inputX, float inputY)
     {
         moveInput = new Vector2(inputX, inputY);
     }
-
-    // [ServerRpc(RequireOwnership = false)]
-    // private void MoveRequest_ServerRpc(float directionY) 
-    // {
-    //     if (!IsServer) return;
-    //
-    //     float delta = directionY * moveSpeed * Time.fixedDeltaTime;
-    //     Vector3 newPos = transform.position + new Vector3(0, delta, 0);
-    //     newPos.y = Mathf.Clamp(newPos.y, bottomLimit, topLimit);
-    //     transform.position = newPos;
-    //     
-    //     MoveUpdate_ClientRpc(newPos); // Sync to other clients
-    // }
-    //
-    // // if no network transform
-    // [ClientRpc]
-    // private void MoveUpdate_ClientRpc(Vector3 newPos) 
-    // {
-    //     if (IsOwner) return; // Owner already sees it
-    //     transform.position = newPos;
-    // }
 }

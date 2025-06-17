@@ -60,13 +60,13 @@ public class PlayerTargetingUI : NetworkBehaviour
             targetButtons.Clear();
         }
 
-        [ServerRpc]
+        [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
         void ApplyEffectToPlayerServerRpc(ulong targetClientId, int effectType)
         {
             ApplyEffectToPlayerClientRpc(targetClientId, effectType);
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
         void ApplyEffectToPlayerClientRpc(ulong targetClientId, int effectType)
         {
             if (NetworkManager.Singleton.LocalClientId == targetClientId)

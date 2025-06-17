@@ -89,12 +89,11 @@ public class NetworkGameManager : NetworkBehaviour
         // Spawn the paddle
         GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, spawnTransform.rotation);
         paddle.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        // To add later:
-        // var paddleController = paddle.GetComponent<PaddleController>();
-        // if (paddleController != null)
-        // {
-        //     paddleController.SetPlayerId(playerId);
-        // }
+        PaddleController paddleController = paddle.GetComponent<PaddleController>();
+        if (paddleController != null)
+        {
+            paddleController.SetPlayerId(playerId);
+        }
     }
 
     Transform GetSpawnTransform(int playerId)
