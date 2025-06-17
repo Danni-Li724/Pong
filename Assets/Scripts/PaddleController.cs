@@ -21,7 +21,7 @@ public class PaddleController : NetworkBehaviour
     public void SetPlayerId(int id)
     {
         playerId = id;
-        isHorizontalPaddle = (id == 3 || id == 4);
+        isHorizontalPaddle = (id == 3 || id == 4); // top and bottom players
     }
     
     public override void OnNetworkSpawn()

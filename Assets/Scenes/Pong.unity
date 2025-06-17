@@ -204,6 +204,52 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &253482526
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 253482528}
+  - component: {fileID: 253482527}
+  m_Layer: 0
+  m_Name: BootstrapManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &253482527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253482526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b009af0e27234e47add161489fbd922, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buttonWidth: 70
+  buttonHeight: 40
+--- !u!4 &253482528
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 253482526}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 65.74846, y: -65.42245, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &365693006
 GameObject:
   m_ObjectHideFlags: 0
@@ -354,13 +400,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  playerId: 1
   moveSpeed: 50
   topLimit: 40
   bottomLimit: -40
   leftLimit: -60
   rightLimit: 60
-  isHorizontalPaddle: 1
 --- !u!114 &389067693
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2899,7 +2943,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8145306613596760066, guid: b167d8a26af80474aabcaf4a3f6294b6, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 12.000259
+      value: 12.000244
       objectReference: {fileID: 0}
     - target: {fileID: 8145306613596760066, guid: b167d8a26af80474aabcaf4a3f6294b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2992,7 +3036,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2287727251831398903, guid: d1dc92b82123a2844b4bee946e8213cc, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -12.000259
+      value: -12.000244
       objectReference: {fileID: 0}
     - target: {fileID: 2287727251831398903, guid: d1dc92b82123a2844b4bee946e8213cc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -3601,3 +3645,4 @@ SceneRoots:
   - {fileID: 889653730}
   - {fileID: 1612838194}
   - {fileID: 1830819210}
+  - {fileID: 253482528}
