@@ -1,26 +1,43 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using System.Linq;
 
 public class NetworkGameManager : NetworkBehaviour
 {
     public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
-    public GameObject player1PaddlePrefab;
-    public GameObject player2PaddlePrefab;
-    public GameObject player3PaddlePrefab;
-    public GameObject player4PaddlePrefab;
+    public GameObject playerPaddlePrefab;
     public GameObject ballPrefab;
 
     private int playerCount = 0;
+    private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
     
-    // spaning players
+    // Get list of other players for a specific client
+    public List<PlayerInfo> GetOtherPlayers(ulong clientId)
+    {
+        return allPlayers.Values.Where(p => p.clientId != clientId && p.isConnected).ToList();
+    }
+    
+    // Get player info by client ID
+    public PlayerInfo GetPlayerInfo(ulong clientId)
+    {
+        return allPlayers.ContainsKey(clientId) ? allPlayers[clientId] : null;
+    }
+    
+    // Get all connected players
+    public List<PlayerInfo> GetAllPlayers()
+    {
+        return allPlayers.Values.Where(p => p.isConnected).ToList();
+    }
     public override void OnNetworkSpawn()
     {
         if (IsServer)
         {
             NetworkManager.OnClientConnectedCallback += OnClientConnected;
+            // handling disconnection
+            NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
             // spawn paddle 1 for host
-            GameObject paddle1 = Instantiate(player1PaddlePrefab, leftSpawn.position, Quaternion.identity);
-            paddle1.GetComponent<NetworkObject>().SpawnAsPlayerObject(NetworkManager.Singleton.LocalClientId);
+            SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1);
             playerCount = 1;
         }
     }
@@ -31,40 +48,73 @@ public class NetworkGameManager : NetworkBehaviour
 
             if (clientId == NetworkManager.Singleton.LocalClientId) return; // host doesn't reconnect
 
-            GameObject paddleToSpawn = null;
-            Vector3 spawnPosition = Vector3.zero;
-
-            switch (playerCount)
+            if (playerCount >= 4)
             {
-                case 1: // second player
-                    paddleToSpawn = player2PaddlePrefab;
-                    spawnPosition = rightSpawn.position;
-                    break;
-                case 2: // third player
-                    paddleToSpawn = player3PaddlePrefab;
-                    spawnPosition = topSpawn.position;
-                    break;
-                case 3: // fourth player
-                    paddleToSpawn = player4PaddlePrefab;
-                    spawnPosition = bottomSpawn.position;
-                    break;
-                default:
-                    Debug.LogWarning("More than 4 players attempted to join. Not supported."); // output this to ui text
-                    return;
+                Debug.LogWarning("Player count exceeds max player count");
+                return;
             }
-
-            if (paddleToSpawn != null)
+            playerCount++;
+            SpawnPlayerPaddle(clientId, playerCount);
+            if (playerCount == 2) // temp
             {
-                GameObject paddle = Instantiate(paddleToSpawn, spawnPosition, Quaternion.identity);
-                paddle.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-                playerCount++;
-
-                // Only spawn ball once (when 2+ players are ready)
-                if (playerCount == 2)
-                {
-                    GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
-                    ball.GetComponent<NetworkObject>().Spawn();
-                }
+                GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
+                ball.GetComponent<NetworkObject>().Spawn();
             }
         }
+    
+    void OnClientDisconnected(ulong clientId)
+    {
+        if (!IsServer) return;
+        
+        if (allPlayers.ContainsKey(clientId))
+        {
+            allPlayers[clientId].isConnected = false;
+            Debug.Log($"Player {allPlayers[clientId].playerId} disconnected");
+        }
+    }
+
+    void SpawnPlayerPaddle(ulong clientId, int playerId)
+    {
+        Transform spawnTransform = GetSpawnTransform(playerId);
+        if (spawnTransform == null)
+        {
+            Debug.LogError($"No spawnPos found for player {playerId}");
+            return;
+        }
+
+        // Create player info
+        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
+        allPlayers[clientId] = playerInfo;
+
+        // Spawn the paddle
+        GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, spawnTransform.rotation);
+        paddle.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+        // To add later:
+        // var paddleController = paddle.GetComponent<PaddleController>();
+        // if (paddleController != null)
+        // {
+        //     paddleController.SetPlayerId(playerId);
+        // }
+    }
+
+    Transform GetSpawnTransform(int playerId)
+        {
+            switch (playerId)
+            {
+                case 1: return leftSpawn;
+                case 2: return rightSpawn;
+                case 3: return topSpawn;
+                case 4: return bottomSpawn;
+                default: return null;
+            }
+        }
+    
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer)
+        {
+            NetworkManager.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
+    }
 }
