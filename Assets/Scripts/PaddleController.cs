@@ -16,13 +16,16 @@ public class PaddleController : NetworkBehaviour
     public float leftLimit;
     public float rightLimit;
 
-    private bool isHorizontalPaddle;
+    public bool isHorizontalPaddle;
 
     public void SetPlayerId(int id)
     {
         playerId = id;
+        Debug.Log(id);
         isHorizontalPaddle = (id == 3 || id == 4); // top and bottom players
     }
+    
+    public int GetPlayerId() => playerId;
     
     public override void OnNetworkSpawn()
     {
@@ -68,7 +71,6 @@ public class PaddleController : NetworkBehaviour
             Debug.Log($"NOT setting up input for paddle owned by client {OwnerClientId} (I am client {NetworkManager.Singleton.LocalClientId})");
         }
     }
-
     
     private void OnDisable()
     {
@@ -87,13 +89,13 @@ public class PaddleController : NetworkBehaviour
         if (isHorizontalPaddle)
         {
             Vector2 horizontalMovement = new Vector2(moveInput.x, 0);
-            transform.Translate(horizontalMovement * moveSpeed * Time.deltaTime);
+            transform.Translate(horizontalMovement * moveSpeed * Time.deltaTime, Space.Self);
             pos.x = Mathf.Clamp(transform.position.x, leftLimit, rightLimit);
         }
         else
         {
             Vector2 verticalMovement = new Vector2(0, moveInput.y);
-            transform.Translate(verticalMovement * moveSpeed * Time.deltaTime);
+            transform.Translate(verticalMovement * moveSpeed * Time.deltaTime, Space.Self);
             pos.y = Mathf.Clamp(transform.position.y, bottomLimit, topLimit);
         }
 

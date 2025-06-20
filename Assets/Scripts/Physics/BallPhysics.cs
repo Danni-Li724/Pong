@@ -46,6 +46,13 @@ public class BallPhysics : NetworkBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (!IsServer) return;
+        
+        PaddleController paddle = collision.gameObject.GetComponent<PaddleController>();
+        if (paddle != null)
+        {
+            OnPlayerHit?.Invoke(paddle.GetPlayerId());
+            return;
+        }
 
         switch (collision.gameObject.tag)
         {
