@@ -3,10 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 public class BallVisuals : MonoBehaviour
 {
-    public Color player1Color = Color.red;
-    public Color player2Color = Color.blue;
-    public Color player3Color = Color.green;
-    public Color player4Color = Color.yellow;
+    public Color player1Color;
+    public Color player2Color;
+    public Color player3Color;
+    public Color player4Color;
     private SpriteRenderer spriteRenderer;
     private TrailRenderer trailRenderer;
 
