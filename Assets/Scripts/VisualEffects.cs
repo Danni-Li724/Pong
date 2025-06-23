@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine.Serialization;
 
 
-public class PsychedelicBackground : MonoBehaviour
+public class VisualEffects : MonoBehaviour
 {
       public GameObject circlePrefab;
       public float spawnRate;
@@ -21,7 +21,7 @@ public class PsychedelicBackground : MonoBehaviour
       private int currentColorIndex = 0;
       private List<SpriteRenderer> activeRenderers = new List<SpriteRenderer>();
       
-      private static PsychedelicBackground instance;
+      private static VisualEffects instance;
       private void Awake()
       {
          if (instance == null)

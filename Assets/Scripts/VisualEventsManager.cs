@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using UnityEngine.Serialization;
 
 public class VisualEventsManager : NetworkBehaviour
 {
@@ -11,9 +12,8 @@ public class VisualEventsManager : NetworkBehaviour
     public Text player2ScoreText;
     public Text player3ScoreText;
     public Text player4ScoreText;
-
-    [Header("Background Reference")]
-    public PsychedelicBackground psychedelicBackground;
+    
+    public VisualEffects visualEffects;
 
     [Header("Ball Visuals Reference")]
     public BallVisuals ballVisuals;
@@ -68,7 +68,7 @@ public class VisualEventsManager : NetworkBehaviour
     [ClientRpc]
     private void TriggerBackgroundChangeClientRpc(int playerId)
     {
-        psychedelicBackground?.HandleColorChange(playerId);
+        visualEffects?.HandleColorChange(playerId);
     }
 
     [ClientRpc]

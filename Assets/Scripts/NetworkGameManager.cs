@@ -55,6 +55,7 @@ public class NetworkGameManager : NetworkBehaviour
             }
             playerCount++;
             SpawnPlayerPaddle(clientId, playerCount);
+            AssignGoals();
             if (playerCount == 2) // temp
             {
                 GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
@@ -93,6 +94,42 @@ public class NetworkGameManager : NetworkBehaviour
         if (paddleController != null)
         {
             paddleController.SetPlayerId(playerId);
+        }
+    }
+    
+    private void AssignGoals()
+    {
+        GoalController[] allGoals = FindObjectsOfType<GoalController>();
+        Transform[] spawnPoints = new Transform[]
+        {
+            leftSpawn,
+            rightSpawn,
+            topSpawn,
+            bottomSpawn
+        };
+
+        for (int i = 0; i < allGoals.Length; i++)
+        {
+            GoalController closestGoal = null;
+            float closestDistance = float.MaxValue;
+            int matchedPlayerId = -1;
+
+            for (int playerId = 1; playerId <= spawnPoints.Length; playerId++)
+            {
+                float dist = Vector3.Distance(allGoals[i].transform.position, spawnPoints[playerId - 1].position);
+                if (dist < closestDistance)
+                {
+                    closestDistance = dist;
+                    closestGoal = allGoals[i];
+                    matchedPlayerId = playerId;
+                }
+            }
+
+            if (closestGoal != null)
+            {
+                closestGoal.SetGoalForPlayerId(matchedPlayerId);
+                Debug.Log($"Assigned goal at {closestGoal.transform.position} to player {matchedPlayerId}");
+            }
         }
     }
 

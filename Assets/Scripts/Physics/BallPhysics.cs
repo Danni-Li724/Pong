@@ -7,6 +7,7 @@ public class BallPhysics : NetworkBehaviour
 {
     public float speed = 5f;
     private Rigidbody2D rb;
+    private int lastPlayerId;
 
     public static event Action<int> OnPlayerHit;
     public static event Action<int> OnPlayerScored;
@@ -46,24 +47,28 @@ public class BallPhysics : NetworkBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (!IsServer) return;
-        
-        PaddleController paddle = collision.gameObject.GetComponent<PaddleController>();
-        if (paddle != null)
+
+        if (collision.gameObject.TryGetComponent<PaddleController>(out var paddle))
         {
-            OnPlayerHit?.Invoke(paddle.GetPlayerId());
+            lastPlayerId = paddle.GetPlayerId();
+            OnPlayerHit?.Invoke(lastPlayerId);
             return;
         }
 
-        switch (collision.gameObject.tag)
+        if (collision.gameObject.TryGetComponent<GoalController>(out var goal))
         {
-            case "GoalLeft": OnPlayerScored?.Invoke(2); break;
-            case "GoalRight": OnPlayerScored?.Invoke(1); break;
-            case "GoalTop": OnPlayerScored?.Invoke(4); break;
-            case "GoalBottom": OnPlayerScored?.Invoke(3); break;
-            case "Player1": OnPlayerHit?.Invoke(1); break;
-            case "Player2": OnPlayerHit?.Invoke(2); break;
-            case "Player3": OnPlayerHit?.Invoke(3); break;
-            case "Player4": OnPlayerHit?.Invoke(4); break;
+            int goalOwner = goal.GetGoalForPlayerId();
+        
+            if (lastPlayerId != -1 && lastPlayerId != goalOwner)
+            {
+                OnPlayerScored?.Invoke(lastPlayerId);
+            }
+            else
+            {
+                Debug.Log($"Own goal or no last hitter detected.");
+            }
+
+            return;
         }
     }
 }
