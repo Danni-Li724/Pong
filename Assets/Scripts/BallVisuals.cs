@@ -1,77 +1,88 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 public class BallVisuals : MonoBehaviour
 {
-    public Gradient player1Gradient;
-    public Gradient player2Gradient;
-    public Gradient player3Gradient;
-    public Gradient player4Gradient;
-    public float gradientSpeed = 1f;
-    public bool animateGradient = true;
+    public Color player1Color = Color.red;
+    public Color player2Color = Color.blue;
+    public Color player3Color = Color.green;
+    public Color player4Color = Color.yellow;
+    public GameObject trailBallPrefab;
+    public int trailCount = 5;
+    public float trailSpacing = 0.05f;
 
     private SpriteRenderer spriteRenderer;
-    private Gradient currentGradient;
-    private Coroutine gradientCoroutine;
+    private Color currentColor;
+    private List<GameObject> trailBalls = new List<GameObject>();
+    // using queue for trailing effects
+    private Queue<Vector3> previousPositions = new Queue<Vector3>();
 
-    private void Awake()
+     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        currentColor = player1Color;
     }
 
     private void Start()
     {
-        currentGradient = player1Gradient;
-        if (animateGradient)
-        {
-            StartGradientAnimation();
-        }
+        CreateTrailBalls();
     }
 
-    public void HandleGradientChange(int playerId)
+    private void Update()
     {
-        Debug.Log($"Ball gradient changing to player {playerId}");
+        UpdateTrailPositions();
+    }
+
+    public void HandleColorChange(int playerId)
+    {
+        Debug.Log($"Ball color changing to player {playerId}");
 
         switch (playerId)
         {
-            case 1: currentGradient = player1Gradient; break;
-            case 2: currentGradient = player2Gradient; break;
-            case 3: currentGradient = player3Gradient; break;
-            case 4: currentGradient = player4Gradient; break;
+            case 1: currentColor = player1Color; break;
+            case 2: currentColor = player2Color; break;
+            case 3: currentColor = player3Color; break;
+            case 4: currentColor = player4Color; break;
         }
 
-        if (animateGradient)
+        spriteRenderer.color = currentColor;
+
+        // Also updating color of trail balls
+        for (int i = 0; i < trailBalls.Count; i++)
         {
-            StartGradientAnimation();
+            Color fadedColor = currentColor;
+            float alphaFactor = 1f - ((i + 1) / (float)(trailCount + 1)); // decreasing alpha
+            fadedColor.a = alphaFactor;
+            trailBalls[i].GetComponent<SpriteRenderer>().color = fadedColor;
         }
     }
 
-    private void StartGradientAnimation()
+    private void CreateTrailBalls()
     {
-        if (gradientCoroutine != null)
+        for (int i = 0; i < trailCount; i++)
         {
-            StopCoroutine(gradientCoroutine);
+            GameObject trail = Instantiate(trailBallPrefab, transform.position, Quaternion.identity);
+            trail.transform.localScale = transform.localScale;
+            trailBalls.Add(trail);
         }
-        gradientCoroutine = StartCoroutine(AnimateGradient());
     }
 
-    private IEnumerator AnimateGradient()
+    private void UpdateTrailPositions()
     {
-        float time = 0f;
-
-        while (true)
+        // Store current position with time spacing
+        previousPositions.Enqueue(transform.position);
+        if (previousPositions.Count > trailCount * Mathf.RoundToInt(1f / trailSpacing))
         {
-            if (currentGradient != null && spriteRenderer != null)
-            {
-                Color color = currentGradient.Evaluate(time);
-                spriteRenderer.color = color;
-            }
+            previousPositions.Dequeue();
+        }
 
-            time += Time.deltaTime * gradientSpeed;
-            if (time > 1f)
-            {
-                time = 0f;
-            }
-            yield return null;
+        Vector3[] positions = previousPositions.ToArray();
+        int stepSize = Mathf.FloorToInt(positions.Length / (float)trailCount);
+
+        for (int i = 0; i < trailBalls.Count; i++)
+        {
+            int index = Mathf.Clamp((i + 1) * stepSize, 0, positions.Length - 1);
+            trailBalls[i].transform.position = positions[index];
         }
     }
 }

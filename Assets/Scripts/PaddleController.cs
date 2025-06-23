@@ -17,59 +17,75 @@ public class PaddleController : NetworkBehaviour
     public float rightLimit;
 
     public bool isHorizontalPaddle;
+    private NetworkVariable<int> playerIdVar = new NetworkVariable<int>();
 
     public void SetPlayerId(int id)
     {
-        playerId = id;
+        playerIdVar.Value = id;
         Debug.Log(id);
         isHorizontalPaddle = (id == 3 || id == 4); // top and bottom players
     }
     
-    public int GetPlayerId() => playerId;
+    public int GetPlayerId() => playerIdVar.Value;
     
     public override void OnNetworkSpawn()
     {
-        if (IsOwner)
+        if (!IsOwner)
         {
-            Debug.Log($"Setting up input for paddle owned by client {OwnerClientId}");
+            Debug.Log($"NOT setting up input for paddle owned by client {OwnerClientId} (I am client {NetworkManager.Singleton.LocalClientId})");
+            return;
+        }
+        Debug.Log($"Waiting for playerIdVar to be set...");
+        
+        playerIdVar.OnValueChanged += (_, newId) =>
+        {
+            playerId = newId;
+            isHorizontalPaddle = (playerId == 3 || playerId == 4);
+            Debug.Log($"Received playerId {playerId} on client {OwnerClientId}, isHorizontal: {isHorizontalPaddle}");
+            SetUpInput();
+        };
+        if (playerIdVar.Value != 0)
+        {
+            playerId = playerIdVar.Value;
+            isHorizontalPaddle = (playerId == 3 || playerId == 4);
+            Debug.Log($"playerIdVar was already available: {playerId}");
+            SetUpInput();
+        }
+    }
 
-            playerInput = new PlayerInput();
-
-            if (isHorizontalPaddle)
+    private void SetUpInput()
+    {
+        playerInput = new PlayerInput();
+        if (isHorizontalPaddle)
+        {
+            // for top/bottom paddles
+            playerInput.Player.Move.performed += ctx =>
             {
-                // for top/bottom paddles
-                playerInput.Player.Move.performed += ctx =>
-                {
-                    moveInput = ctx.ReadValue<Vector2>();
-                    MoveRequest_ServerRpc(moveInput.x, 0); // send x only
-                };
-                playerInput.Player.Move.canceled += ctx =>
-                {
-                    moveInput = Vector2.zero;
-                    MoveRequest_ServerRpc(0, 0);
-                };
-            }
-            else
+                moveInput = ctx.ReadValue<Vector2>();
+                MoveRequest_ServerRpc(moveInput.x, 0); // send x only
+            };
+            playerInput.Player.Move.canceled += ctx =>
             {
-                // for left/right paddles
-                playerInput.Player.Move.performed += ctx =>
-                {
-                    moveInput = ctx.ReadValue<Vector2>();
-                    MoveRequest_ServerRpc(0, moveInput.y); // send y only
-                };
-                playerInput.Player.Move.canceled += ctx =>
-                {
-                    moveInput = Vector2.zero;
-                    MoveRequest_ServerRpc(0, 0);
-                };
-            }
-
-            playerInput.Enable();
+                moveInput = Vector2.zero;
+                MoveRequest_ServerRpc(0, 0);
+            };
         }
         else
         {
-            Debug.Log($"NOT setting up input for paddle owned by client {OwnerClientId} (I am client {NetworkManager.Singleton.LocalClientId})");
+            // for left/right paddles
+            playerInput.Player.Move.performed += ctx =>
+            {
+                moveInput = ctx.ReadValue<Vector2>();
+                MoveRequest_ServerRpc(0, moveInput.y); // send y only
+            };
+            playerInput.Player.Move.canceled += ctx =>
+            {
+                moveInput = Vector2.zero;
+                MoveRequest_ServerRpc(0, 0);
+            };
         }
+
+        playerInput.Enable();
     }
     
     private void OnDisable()
@@ -84,19 +100,31 @@ public class PaddleController : NetworkBehaviour
     {
         if (!IsServer) return;
 
+        Vector3 movementDirection = Vector3.zero;
+
+        if (isHorizontalPaddle)
+        {
+            // Use paddle's local right
+            movementDirection = transform.right* -moveInput.x;
+        }
+        else
+        {
+            // Use paddle's local up
+            movementDirection = transform.up * moveInput.y;
+        }
+
+        transform.Translate(movementDirection * moveSpeed * Time.deltaTime);
+
+        // Clamp based on world space position and not local
         Vector3 pos = transform.position;
 
         if (isHorizontalPaddle)
         {
-            Vector2 horizontalMovement = new Vector2(moveInput.x, 0);
-            transform.Translate(horizontalMovement * moveSpeed * Time.deltaTime, Space.Self);
-            pos.x = Mathf.Clamp(transform.position.x, leftLimit, rightLimit);
+            pos.x = Mathf.Clamp(pos.x, leftLimit, rightLimit);
         }
         else
         {
-            Vector2 verticalMovement = new Vector2(0, moveInput.y);
-            transform.Translate(verticalMovement * moveSpeed * Time.deltaTime, Space.Self);
-            pos.y = Mathf.Clamp(transform.position.y, bottomLimit, topLimit);
+            pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
         }
 
         transform.position = pos;

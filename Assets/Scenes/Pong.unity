@@ -405,6 +405,7 @@ MonoBehaviour:
   bottomLimit: -40
   leftLimit: -60
   rightLimit: 60
+  isHorizontalPaddle: 0
 --- !u!114 &389067693
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -770,6 +771,7 @@ GameObject:
   - component: {fileID: 596299116}
   - component: {fileID: 596299115}
   - component: {fileID: 596299114}
+  - component: {fileID: 596299117}
   m_Layer: 0
   m_Name: LeftWall
   m_TagString: GoalLeft
@@ -893,6 +895,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1080540040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
+--- !u!114 &596299117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596299113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbe5abe99f75e1b4987a25c9b1a8ecdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  goalForPlayerId: 0
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1442,6 +1457,7 @@ GameObject:
   - component: {fileID: 990237908}
   - component: {fileID: 990237907}
   - component: {fileID: 990237906}
+  - component: {fileID: 990237909}
   m_Layer: 0
   m_Name: UpperWall
   m_TagString: GoalTop
@@ -1565,6 +1581,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1080540040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &990237909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990237905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbe5abe99f75e1b4987a25c9b1a8ecdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  goalForPlayerId: 0
 --- !u!1 &990872988
 GameObject:
   m_ObjectHideFlags: 0
@@ -1940,7 +1969,7 @@ GameObject:
   - component: {fileID: 1171796869}
   - component: {fileID: 1171796870}
   m_Layer: 0
-  m_Name: PsychedelicBackground
+  m_Name: VisualEffects
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2265,7 +2294,7 @@ MonoBehaviour:
   player2ScoreText: {fileID: 173308543}
   player3ScoreText: {fileID: 5414354724398069326}
   player4ScoreText: {fileID: 5414354722748402481}
-  psychedelicBackground: {fileID: 1171796870}
+  visualEffects: {fileID: 1171796870}
   ballVisuals: {fileID: 0}
 --- !u!4 &1612838194
 Transform:
@@ -2324,6 +2353,7 @@ GameObject:
   - component: {fileID: 1804056070}
   - component: {fileID: 1804056069}
   - component: {fileID: 1804056068}
+  - component: {fileID: 1804056071}
   m_Layer: 0
   m_Name: RightWall
   m_TagString: GoalRight
@@ -2447,6 +2477,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1080540040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
+--- !u!114 &1804056071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1804056067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbe5abe99f75e1b4987a25c9b1a8ecdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  goalForPlayerId: 0
 --- !u!1 &1830819207
 GameObject:
   m_ObjectHideFlags: 0
@@ -2535,6 +2578,7 @@ GameObject:
   - component: {fileID: 1890414764}
   - component: {fileID: 1890414763}
   - component: {fileID: 1890414762}
+  - component: {fileID: 1890414765}
   m_Layer: 0
   m_Name: LowerWall
   m_TagString: GoalBottom
@@ -2658,6 +2702,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1080540040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1890414765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1890414761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbe5abe99f75e1b4987a25c9b1a8ecdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  goalForPlayerId: 0
 --- !u!1 &2010061201
 GameObject:
   m_ObjectHideFlags: 0

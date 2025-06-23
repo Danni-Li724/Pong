@@ -65,19 +65,19 @@ public class VisualEventsManager : NetworkBehaviour
         TriggerBallGradientChangeClientRpc(playerId);
     }
 
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void TriggerBackgroundChangeClientRpc(int playerId)
     {
         visualEffects?.HandleColorChange(playerId);
     }
 
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void TriggerBallGradientChangeClientRpc(int playerId)
     {
-        ballVisuals?.HandleGradientChange(playerId);
+        ballVisuals?.HandleColorChange(playerId);
     }
 
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     public void UpdateScoreUIClientRpc(int p1, int p2, int p3, int p4)
     {
         if (player1ScoreText != null) player1ScoreText.text = p1.ToString();
@@ -86,7 +86,7 @@ public class VisualEventsManager : NetworkBehaviour
         if (player4ScoreText != null) player4ScoreText.text = p4.ToString();
     }
 
-    [ClientRpc] // future method
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)] // future method
     public void TriggerInventoryUIClientRpc(int effectId, int playerId)
     {
         switch (effectId)

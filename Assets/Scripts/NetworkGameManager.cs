@@ -113,7 +113,7 @@ public class NetworkGameManager : NetworkBehaviour
             GoalController closestGoal = null;
             float closestDistance = float.MaxValue;
             int matchedPlayerId = -1;
-
+            // setting goal to player by checking distance
             for (int playerId = 1; playerId <= spawnPoints.Length; playerId++)
             {
                 float dist = Vector3.Distance(allGoals[i].transform.position, spawnPoints[playerId - 1].position);
