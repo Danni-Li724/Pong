@@ -38,17 +38,10 @@ public class VisualEventsManager : NetworkBehaviour
         BallPhysics.OnPlayerScored -= HandlePlayerScored;
     }
 
-    void Start()
+    public void RegisterBallVisuals(BallVisuals visuals)
     {
-        GameObject ballGO = GameObject.FindWithTag("Ball");
-        if (ballGO != null)
-        {
-            ballVisuals = ballGO.GetComponentInChildren<BallVisuals>();
-        }
-        else
-        {
-            Debug.LogWarning("Ball visual not found");
-        }
+        ballVisuals = visuals;
+        Debug.Log("Ball visuals registered.");
     }
 
     private void HandlePlayerScored(int playerId)
@@ -62,7 +55,7 @@ public class VisualEventsManager : NetworkBehaviour
 
         Debug.Log($"VisualEventsManager: Player {playerId} hit detected");
         TriggerBackgroundChangeClientRpc(playerId);
-        TriggerBallGradientChangeClientRpc(playerId);
+        TriggerBallColorChangeClientRpc(playerId);
     }
 
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
@@ -72,7 +65,7 @@ public class VisualEventsManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void TriggerBallGradientChangeClientRpc(int playerId)
+    private void TriggerBallColorChangeClientRpc(int playerId)
     {
         ballVisuals?.HandleColorChange(playerId);
     }
