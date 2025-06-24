@@ -61,6 +61,11 @@ public class NetworkGameManager : NetworkBehaviour
                 GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
                 ball.GetComponent<NetworkObject>().Spawn();
             }
+
+            if (playerCount == 3)
+            {
+                TriggerPlayerSelectionUIClientRpc();
+            }
         }
     
     void OnClientDisconnected(ulong clientId)
@@ -129,6 +134,21 @@ public class NetworkGameManager : NetworkBehaviour
             {
                 closestGoal.SetGoalForPlayerId(matchedPlayerId);
                 Debug.Log($"Assigned goal at {closestGoal.transform.position} to player {matchedPlayerId}");
+            }
+        }
+    }
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void TriggerPlayerSelectionUIClientRpc()
+    {
+        Debug.Log("All players are ready, making player selection buttons.");
+        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
+
+        foreach (var paddle in allPaddles)
+        {
+            if (paddle.IsOwner)
+            {
+                paddle.SpawnPlayerSelectionUI();
             }
         }
     }

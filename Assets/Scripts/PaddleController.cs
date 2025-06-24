@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class PaddleController : NetworkBehaviour
 {
@@ -18,6 +19,8 @@ public class PaddleController : NetworkBehaviour
 
     public bool isHorizontalPaddle;
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>();
+    
+    public GameObject playerTargetUIPrefab;
 
     public void SetPlayerId(int id)
     {
@@ -51,6 +54,18 @@ public class PaddleController : NetworkBehaviour
             Debug.Log($"playerIdVar was already available: {playerId}");
             SetUpInput();
         }
+    }
+
+    public void SpawnPlayerSelectionUI()
+    {
+        if (!IsOwner) return;
+
+        NetworkGameManager manager = FindObjectOfType<NetworkGameManager>();
+        List<PlayerInfo> otherPlayers = manager.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
+
+        GameObject ui = Instantiate(playerTargetUIPrefab);
+        PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
+        uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, isHorizontalPaddle);
     }
 
     private void SetUpInput()
