@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
+using Unity.VisualScripting;
 
 public class NetworkGameManager : NetworkBehaviour
 {
@@ -164,6 +165,24 @@ public class NetworkGameManager : NetworkBehaviour
                 default: return null;
             }
         }
+
+    public void MarkPlayerReady(ulong clientId)
+    {
+        if(!IsServer) return;
+        if(allPlayers.ContainsKey(clientId))
+        {
+            allPlayers[clientId].isReady = true;
+            if (AllPlayersReady())
+            {
+                //StartGame();
+            }
+        };
+    }
+
+    private bool AllPlayersReady()
+    {
+        return allPlayers.Values.Where(p => p.isConnected).All(p => p.isReady == true);
+    }
     
     public override void OnNetworkDespawn()
     {

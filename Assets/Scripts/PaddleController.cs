@@ -110,6 +110,19 @@ public class PaddleController : NetworkBehaviour
             playerInput.Disable();
         }
     }
+
+    public void OnReadyButtonPressed()
+    {
+        if (IsOwner)
+            NotifyReadyServerRpc();
+    }
+
+    [Rpc(SendTo.Server)]
+    void NotifyReadyServerRpc()
+    {
+        NetworkGameManager manager = FindObjectOfType<NetworkGameManager>();
+        manager.MarkPlayerReady(OwnerClientId);
+    }
    
     void Update()
     {

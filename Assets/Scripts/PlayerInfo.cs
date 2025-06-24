@@ -6,12 +6,14 @@ public class PlayerInfo : MonoBehaviour
     public ulong clientId;
     public bool isConnected;
     public Transform spawnPos;
+    public bool isReady;
     
-    public PlayerInfo(int id, ulong client, Transform spawn)
+    public PlayerInfo(int playerId, ulong client, Transform spawn)
     {
-        playerId = id;
-        clientId = client;
-        isConnected = true;
-        spawnPos = spawn;
+        this.playerId = playerId;
+        this.clientId = clientId;
+        this.spawnPos = spawn;
+        this.isReady = false;
+        this.isConnected = true;
     }
 }
