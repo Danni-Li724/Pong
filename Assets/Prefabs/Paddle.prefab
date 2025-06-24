@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 2597523412441283604}
   - component: {fileID: 5294642502499195846}
   - component: {fileID: 3019133057042100324}
+  - component: {fileID: -7880373325084391499}
+  - component: {fileID: -2406434400426874364}
   - component: {fileID: 27655788663406287}
   - component: {fileID: 641901330694467435}
   - component: {fileID: 7931555981654995631}
@@ -116,6 +118,37 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &-7880373325084391499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6031316684274673900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec7202e16a529774c9e81d48358e0697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  moveSpeed: 60
+  topLimit: 51
+  bottomLimit: -51
+  leftLimit: -72
+  rightLimit: 72
+--- !u!114 &-2406434400426874364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6031316684274673900}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53105b590017acc499dbc1b144e38be2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &27655788663406287
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -129,12 +162,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  moveSpeed: 50
-  topLimit: 40
-  bottomLimit: -40
-  leftLimit: -60
-  rightLimit: 60
-  isHorizontalPaddle: 0
   playerTargetUIPrefab: {fileID: 3106027875112034120, guid: 596432ebd766c164ebe47f29bf771b66, type: 3}
 --- !u!61 &641901330694467435
 BoxCollider2D:

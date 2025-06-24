@@ -21,13 +21,11 @@ public class NetworkGameManager : NetworkBehaviour
     {
         return allPlayers.Values.Where(p => p.clientId != clientId && p.isConnected).ToList();
     }
-    
     // Get player info by client ID
     public PlayerInfo GetPlayerInfo(ulong clientId)
     {
         return allPlayers.ContainsKey(clientId) ? allPlayers[clientId] : null;
     }
-    
     // Get all connected players
     public List<PlayerInfo> GetAllPlayers()
     {
@@ -45,7 +43,6 @@ public class NetworkGameManager : NetworkBehaviour
             playerCount = 1;
         }
     }
-
     [Rpc(SendTo.Server)]
     public void SetMaxPlayersServerRpc(int playerCount)
     {
@@ -56,7 +53,6 @@ public class NetworkGameManager : NetworkBehaviour
             Debug.Log("Player count in this game set to " + playerCount);
         }
     }
-    
     void OnClientConnected(ulong clientId)
         {
             if (!IsServer) return;
@@ -72,7 +68,6 @@ public class NetworkGameManager : NetworkBehaviour
             SpawnPlayerPaddle(clientId, playerCount);
             AssignGoals();
         }
-    
     void OnClientDisconnected(ulong clientId)
     {
         if (!IsServer) return;
@@ -83,7 +78,6 @@ public class NetworkGameManager : NetworkBehaviour
             Debug.Log($"Player {allPlayers[clientId].playerId} disconnected");
         }
     }
-
     void SpawnPlayerPaddle(ulong clientId, int playerId)
     {
         Transform spawnTransform = GetSpawnTransform(playerId);
@@ -92,7 +86,6 @@ public class NetworkGameManager : NetworkBehaviour
             Debug.LogError($"No spawnPos found for player {playerId}");
             return;
         }
-
         // Create player info
         PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
         allPlayers[clientId] = playerInfo;
@@ -106,7 +99,6 @@ public class NetworkGameManager : NetworkBehaviour
             paddleController.SetPlayerId(playerId);
         }
     }
-    
     private void AssignGoals()
     {
         GoalController[] allGoals = FindObjectsOfType<GoalController>();
@@ -117,7 +109,6 @@ public class NetworkGameManager : NetworkBehaviour
             topSpawn,
             bottomSpawn
         };
-
         for (int i = 0; i < allGoals.Length; i++)
         {
             GoalController closestGoal = null;
@@ -142,7 +133,6 @@ public class NetworkGameManager : NetworkBehaviour
             }
         }
     }
-    
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void TriggerPlayerSelectionUIClientRpc()
     {
@@ -157,7 +147,6 @@ public class NetworkGameManager : NetworkBehaviour
             }
         }
     }
-
     Transform GetSpawnTransform(int playerId)
         {
             switch (playerId)
@@ -169,7 +158,6 @@ public class NetworkGameManager : NetworkBehaviour
                 default: return null;
             }
         }
-
     public void MarkPlayerReady(ulong clientId)
     {
         if(!IsServer) return;
@@ -182,19 +170,16 @@ public class NetworkGameManager : NetworkBehaviour
             }
         };
     }
-
     private void StartGame()
     {
         GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
         ball.GetComponent<NetworkObject>().Spawn();
         TriggerPlayerSelectionUIClientRpc();
     }
-
     private bool AllPlayersReady()
     {
         return allPlayers.Values.Where(p => p.isConnected).Count(p => p.isReady) == maxPlayers.Value;
     }
-    
     public override void OnNetworkDespawn()
     {
         if (IsServer)
@@ -204,3 +189,4 @@ public class NetworkGameManager : NetworkBehaviour
         }
     }
 }
+
