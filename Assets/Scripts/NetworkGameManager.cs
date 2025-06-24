@@ -9,6 +9,9 @@ public class NetworkGameManager : NetworkBehaviour
     public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
     public GameObject playerPaddlePrefab;
     public GameObject ballPrefab;
+    
+    public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private int playerCount = 0;
     private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
@@ -42,6 +45,17 @@ public class NetworkGameManager : NetworkBehaviour
             playerCount = 1;
         }
     }
+
+    [Rpc(SendTo.Server)]
+    public void SetMaxPlayersServerRpc(int playerCount)
+    {
+        if (!IsServer) return;
+        if (playerCount >= 2 && playerCount <= 4)
+        {
+            maxPlayers.Value = playerCount;
+            Debug.Log("Player count in this game set to " + playerCount);
+        }
+    }
     
     void OnClientConnected(ulong clientId)
         {
@@ -57,16 +71,6 @@ public class NetworkGameManager : NetworkBehaviour
             playerCount++;
             SpawnPlayerPaddle(clientId, playerCount);
             AssignGoals();
-            if (playerCount == 2) // temp
-            {
-                GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
-                ball.GetComponent<NetworkObject>().Spawn();
-            }
-
-            if (playerCount == 3)
-            {
-                TriggerPlayerSelectionUIClientRpc();
-            }
         }
     
     void OnClientDisconnected(ulong clientId)
@@ -174,14 +178,21 @@ public class NetworkGameManager : NetworkBehaviour
             allPlayers[clientId].isReady = true;
             if (AllPlayersReady())
             {
-                //StartGame();
+                StartGame();
             }
         };
     }
 
+    private void StartGame()
+    {
+        GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
+        ball.GetComponent<NetworkObject>().Spawn();
+        TriggerPlayerSelectionUIClientRpc();
+    }
+
     private bool AllPlayersReady()
     {
-        return allPlayers.Values.Where(p => p.isConnected).All(p => p.isReady == true);
+        return allPlayers.Values.Where(p => p.isConnected).Count(p => p.isReady) == maxPlayers.Value;
     }
     
     public override void OnNetworkDespawn()
