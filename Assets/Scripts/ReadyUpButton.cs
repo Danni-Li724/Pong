@@ -34,4 +34,9 @@ public class ReadyUpButton : MonoBehaviour
         readyButton.gameObject.SetActive(true);
         readyButton.onClick.AddListener(paddle.ReadyUp);
     }
+
+    public void DisableButton()
+    {
+        readyButton.gameObject.SetActive(false);
+    }
 }

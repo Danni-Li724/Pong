@@ -25,12 +25,11 @@ public class PaddleMovement : NetworkBehaviour
     private void Update()
     {
         if (!IsServer) return;
-
         Vector3 movementDirection = controller.IsHorizontal
             ? transform.right * -moveInput.x
             : transform.up * moveInput.y;
 
-        transform.Translate(movementDirection * moveSpeed * Time.deltaTime);
+        transform.Translate(movementDirection * moveSpeed * Time.deltaTime, Space.World);
 
         Vector3 pos = transform.position;
         if (controller.IsHorizontal)
