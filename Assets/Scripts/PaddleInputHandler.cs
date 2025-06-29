@@ -8,10 +8,14 @@ public class PaddleInputHandler : NetworkBehaviour
     private bool isHorizontal;
     private Vector2 moveInput;
 
+    private PlayerInput spaceshipInput;
+
     public void InitializeInput(bool isHorizontalPaddle)
     {
         isHorizontal = isHorizontalPaddle;
         playerInput = new PlayerInput();
+        
+        //private PlayerInput spaceshipInput;
 
         if (isHorizontal)
         {
@@ -54,4 +58,36 @@ public class PaddleInputHandler : NetworkBehaviour
     {
         GetComponent<PaddleMovement>().SetMoveInput(new Vector2(inputX, inputY));
     }
+
+    #region Spaceship Input
+
+    public void EnableSpaceshipControls()
+    {
+        spaceshipInput = new PlayerInput();
+
+        spaceshipInput.Spaceship.Move.performed += ctx =>
+        {
+            Vector2 input = ctx.ReadValue<Vector2>();
+            MoveRequest_ServerRpc(input.x, input.y);
+        };
+        spaceshipInput.Spaceship.Move.canceled += _ =>
+        {
+            MoveRequest_ServerRpc(0, 0);
+        };
+        spaceshipInput.Spaceship.Fire.performed += _ =>
+        {
+            Vector2 mouse = Mouse.current.position.ReadValue();
+            Vector2 worldPos = Camera.main.ScreenToWorldPoint(mouse);
+            GetComponent<PaddleController>().TryFire(worldPos);
+        };
+        spaceshipInput.Enable();
+    }
+
+    public void DisableSpaceshipControls()
+    {
+        spaceshipInput?.Disable();
+        spaceshipInput = null;
+    }
+
+    #endregion
 }

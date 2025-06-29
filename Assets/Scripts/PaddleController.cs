@@ -7,12 +7,21 @@ using System.Collections.Generic;
 /// </summary>
 public class PaddleController : NetworkBehaviour
 {
+    [Header("Pong Settings")]
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>();
     public bool IsHorizontal => (PlayerId == 3 || PlayerId == 4);
+    
+    [Header("Spaceship Mode Settings")]
+    private bool inSpaceshipMode = false;
+    private Sprite defaultSprite;
+    private GameObject bulletPrefab;
+    private float bulletSpeed;
+    private float fireCooldown;
+    private float lastFireTime;
+    public bool isInSpaceshipMode() => inSpaceshipMode;
 
     public int PlayerId { get; private set; }
     public GameObject playerTargetUIPrefab;
-
     public override void OnNetworkSpawn()
     {
         if (!IsOwner) return;
@@ -63,4 +72,56 @@ public class PaddleController : NetworkBehaviour
         PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
         uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, IsHorizontal);
     }
+    
+    #region Spaceship Mode
+    /// <summary>
+    /// Below are functions for Spaceship controls, firing bullets
+    /// </summary>
+    /// <param name="active"></param>
+    /// <param name="rocketSprite"></param>
+    /// <param name="bulletPrefab"></param>
+    /// <param name="bulletSpeed"></param>
+    /// <param name="fireCooldown"></param>
+    
+    public void SetSpaceshipMode(bool active, Sprite rocketSprite, GameObject bulletPrefab, float bulletSpeed, float fireCooldown)
+    {
+        inSpaceshipMode = active;
+        this.bulletPrefab = bulletPrefab;
+        this.bulletSpeed = bulletSpeed;
+        this.fireCooldown = fireCooldown;
+
+        var renderer = GetComponent<SpriteRenderer>();
+        if (active)
+        {
+            defaultSprite = renderer.sprite;
+            renderer.sprite = rocketSprite;
+            GetComponent<PaddleInputHandler>().EnableSpaceshipControls();
+        }
+        else
+        {
+            renderer.sprite = defaultSprite;
+            GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
+        }
+    }
+
+    public void TryFire(Vector2 targetWorldPos)
+    {
+        if (!inSpaceshipMode || !IsOwner) return;
+        if (Time.time - lastFireTime < fireCooldown) return;
+        lastFireTime = Time.time;
+
+        Vector2 direction = (targetWorldPos - (Vector2)transform.position).normalized;
+        FireServerRpc(direction);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void FireServerRpc(Vector2 direction)
+    {
+        GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
+        bullet.GetComponent<Rigidbody2D>().linearVelocity = direction * bulletSpeed;
+
+        NetworkObject no = bullet.GetComponent<NetworkObject>();
+        no.Spawn();
+    }
+    #endregion
 }

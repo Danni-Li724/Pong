@@ -160,23 +160,32 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
             ]
         },
         {
-            ""name"": ""PlayerHorizontal"",
-            ""id"": ""c0bfa099-4893-44d2-a2a0-26c32705f56a"",
+            ""name"": ""Spaceship"",
+            ""id"": ""b72867bd-f9ac-4596-87f8-b98c6bf39047"",
             ""actions"": [
                 {
                     ""name"": ""Move"",
                     ""type"": ""Value"",
-                    ""id"": ""5c16b5a5-d9c8-45b3-8daf-6a0df66cb223"",
+                    ""id"": ""096b6679-9797-4e65-8e3f-f4b90c6633eb"",
                     ""expectedControlType"": ""Vector2"",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Fire"",
+                    ""type"": ""Button"",
+                    ""id"": ""312aa198-63ae-4f22-bc5f-cf43b3f38aed"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
                 {
                     ""name"": ""2D Vector"",
-                    ""id"": ""61c5d537-13d9-4833-b5ad-98e760b7bbc2"",
+                    ""id"": ""e7069a98-088b-4b1a-8bb5-84a6984612e3"",
                     ""path"": ""2DVector"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -187,8 +196,8 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""up"",
-                    ""id"": ""623bbb36-8e6e-4832-ab83-6fe8826b2bae"",
-                    ""path"": """",
+                    ""id"": ""3cf062ad-a924-48af-ae6d-7ca6abb943d2"",
+                    ""path"": ""<Keyboard>/w"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -198,8 +207,8 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""down"",
-                    ""id"": ""0c336625-019d-4ad3-b647-a1e4abee06a9"",
-                    ""path"": """",
+                    ""id"": ""a157a250-391b-4db7-9458-c92a29b7cd75"",
+                    ""path"": ""<Keyboard>/s"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -209,7 +218,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""left"",
-                    ""id"": ""a9a59ac6-ce87-400b-ad83-829f2be9dc23"",
+                    ""id"": ""02e4184c-a107-4066-8f51-5708c990d9c9"",
                     ""path"": ""<Keyboard>/a"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -220,7 +229,7 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""right"",
-                    ""id"": ""3b2b0f1e-3803-4430-8021-e2d31e64d1b1"",
+                    ""id"": ""ce006bf4-f786-4f1d-9d59-c8d06d780e2f"",
                     ""path"": ""<Keyboard>/d"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -228,6 +237,17 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
                     ""action"": ""Move"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""92835077-8c5a-4293-8cb0-84e7273098e0"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Fire"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -237,15 +257,16 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         // Player
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
         m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
-        // PlayerHorizontal
-        m_PlayerHorizontal = asset.FindActionMap("PlayerHorizontal", throwIfNotFound: true);
-        m_PlayerHorizontal_Move = m_PlayerHorizontal.FindAction("Move", throwIfNotFound: true);
+        // Spaceship
+        m_Spaceship = asset.FindActionMap("Spaceship", throwIfNotFound: true);
+        m_Spaceship_Move = m_Spaceship.FindAction("Move", throwIfNotFound: true);
+        m_Spaceship_Fire = m_Spaceship.FindAction("Fire", throwIfNotFound: true);
     }
 
     ~@PlayerInput()
     {
         UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, PlayerInput.Player.Disable() has not been called.");
-        UnityEngine.Debug.Assert(!m_PlayerHorizontal.enabled, "This will cause a leak and performance issues, PlayerInput.PlayerHorizontal.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Spaceship.enabled, "This will cause a leak and performance issues, PlayerInput.Spaceship.Disable() has not been called.");
     }
 
     /// <summary>
@@ -414,29 +435,34 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
     /// </summary>
     public PlayerActions @Player => new PlayerActions(this);
 
-    // PlayerHorizontal
-    private readonly InputActionMap m_PlayerHorizontal;
-    private List<IPlayerHorizontalActions> m_PlayerHorizontalActionsCallbackInterfaces = new List<IPlayerHorizontalActions>();
-    private readonly InputAction m_PlayerHorizontal_Move;
+    // Spaceship
+    private readonly InputActionMap m_Spaceship;
+    private List<ISpaceshipActions> m_SpaceshipActionsCallbackInterfaces = new List<ISpaceshipActions>();
+    private readonly InputAction m_Spaceship_Move;
+    private readonly InputAction m_Spaceship_Fire;
     /// <summary>
-    /// Provides access to input actions defined in input action map "PlayerHorizontal".
+    /// Provides access to input actions defined in input action map "Spaceship".
     /// </summary>
-    public struct PlayerHorizontalActions
+    public struct SpaceshipActions
     {
         private @PlayerInput m_Wrapper;
 
         /// <summary>
         /// Construct a new instance of the input action map wrapper class.
         /// </summary>
-        public PlayerHorizontalActions(@PlayerInput wrapper) { m_Wrapper = wrapper; }
+        public SpaceshipActions(@PlayerInput wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "PlayerHorizontal/Move".
+        /// Provides access to the underlying input action "Spaceship/Move".
         /// </summary>
-        public InputAction @Move => m_Wrapper.m_PlayerHorizontal_Move;
+        public InputAction @Move => m_Wrapper.m_Spaceship_Move;
+        /// <summary>
+        /// Provides access to the underlying input action "Spaceship/Fire".
+        /// </summary>
+        public InputAction @Fire => m_Wrapper.m_Spaceship_Fire;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
-        public InputActionMap Get() { return m_Wrapper.m_PlayerHorizontal; }
+        public InputActionMap Get() { return m_Wrapper.m_Spaceship; }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
         public void Enable() { Get().Enable(); }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
@@ -444,9 +470,9 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
         public bool enabled => Get().enabled;
         /// <summary>
-        /// Implicitly converts an <see ref="PlayerHorizontalActions" /> to an <see ref="InputActionMap" /> instance.
+        /// Implicitly converts an <see ref="SpaceshipActions" /> to an <see ref="InputActionMap" /> instance.
         /// </summary>
-        public static implicit operator InputActionMap(PlayerHorizontalActions set) { return set.Get(); }
+        public static implicit operator InputActionMap(SpaceshipActions set) { return set.Get(); }
         /// <summary>
         /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
         /// </summary>
@@ -454,14 +480,17 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
         /// </remarks>
-        /// <seealso cref="PlayerHorizontalActions" />
-        public void AddCallbacks(IPlayerHorizontalActions instance)
+        /// <seealso cref="SpaceshipActions" />
+        public void AddCallbacks(ISpaceshipActions instance)
         {
-            if (instance == null || m_Wrapper.m_PlayerHorizontalActionsCallbackInterfaces.Contains(instance)) return;
-            m_Wrapper.m_PlayerHorizontalActionsCallbackInterfaces.Add(instance);
+            if (instance == null || m_Wrapper.m_SpaceshipActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_SpaceshipActionsCallbackInterfaces.Add(instance);
             @Move.started += instance.OnMove;
             @Move.performed += instance.OnMove;
             @Move.canceled += instance.OnMove;
+            @Fire.started += instance.OnFire;
+            @Fire.performed += instance.OnFire;
+            @Fire.canceled += instance.OnFire;
         }
 
         /// <summary>
@@ -470,21 +499,24 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <remarks>
         /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
         /// </remarks>
-        /// <seealso cref="PlayerHorizontalActions" />
-        private void UnregisterCallbacks(IPlayerHorizontalActions instance)
+        /// <seealso cref="SpaceshipActions" />
+        private void UnregisterCallbacks(ISpaceshipActions instance)
         {
             @Move.started -= instance.OnMove;
             @Move.performed -= instance.OnMove;
             @Move.canceled -= instance.OnMove;
+            @Fire.started -= instance.OnFire;
+            @Fire.performed -= instance.OnFire;
+            @Fire.canceled -= instance.OnFire;
         }
 
         /// <summary>
-        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="PlayerHorizontalActions.UnregisterCallbacks(IPlayerHorizontalActions)" />.
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="SpaceshipActions.UnregisterCallbacks(ISpaceshipActions)" />.
         /// </summary>
-        /// <seealso cref="PlayerHorizontalActions.UnregisterCallbacks(IPlayerHorizontalActions)" />
-        public void RemoveCallbacks(IPlayerHorizontalActions instance)
+        /// <seealso cref="SpaceshipActions.UnregisterCallbacks(ISpaceshipActions)" />
+        public void RemoveCallbacks(ISpaceshipActions instance)
         {
-            if (m_Wrapper.m_PlayerHorizontalActionsCallbackInterfaces.Remove(instance))
+            if (m_Wrapper.m_SpaceshipActionsCallbackInterfaces.Remove(instance))
                 UnregisterCallbacks(instance);
         }
 
@@ -494,21 +526,21 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
         /// </remarks>
-        /// <seealso cref="PlayerHorizontalActions.AddCallbacks(IPlayerHorizontalActions)" />
-        /// <seealso cref="PlayerHorizontalActions.RemoveCallbacks(IPlayerHorizontalActions)" />
-        /// <seealso cref="PlayerHorizontalActions.UnregisterCallbacks(IPlayerHorizontalActions)" />
-        public void SetCallbacks(IPlayerHorizontalActions instance)
+        /// <seealso cref="SpaceshipActions.AddCallbacks(ISpaceshipActions)" />
+        /// <seealso cref="SpaceshipActions.RemoveCallbacks(ISpaceshipActions)" />
+        /// <seealso cref="SpaceshipActions.UnregisterCallbacks(ISpaceshipActions)" />
+        public void SetCallbacks(ISpaceshipActions instance)
         {
-            foreach (var item in m_Wrapper.m_PlayerHorizontalActionsCallbackInterfaces)
+            foreach (var item in m_Wrapper.m_SpaceshipActionsCallbackInterfaces)
                 UnregisterCallbacks(item);
-            m_Wrapper.m_PlayerHorizontalActionsCallbackInterfaces.Clear();
+            m_Wrapper.m_SpaceshipActionsCallbackInterfaces.Clear();
             AddCallbacks(instance);
         }
     }
     /// <summary>
-    /// Provides a new <see cref="PlayerHorizontalActions" /> instance referencing this action map.
+    /// Provides a new <see cref="SpaceshipActions" /> instance referencing this action map.
     /// </summary>
-    public PlayerHorizontalActions @PlayerHorizontal => new PlayerHorizontalActions(this);
+    public SpaceshipActions @Spaceship => new SpaceshipActions(this);
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Player" which allows adding and removing callbacks.
     /// </summary>
@@ -525,11 +557,11 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         void OnMove(InputAction.CallbackContext context);
     }
     /// <summary>
-    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "PlayerHorizontal" which allows adding and removing callbacks.
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Spaceship" which allows adding and removing callbacks.
     /// </summary>
-    /// <seealso cref="PlayerHorizontalActions.AddCallbacks(IPlayerHorizontalActions)" />
-    /// <seealso cref="PlayerHorizontalActions.RemoveCallbacks(IPlayerHorizontalActions)" />
-    public interface IPlayerHorizontalActions
+    /// <seealso cref="SpaceshipActions.AddCallbacks(ISpaceshipActions)" />
+    /// <seealso cref="SpaceshipActions.RemoveCallbacks(ISpaceshipActions)" />
+    public interface ISpaceshipActions
     {
         /// <summary>
         /// Method invoked when associated input action "Move" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
@@ -538,5 +570,12 @@ public partial class @PlayerInput: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnMove(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Fire" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnFire(InputAction.CallbackContext context);
     }
 }

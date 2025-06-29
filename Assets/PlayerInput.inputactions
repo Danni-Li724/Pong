@@ -74,23 +74,32 @@
             ]
         },
         {
-            "name": "PlayerHorizontal",
-            "id": "c0bfa099-4893-44d2-a2a0-26c32705f56a",
+            "name": "Spaceship",
+            "id": "b72867bd-f9ac-4596-87f8-b98c6bf39047",
             "actions": [
                 {
                     "name": "Move",
                     "type": "Value",
-                    "id": "5c16b5a5-d9c8-45b3-8daf-6a0df66cb223",
+                    "id": "096b6679-9797-4e65-8e3f-f4b90c6633eb",
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Fire",
+                    "type": "Button",
+                    "id": "312aa198-63ae-4f22-bc5f-cf43b3f38aed",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
                 {
                     "name": "2D Vector",
-                    "id": "61c5d537-13d9-4833-b5ad-98e760b7bbc2",
+                    "id": "e7069a98-088b-4b1a-8bb5-84a6984612e3",
                     "path": "2DVector",
                     "interactions": "",
                     "processors": "",
@@ -101,8 +110,8 @@
                 },
                 {
                     "name": "up",
-                    "id": "623bbb36-8e6e-4832-ab83-6fe8826b2bae",
-                    "path": "",
+                    "id": "3cf062ad-a924-48af-ae6d-7ca6abb943d2",
+                    "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -112,8 +121,8 @@
                 },
                 {
                     "name": "down",
-                    "id": "0c336625-019d-4ad3-b647-a1e4abee06a9",
-                    "path": "",
+                    "id": "a157a250-391b-4db7-9458-c92a29b7cd75",
+                    "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -123,7 +132,7 @@
                 },
                 {
                     "name": "left",
-                    "id": "a9a59ac6-ce87-400b-ad83-829f2be9dc23",
+                    "id": "02e4184c-a107-4066-8f51-5708c990d9c9",
                     "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
@@ -134,7 +143,7 @@
                 },
                 {
                     "name": "right",
-                    "id": "3b2b0f1e-3803-4430-8021-e2d31e64d1b1",
+                    "id": "ce006bf4-f786-4f1d-9d59-c8d06d780e2f",
                     "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
@@ -142,6 +151,17 @@
                     "action": "Move",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "92835077-8c5a-4293-8cb0-84e7273098e0",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Fire",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }
