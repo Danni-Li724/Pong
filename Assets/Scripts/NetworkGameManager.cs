@@ -213,8 +213,14 @@ public class NetworkGameManager : NetworkBehaviour
         foreach (var paddle in allPaddles)
         {
             paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
+            // reset paddle position to pong
+            var info = GetPlayerInfo(paddle.OwnerClientId);
+            if (info != null && info.spawnPos != null)
+            {
+                paddle.transform.position = info.spawnPos.position;
+                paddle.transform.rotation = info.spawnPos.rotation;
+            }
         }
-
         Debug.Log("Spaceship Mode Ended");
     }
 
