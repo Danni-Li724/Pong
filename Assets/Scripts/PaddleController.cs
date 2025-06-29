@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
 /// <summary>
-/// Player identity and set up; also handles player specific UI spawning
+/// Player identity and set up; also handles player specific UI spawning.
+/// Now handles spaceship mode switching and bullet firing (maybe seperate script?)
 /// </summary>
 public class PaddleController : NetworkBehaviour
 {

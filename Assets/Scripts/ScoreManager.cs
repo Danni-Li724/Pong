@@ -70,4 +70,24 @@ public class ScoreManager : NetworkBehaviour
 
         return true;
     }
+    
+    // for spaceship mode
+    public void HandleBulletHit(int playerId)
+    {
+        if (!IsServer) return;
+
+        switch (playerId)
+        {
+            // -1 from score but prevent it dropping below 0.
+            case 1: player1Score.Value = Mathf.Max(0, player1Score.Value - 1); break;
+            case 2: player2Score.Value = Mathf.Max(0, player2Score.Value - 1); break;
+            case 3: player3Score.Value = Mathf.Max(0, player3Score.Value - 1); break;
+            case 4: player4Score.Value = Mathf.Max(0, player4Score.Value - 1); break;
+            default: return;
+        }
+
+        VisualEventsManager.Instance?.UpdateScoreUIClientRpc(
+            player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
+        );
+    }
 }
