@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
@@ -188,5 +189,34 @@ public class NetworkGameManager : NetworkBehaviour
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
         }
     }
+
+    /// TEST
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    public void StartSpaceshipModeClientRpc()
+    {
+        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
+
+        foreach (var paddle in allPaddles)
+        {
+            // experimenting with file loading
+            Sprite rocketSprite = Resources.Load<Sprite>("Sprites/rocketSprite");
+            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+            paddle.SetSpaceshipMode(true, rocketSprite, bulletPrefab, 10f, .5f);
+        }
+        StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
+    }
+    private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+
+        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
+        foreach (var paddle in allPaddles)
+        {
+            paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
+        }
+
+        Debug.Log("Spaceship Mode Ended");
+    }
+
 }
 
