@@ -3,7 +3,8 @@ using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using System.Linq;
-using Unity.VisualScripting;
+using System.Runtime.InteropServices;
+
 
 public class NetworkGameManager : NetworkBehaviour
 {
@@ -98,6 +99,12 @@ public class NetworkGameManager : NetworkBehaviour
         if (paddleController != null)
         {
             paddleController.SetPlayerId(playerId);
+            // loading custom paddle sprites
+            var renderer = paddle.GetComponent<SpriteRenderer>();
+            if (renderer != null && playerInfo.paddleSprite != null)
+            {
+                renderer.sprite = playerInfo.paddleSprite;
+            }
         }
     }
     private void AssignGoals()
@@ -191,6 +198,12 @@ public class NetworkGameManager : NetworkBehaviour
     }
 
     /// TEST
+  [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+    public void RequestSpaceshipModeServerRpc()
+    {
+        Debug.Log("Requesting Spaceship mode.");
+        StartSpaceshipModeClientRpc();
+    }
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     public void StartSpaceshipModeClientRpc()
     {
@@ -198,18 +211,26 @@ public class NetworkGameManager : NetworkBehaviour
 
         foreach (var paddle in allPaddles)
         {
-            // experimenting with file loading
-            Sprite rocketSprite = Resources.Load<Sprite>("Sprites/rocketSprite");
+            if (paddle == null) continue;
+            ulong ownerId = paddle.OwnerClientId;
+            PlayerInfo playerInfo = GetPlayerInfo(ownerId);
+            if (playerInfo == null) continue;
             GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
-            paddle.SetSpaceshipMode(true, rocketSprite, bulletPrefab, 10f, .5f);
+            paddle.SetSpaceshipMode(
+                true,
+                playerInfo.rocketSprite,
+                bulletPrefab,
+                10f,
+                0.5f
+            );
         }
         StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
     }
     private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
     {
         yield return new WaitForSeconds(seconds);
-
-        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
+        // fine unity whatever -_- i do sort
+        PaddleController[] allPaddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
         foreach (var paddle in allPaddles)
         {
             paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
@@ -223,6 +244,5 @@ public class NetworkGameManager : NetworkBehaviour
         }
         Debug.Log("Spaceship Mode Ended");
     }
-
 }
 

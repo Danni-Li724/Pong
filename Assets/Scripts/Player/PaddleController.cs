@@ -121,8 +121,8 @@ public class PaddleController : NetworkBehaviour
         GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
         bullet.GetComponent<Rigidbody2D>().linearVelocity = direction * bulletSpeed;
 
-        NetworkObject no = bullet.GetComponent<NetworkObject>();
-        no.Spawn();
+        NetworkObject bulletNetObj = bullet.GetComponent<NetworkObject>();
+        bulletNetObj.Spawn();
     }
     #endregion
 }
