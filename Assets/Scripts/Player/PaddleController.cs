@@ -40,6 +40,11 @@ public class PaddleController : NetworkBehaviour
             Debug.Log($"[PaddleController] PlayerId was already set: {PlayerId}");
             GetComponent<PaddleInputHandler>().InitializeInput(IsHorizontal);
         }
+        
+        if (IsOwner && VisualEventsManager.Instance != null)
+        {
+            VisualEventsManager.Instance.RegisterPaddle(this);
+        }
     }
 
     public void SetPlayerId(int id)

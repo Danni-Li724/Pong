@@ -182,6 +182,8 @@ public class NetworkGameManager : NetworkBehaviour
     {
         GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
         ball.GetComponent<NetworkObject>().Spawn();
+        // syncing individual client's paddle sprites
+        VisualEventsManager.Instance?.AssignPaddleSpritesToAllPlayers();
         TriggerPlayerSelectionUIClientRpc();
     }
     private bool AllPlayersReady()
@@ -207,6 +209,7 @@ public class NetworkGameManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     public void StartSpaceshipModeClientRpc()
     {
+        Debug.Log("Editor launched Spaceship mode.");
         PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
 
         foreach (var paddle in allPaddles)

@@ -17,7 +17,7 @@ public class GameManagerFunctionCaller : Editor
         {
             if (GUILayout.Button("Spaceship Mode"))
             {
-                networkGameManager.RequestSpaceshipModeServerRpc();
+                networkGameManager.StartSpaceshipModeClientRpc();
             }
         }
         if (visualEventsManager != null)
