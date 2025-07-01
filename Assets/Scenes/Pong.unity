@@ -967,7 +967,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!199 &503429149
 ParticleSystemRenderer:
   serializedVersion: 6
@@ -1882,7 +1882,7 @@ ParticleSystem:
     rateOverTime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 5000
+      scalar: 50
       minScalar: 10
       maxCurve:
         serializedVersion: 2
@@ -7365,7 +7365,7 @@ MonoBehaviour:
   m_MaxConnectAttempts: 60
   m_DisconnectTimeoutMS: 30000
   ConnectionData:
-    Address: 127.0.0.1
+    Address: 121.200.8.114
     Port: 7777
     ServerListenAddress: 127.0.0.1
   DebugSimulator:
@@ -8878,7 +8878,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8145306613596760066, guid: b167d8a26af80474aabcaf4a3f6294b6, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 12.000473
+      value: 12.000595
       objectReference: {fileID: 0}
     - target: {fileID: 8145306613596760066, guid: b167d8a26af80474aabcaf4a3f6294b6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -8971,7 +8971,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2287727251831398903, guid: d1dc92b82123a2844b4bee946e8213cc, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -12.000473
+      value: -12.000595
       objectReference: {fileID: 0}
     - target: {fileID: 2287727251831398903, guid: d1dc92b82123a2844b4bee946e8213cc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -9308,7 +9308,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -30.00003
+      value: -29.99997
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.y

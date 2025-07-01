@@ -289,14 +289,29 @@ private void ApplyPlayerSprite(ulong targetClientId, string paddleSpriteName, st
                     Debug.LogWarning($"can't find paddle sprite {paddleSpriteName}");
                 }
             }
+
             if (allPlayers.ContainsKey(targetClientId)) // update PlayerInfo
             {
                 PlayerInfo playerInfo = allPlayers[targetClientId];
                 playerInfo.paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
                 playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
             }
+
             break;
         }
+    }
+}
+
+private void BroadcastSpaceshipSpriteToAllClients(string spriteName)
+{
+    foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
+    {
+        if(clientId == OwnerClientId) continue;
+        var rpcParams = new RpcParams
+        {
+            // Send = new RpcSendParams { Target = new[] { clientId }}
+
+        };
     }
 }
 
@@ -390,6 +405,7 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
             netObj.Despawn();
         }
         ToggleSpaceshipVisualsClientRpc(true);
+        
         foreach (var player in GetAllPlayers())
         {
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(player.clientId)) continue;
