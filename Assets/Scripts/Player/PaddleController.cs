@@ -115,7 +115,7 @@ public class PaddleController : NetworkBehaviour
         {
             defaultSprite = renderer.sprite;
             renderer.sprite = rocketSprite;
-            if (IsOwner) // only enable fort owner of the paddle
+            if (IsOwner)
             {
                 GetComponent<PaddleInputHandler>().EnableSpaceshipControls();
             }
@@ -129,22 +129,23 @@ public class PaddleController : NetworkBehaviour
             }
         }
     }
-    [Rpc(SendTo.Owner)] // enter mode locally
-    public void ActivateSpaceshipModeClientRpc(string rocketSpriteName, float bulletSpeed, float fireCooldown)
+    public void EnterSpaceshipMode(float bulletSpeed, float fireCooldown, string rocketSpriteName)
     {
         Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+        GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+
         if (rocketSprite == null)
         {
-            Debug.LogWarning($"[PaddleController] Could not load rocket sprite: {rocketSpriteName}");
+            Debug.LogWarning($"[PaddleController] Missing rocket sprite: {rocketSpriteName}");
             return;
         }
 
-        GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
         if (bulletPrefab == null)
         {
-            Debug.LogError("cant find bullet prefab");
+            Debug.LogError("[PaddleController] Missing bullet prefab");
             return;
         }
+
         SetSpaceshipMode(true, rocketSprite, bulletPrefab, bulletSpeed, fireCooldown);
     }
     
@@ -153,7 +154,6 @@ public class PaddleController : NetworkBehaviour
         if (!inSpaceshipMode || !IsOwner) return;
         if (Time.time - lastFireTime < fireCooldown) return;
         lastFireTime = Time.time;
-
         Vector2 direction = (targetWorldPos - (Vector2)transform.position).normalized;
         FireServerRpc(direction);
     }
@@ -162,10 +162,8 @@ public class PaddleController : NetworkBehaviour
     private void FireServerRpc(Vector2 direction)
     {
         GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
-
         Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
         rb.linearVelocity = direction * bulletSpeed;
-
         // shoot bullet to face direction
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         bullet.transform.rotation = Quaternion.Euler(0, 0, angle);

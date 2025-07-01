@@ -318,7 +318,6 @@ private void BroadcastSpaceshipSpriteToAllClients(string spriteName)
 #endregion
 
 #region  SPACESHIP MODE
-
 public void ActivateSpaceshipModeFromEditor()
 {
     if (!IsServer) return;
@@ -329,61 +328,34 @@ public void ActivateSpaceshipModeFromEditor()
     private void StartSpaceshipMode()
     {
         Debug.Log("Mode launched");
+
         if (spawnedBall != null && spawnedBall.TryGetComponent(out NetworkObject netObj) && netObj.IsSpawned)
         {
             netObj.Despawn();
         }
+
         ToggleSpaceshipVisualsClientRpc(true);
-        foreach (var player in GetAllPlayers())
+
+        foreach (var kvp in allPlayers)
         {
-            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(player.clientId)) continue;
-            foreach (var kvp in allPlayers)
-            {
-                SyncPlayerSprite(kvp.Key);
-            }
-           SyncRocketSpriteToAllClients(50f, 0.5f);
+            SyncPlayerSprite(kvp.Key); // already updates rocketSpriteName in PlayerInfo
         }
+
+        ActivateSpaceshipModeClientRpc(50f, 0.5f); // just send one clean RPC to all
+
         StartCoroutine(StopSpaceshipModeAfterSeconds(30f));
     }
-
-    private void SyncRocketSpriteToAllClients(float bulletSpeed, float fireCooldown)
-    {
-        foreach (var player in GetAllPlayers())
-        {
-           ActivateSpaceshipModeClientRpc(
-               player.clientId,
-               player.rocketSpriteName,
-               bulletSpeed,
-               fireCooldown,
-               RpcTarget.Everyone
-               );
-        }
-    }
-    
     [Rpc(SendTo.ClientsAndHost)]
-    private void ActivateSpaceshipModeClientRpc(ulong targetClientId, string rocketSpriteName, float bulletSpeed, float fireCooldown, RpcParams rpcParams = default)
+    private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldown)
     {
         PaddleController[] paddles = FindObjectsOfType<PaddleController>();
+
         foreach (var paddle in paddles)
         {
-            if (paddle.OwnerClientId != targetClientId) continue;
+            var info = GetPlayerInfo(paddle.OwnerClientId);
+            if (info == null || string.IsNullOrEmpty(info.rocketSpriteName)) continue;
 
-            Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
-            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
-            //PlayerInfo playerInfo = GetPlayerInfo(paddle.OwnerClientId);
-            if (rocketSprite == null)
-            {
-                Debug.LogWarning($"Could not load rocket sprite: {rocketSpriteName}");
-                return;
-            }
-            if (bulletPrefab == null)
-            {
-                Debug.LogError("Could not load bullet prefab from Resources/Prefabs/Bullet");
-                return;
-            }
-
-            paddle.SetSpaceshipMode(true, rocketSprite, bulletPrefab, bulletSpeed, fireCooldown);
-            break;
+            paddle.EnterSpaceshipMode(bulletSpeed, fireCooldown, info.rocketSpriteName);
         }
     }
 
