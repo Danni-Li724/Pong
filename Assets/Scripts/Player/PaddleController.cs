@@ -129,6 +129,24 @@ public class PaddleController : NetworkBehaviour
             }
         }
     }
+    [Rpc(SendTo.Owner)] // enter mode locally
+    public void ActivateSpaceshipModeClientRpc(string rocketSpriteName, float bulletSpeed, float fireCooldown)
+    {
+        Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+        if (rocketSprite == null)
+        {
+            Debug.LogWarning($"[PaddleController] Could not load rocket sprite: {rocketSpriteName}");
+            return;
+        }
+
+        GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+        if (bulletPrefab == null)
+        {
+            Debug.LogError("cant find bullet prefab");
+            return;
+        }
+        SetSpaceshipMode(true, rocketSprite, bulletPrefab, bulletSpeed, fireCooldown);
+    }
     
     public void TryFire(Vector2 targetWorldPos)
     {
