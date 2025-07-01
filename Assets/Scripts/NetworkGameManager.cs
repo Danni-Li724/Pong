@@ -385,27 +385,15 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
         foreach (var player in GetAllPlayers())
         {
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(player.clientId)) continue;
-            ActivateSpaceshipModeClientRpc(
-                player.clientId,
-                player.rocketSpriteName,
-                50f,    // bullet speed
-                0.5f    // fire cooldown
-            );
+            ActivateSpaceshipModeClientRpc(player.rocketSpriteName, 50f, 0.5f);
         }
 
         StartCoroutine(StopSpaceshipModeAfterSeconds(30f));
     }
     
     [Rpc(SendTo.ClientsAndHost)]
-    private void ActivateSpaceshipModeClientRpc(
-        ulong targetClientId,
-        string rocketSpriteName,
-        float bulletSpeed,
-        float fireCooldown)
+    private void ActivateSpaceshipModeClientRpc(string rocketSpriteName, float bulletSpeed, float fireCooldown)
     {
-        // Only run for the *target* client..
-        if (NetworkManager.Singleton.LocalClientId != targetClientId) return;
-
         PaddleController[] paddles = FindObjectsOfType<PaddleController>();
         foreach (var paddle in paddles)
         {
