@@ -129,7 +129,7 @@ public class PaddleController : NetworkBehaviour
             }
         }
     }
-
+    
     public void TryFire(Vector2 targetWorldPos)
     {
         if (!inSpaceshipMode || !IsOwner) return;

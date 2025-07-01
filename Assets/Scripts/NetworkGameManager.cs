@@ -14,6 +14,7 @@ public class NetworkGameManager : NetworkBehaviour
     
     public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private bool allPlayersJoined = false;
 
     private int playerCount = 0;
     private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
@@ -43,8 +44,10 @@ public class NetworkGameManager : NetworkBehaviour
             // spawn paddle 1 for host
             SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1);
             playerCount = 1;
+            //ShowPlayerSelectionForHost();
         }
     }
+
    
     void OnClientConnected(ulong clientId)
         {
@@ -52,7 +55,7 @@ public class NetworkGameManager : NetworkBehaviour
 
             if (clientId == NetworkManager.Singleton.LocalClientId) return; // host doesn't reconnect
 
-            if (playerCount >= 4)
+            if (playerCount >= maxPlayers.Value)
             {
                 Debug.LogWarning("Player count exceeds max player count");
                 return;
@@ -62,6 +65,11 @@ public class NetworkGameManager : NetworkBehaviour
             AssignGoals();
             SyncPlayerSprite(clientId); // IMMEDIATELY syncing sprites for new players
             SyncAllPlayersToClient(clientId); // Also sync all existing players to the new client
+            // NOW show button
+            if (playerCount == maxPlayers.Value)
+            {
+                EnableReadyUpButtonClientRpc();
+            }
         }
     void OnClientDisconnected(ulong clientId)
     {
@@ -113,6 +121,17 @@ public class NetworkGameManager : NetworkBehaviour
             Debug.Log("Player count in this game set to " + playerCount);
         }
     }
+    
+    [Rpc(SendTo.ClientsAndHost)]
+    private void EnableReadyUpButtonClientRpc()
+    {
+        ReadyUpButton[] readyButtons = FindObjectsOfType<ReadyUpButton>();
+        foreach (var button in readyButtons)
+        {
+            button.EnableButton();
+        }
+    }
+    
     private void AssignGoals()
     {
         GoalController[] allGoals = FindObjectsOfType<GoalController>();
@@ -297,34 +316,37 @@ private void ApplyPlayerSprite(ulong targetClientId, string paddleSpriteName, st
         StartSpaceshipModeClientRpc();
     }
     
-[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-public void StartSpaceshipModeClientRpc()
-{
-    Debug.Log("Editor launched Spaceship mode.");
-    PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
-
-    foreach (var paddle in allPaddles)
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    public void StartSpaceshipModeClientRpc()
     {
-        if (paddle == null) continue;
-        ulong ownerId = paddle.OwnerClientId;
-        PlayerInfo playerInfo = GetPlayerInfo(ownerId);
-        if (playerInfo == null) continue;
-        // loading player sprites locally
-        if (playerInfo.rocketSprite == null)
+        Debug.Log("Editor launched Spaceship mode.");
+        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
+    
+        foreach (var paddle in allPaddles)
         {
-            playerInfo.LoadSprites();
+            if (paddle == null) continue;
+            ulong ownerId = paddle.OwnerClientId;
+            PlayerInfo playerInfo = GetPlayerInfo(ownerId);
+            if (playerInfo == null) continue;
+        
+            // force load sprites on all clients
+            if (playerInfo.rocketSprite == null)
+            {
+                playerInfo.LoadSprites();
+            }
+        
+            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+            paddle.SetSpaceshipMode(
+                true,
+                playerInfo.rocketSprite,
+                bulletPrefab,
+                50f,
+                0.5f
+            );
         }
-        GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
-        paddle.SetSpaceshipMode(
-            true,
-            playerInfo.rocketSprite,
-            bulletPrefab,
-            10f,
-            0.5f
-        );
+    
+        StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
     }
-    StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
-}
 private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
 {
     yield return new WaitForSeconds(seconds);
