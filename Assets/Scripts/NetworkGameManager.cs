@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 public class NetworkGameManager : NetworkBehaviour
 {
-    public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
+   public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
     public GameObject playerPaddlePrefab;
     public GameObject ballPrefab;
     private GameObject spawnedBall; // current ball in scene
@@ -326,112 +326,56 @@ public void ActivateSpaceshipModeFromEditor()
     Debug.Log("Editor launched Spaceship mode.");
     StartSpaceshipMode();
 }
-
-// [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
-// public void RequestSpaceshipModeServerRpc()
-// {
-//     Debug.Log("Requesting Spaceship mode.");
-//     StartSpaceshipModeClientRpc();
-// }
-
-    /*public void ActivateSpaceshipModeFromEditor()
-    {
-        if (!IsServer) return;
-    
-        Debug.Log("Editor launched Spaceship mode.");
-        StartSpaceshipModeClientRpc();
-    }
-    
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    public void StartSpaceshipModeClientRpc()
-    {
-        Debug.Log("Editor launched Spaceship mode.");
-        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
-    
-        foreach (var paddle in allPaddles)
-        {
-            if (paddle == null) continue;
-            ulong ownerId = paddle.OwnerClientId;
-            PlayerInfo playerInfo = GetPlayerInfo(ownerId);
-            if (playerInfo == null) continue;
-        
-            // force load sprites on all clients
-            if (playerInfo.rocketSprite == null)
-            {
-                playerInfo.LoadSprites();
-            }
-        
-            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
-            paddle.SetSpaceshipMode(
-                true,
-                playerInfo.rocketSprite,
-                bulletPrefab,
-                50f,
-                0.5f
-            );
-        }
-    
-        StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
-    }
-    
-private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
-{
-    yield return new WaitForSeconds(seconds);
-    // fine unity whatever -_- i do sort
-    PaddleController[] allPaddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
-    foreach (var paddle in allPaddles)
-    {
-        paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
-        // reset paddle position to pong
-        var info = GetPlayerInfo(paddle.OwnerClientId);
-        if (info != null && info.spawnPos != null)
-        {
-            paddle.transform.position = info.spawnPos.position;
-            paddle.transform.rotation = info.spawnPos.rotation;
-            // Restoring paddle sprite
-            var renderer = paddle.GetComponent<SpriteRenderer>();
-            if (renderer != null && info.paddleSprite != null)
-            {
-                renderer.sprite = info.paddleSprite;
-            }
-        }
-    }
-    Debug.Log("Spaceship Mode Ended");
-} */
     private void StartSpaceshipMode()
     {
+        Debug.Log("Mode launched");
         if (spawnedBall != null && spawnedBall.TryGetComponent(out NetworkObject netObj) && netObj.IsSpawned)
         {
             netObj.Despawn();
         }
         ToggleSpaceshipVisualsClientRpc(true);
-        
         foreach (var player in GetAllPlayers())
         {
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(player.clientId)) continue;
-            ActivateSpaceshipModeClientRpc(player.rocketSpriteName, 50f, 0.5f);
+            foreach (var kvp in allPlayers)
+            {
+                SyncPlayerSprite(kvp.Key);
+            }
+           SyncRocketSpriteToAllClients(50f, 0.5f);
         }
-
         StartCoroutine(StopSpaceshipModeAfterSeconds(30f));
+    }
+
+    private void SyncRocketSpriteToAllClients(float bulletSpeed, float fireCooldown)
+    {
+        foreach (var player in GetAllPlayers())
+        {
+           ActivateSpaceshipModeClientRpc(
+               player.clientId,
+               player.rocketSpriteName,
+               bulletSpeed,
+               fireCooldown,
+               RpcTarget.Everyone
+               );
+        }
     }
     
     [Rpc(SendTo.ClientsAndHost)]
-    private void ActivateSpaceshipModeClientRpc(string rocketSpriteName, float bulletSpeed, float fireCooldown)
+    private void ActivateSpaceshipModeClientRpc(ulong targetClientId, string rocketSpriteName, float bulletSpeed, float fireCooldown, RpcParams rpcParams = default)
     {
         PaddleController[] paddles = FindObjectsOfType<PaddleController>();
         foreach (var paddle in paddles)
         {
-            if (!paddle.IsOwner) continue;
+            if (paddle.OwnerClientId != targetClientId) continue;
 
             Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
-            PlayerInfo playerInfo = GetPlayerInfo(paddle.OwnerClientId);
+            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+            //PlayerInfo playerInfo = GetPlayerInfo(paddle.OwnerClientId);
             if (rocketSprite == null)
             {
                 Debug.LogWarning($"Could not load rocket sprite: {rocketSpriteName}");
                 return;
             }
-
-            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
             if (bulletPrefab == null)
             {
                 Debug.LogError("Could not load bullet prefab from Resources/Prefabs/Bullet");
