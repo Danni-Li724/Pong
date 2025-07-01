@@ -12,6 +12,8 @@ public class NetworkGameManager : NetworkBehaviour
     public GameObject playerPaddlePrefab;
     public GameObject ballPrefab;
     private GameObject spawnedBall; // current ball in scene
+    [SerializeField] private GameObject circles;
+    [SerializeField] private GameObject stars;
     
     public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -387,6 +389,7 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
         {
             netObj.Despawn();
         }
+        ToggleSpaceshipVisualsClientRpc(true);
         foreach (var player in GetAllPlayers())
         {
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(player.clientId)) continue;
@@ -452,8 +455,15 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
             spawnedBall.GetComponent<NetworkObject>().Spawn();
             spawnedBall.transform.position = Vector3.zero;
         }
-
+        ToggleSpaceshipVisualsClientRpc(false);
         Debug.Log("Spaceship Mode Ended");
+    }
+    
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ToggleSpaceshipVisualsClientRpc(bool enableSpaceshipMode)
+    {
+        if (circles != null) circles.SetActive(!enableSpaceshipMode);
+        if (stars != null) stars.SetActive(enableSpaceshipMode);
     }
 #endregion
 
