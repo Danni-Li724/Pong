@@ -20,6 +20,7 @@ public class PaddleController : NetworkBehaviour
     private float fireCooldown;
     private float lastFireTime;
     public bool isInSpaceshipMode() => inSpaceshipMode;
+    private NetworkVariable<int> currentSpriteIndex = new NetworkVariable<int>(-1);
 
     public int PlayerId { get; private set; }
     public GameObject playerTargetUIPrefab;
@@ -79,7 +80,20 @@ public class PaddleController : NetworkBehaviour
         uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, IsHorizontal);
     }
     
-    #region Spaceship Mode
+    #region SPRITE SYSTEM
+
+    // private void OnSpriteIndexChanged(int oldValue, int newValue)
+    // {
+    //     if (newValue == -1) return; // load sprite based on index
+    //     // var sprite = GetSpriteByIndex(newValue);
+    //     //GetComponent<SpriteRenderer>().sprite = sprite;
+    // }
+    /// maybe different approach?
+
+    #endregion
+    
+    
+    #region SPACESHIP MODE
     /// <summary>
     /// Below are functions for Spaceship controls, firing bullets
     /// </summary>
@@ -101,12 +115,18 @@ public class PaddleController : NetworkBehaviour
         {
             defaultSprite = renderer.sprite;
             renderer.sprite = rocketSprite;
-            GetComponent<PaddleInputHandler>().EnableSpaceshipControls();
+            if (IsOwner) // only enable fort owner of the paddle
+            {
+                GetComponent<PaddleInputHandler>().EnableSpaceshipControls();
+            }
         }
         else
         {
             renderer.sprite = defaultSprite;
-            GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
+            if (IsOwner)
+            {
+                GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
+            }
         }
     }
 
