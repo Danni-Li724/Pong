@@ -326,39 +326,58 @@ public void ActivateSpaceshipModeFromEditor()
     StartSpaceshipMode();
 }
     private void StartSpaceshipMode()
+{
+    Debug.Log("Mode launched");
+
+    if (spawnedBall != null && spawnedBall.TryGetComponent(out NetworkObject netObj) && netObj.IsSpawned)
     {
-        Debug.Log("Mode launched");
-
-        if (spawnedBall != null && spawnedBall.TryGetComponent(out NetworkObject netObj) && netObj.IsSpawned)
-        {
-            netObj.Despawn();
-        }
-
-        ToggleSpaceshipVisualsClientRpc(true);
-
-        foreach (var kvp in allPlayers)
-        {
-            SyncPlayerSprite(kvp.Key); // already updates rocketSpriteName in PlayerInfo
-        }
-
-        ActivateSpaceshipModeClientRpc(50f, 0.5f); // just send one clean RPC to all
-
-        StartCoroutine(StopSpaceshipModeAfterSeconds(30f));
-    }
-    [Rpc(SendTo.ClientsAndHost)]
-    private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldown)
-    {
-        PaddleController[] paddles = FindObjectsOfType<PaddleController>();
-
-        foreach (var paddle in paddles)
-        {
-            var info = GetPlayerInfo(paddle.OwnerClientId);
-            if (info == null || string.IsNullOrEmpty(info.rocketSpriteName)) continue;
-
-            paddle.EnterSpaceshipMode(bulletSpeed, fireCooldown, info.rocketSpriteName);
-        }
+        netObj.Despawn();
     }
 
+    ToggleSpaceshipVisualsClientRpc(true);
+    foreach (var kvp in allPlayers)
+    {
+        if (kvp.Value.isConnected)
+        {
+            SyncPlayerSprite(kvp.Key);
+        }
+    }
+    StartCoroutine(DelayedSpaceshipActivation());
+}
+
+private IEnumerator DelayedSpaceshipActivation()
+{
+    yield return new WaitForSeconds(0.2f); 
+    ActivateSpaceshipModeClientRpc(50f, 0.5f);
+    
+    StartCoroutine(StopSpaceshipModeAfterSeconds(30f));
+}
+
+[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldown)
+{
+    PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
+
+    foreach (var paddle in paddles)
+    {
+        // Get the player info for this paddle
+        var info = GetPlayerInfo(paddle.OwnerClientId);
+        if (info == null)
+        {
+            Debug.LogWarning($"No player info found for paddle with OwnerClientId: {paddle.OwnerClientId}");
+            continue;
+        }
+
+        string rocketSpriteName = info.rocketSpriteName;
+        if (string.IsNullOrEmpty(rocketSpriteName))
+        {
+            Debug.LogWarning($"No rocket sprite name set for player {info.playerId}");
+        }
+
+        Debug.Log($"Activating spaceship mode for player {info.playerId} with rocket sprite: {rocketSpriteName}");
+        paddle.EnterSpaceshipMode(bulletSpeed, fireCooldown, rocketSpriteName);
+    }
+}
     private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
     {
         yield return new WaitForSeconds(seconds);

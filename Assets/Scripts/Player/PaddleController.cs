@@ -129,15 +129,23 @@ public class PaddleController : NetworkBehaviour
             }
         }
     }
-    public void EnterSpaceshipMode(float bulletSpeed, float fireCooldown, string rocketSpriteName)
+    /*public void EnterSpaceshipMode(float bulletSpeed, float fireCooldown, string rocketSpriteName)
     {
+        Debug.Log($"[PaddleController] Player {PlayerId} entering spaceship mode with sprite: {rocketSpriteName}");
+    
         Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
         GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
 
         if (rocketSprite == null)
         {
-            Debug.LogWarning($"[PaddleController] Missing rocket sprite: {rocketSpriteName}");
-            return;
+            Debug.LogWarning($"[PaddleController] Missing rocket sprite: {rocketSpriteName} for player {PlayerId}");
+            // Try to load a default rocket sprite
+            rocketSprite = Resources.Load<Sprite>("Sprites/rocket_default");
+            if (rocketSprite == null)
+            {
+                Debug.LogError($"[PaddleController] No default rocket sprite found either!");
+                return;
+            }
         }
 
         if (bulletPrefab == null)
@@ -147,6 +155,47 @@ public class PaddleController : NetworkBehaviour
         }
 
         SetSpaceshipMode(true, rocketSprite, bulletPrefab, bulletSpeed, fireCooldown);
+        Debug.Log($"[PaddleController] Player {PlayerId} successfully entered spaceship mode");
+    }*/
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    public void SetSpaceshipModeRpc(bool active, string rocketSpriteName, float bulletSpeed, float fireCooldown)
+    {
+        Debug.Log($"[PaddleController] SetSpaceshipModeRpc called for Player {PlayerId}: active={active}, sprite={rocketSpriteName}");
+    
+        if (active)
+        {
+            // Load the rocket sprite
+            Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+
+            if (rocketSprite == null)
+            {
+                Debug.LogWarning($"[PaddleController] Missing rocket sprite: {rocketSpriteName}");
+                rocketSprite = Resources.Load<Sprite>("Sprites/rocket_default");
+            }
+
+            if (bulletPrefab == null)
+            {
+                Debug.LogError("[PaddleController] Missing bullet prefab");
+                return;
+            }
+
+            SetSpaceshipMode(true, rocketSprite, bulletPrefab, bulletSpeed, fireCooldown);
+        }
+        else
+        {
+            SetSpaceshipMode(false, null, null, 0f, 0f);
+        }
+    }
+    
+    public void EnterSpaceshipMode(float bulletSpeed, float fireCooldown, string rocketSpriteName)
+    {
+        Debug.Log($"[PaddleController] EnterSpaceshipMode called for Player {PlayerId}");
+        if (IsServer)
+        {
+            SetSpaceshipModeRpc(true, rocketSpriteName, bulletSpeed, fireCooldown);
+        }
     }
     
     public void TryFire(Vector2 targetWorldPos)
