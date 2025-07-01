@@ -1,6 +1,6 @@
 using UnityEngine;
 [System.Serializable]
-public class PlayerInfo : MonoBehaviour
+public class PlayerInfo
 {
     public int playerId;
     public ulong clientId;
@@ -8,6 +8,10 @@ public class PlayerInfo : MonoBehaviour
     public Transform spawnPos;
     public bool isReady;
     
+    // strings for network sync
+    public string paddleSpriteName;
+    public string rocketSpriteName;
+    // local refs
     public Sprite paddleSprite;
     public Sprite rocketSprite;
     
@@ -18,13 +22,29 @@ public class PlayerInfo : MonoBehaviour
         this.spawnPos = spawn;
         this.isReady = false;
         this.isConnected = true;
+         // storing names
+        this.paddleSpriteName = $"Player{playerId}Paddle";
+        this.rocketSpriteName = $"Player{playerId}Rocket";
         
-        paddleSprite = Resources.Load<Sprite>($"Sprites/Player{playerId}Paddle");
-        rocketSprite = Resources.Load<Sprite>($"Sprites/Player{playerId}Rocket");
+        LoadSprites();
         
         if (paddleSprite == null || rocketSprite == null)
         {
             Debug.LogWarning($"Missing sprite for Player {playerId}");
+        }
+    }
+
+    public void LoadSprites()
+    {
+        paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
+        rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+        if (paddleSprite == null)
+        {
+            Debug.LogWarning($"Missing paddle sprite: Sprites/{paddleSpriteName}");
+        }
+        if (rocketSprite == null)
+        {
+            Debug.LogWarning($"Missing rocket sprite: Sprites/{rocketSpriteName}");
         }
     }
 }
