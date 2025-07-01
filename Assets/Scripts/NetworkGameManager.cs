@@ -45,16 +45,7 @@ public class NetworkGameManager : NetworkBehaviour
             playerCount = 1;
         }
     }
-    [Rpc(SendTo.Server)]
-    public void SetMaxPlayersServerRpc(int playerCount)
-    {
-        if (!IsServer) return;
-        if (playerCount >= 2 && playerCount <= 4)
-        {
-            maxPlayers.Value = playerCount;
-            Debug.Log("Player count in this game set to " + playerCount);
-        }
-    }
+   
     void OnClientConnected(ulong clientId)
         {
             if (!IsServer) return;
@@ -69,6 +60,8 @@ public class NetworkGameManager : NetworkBehaviour
             playerCount++;
             SpawnPlayerPaddle(clientId, playerCount);
             AssignGoals();
+            SyncPlayerSprite(clientId); // IMMEDIATELY syncing sprites for new players
+            SyncAllPlayersToClient(clientId); // Also sync all existing players to the new client
         }
     void OnClientDisconnected(ulong clientId)
     {
@@ -80,6 +73,8 @@ public class NetworkGameManager : NetworkBehaviour
             Debug.Log($"Player {allPlayers[clientId].playerId} disconnected");
         }
     }
+    
+    #region STARTING GAME
     void SpawnPlayerPaddle(ulong clientId, int playerId)
     {
         Transform spawnTransform = GetSpawnTransform(playerId);
@@ -105,6 +100,17 @@ public class NetworkGameManager : NetworkBehaviour
             {
                 renderer.sprite = playerInfo.paddleSprite;
             }
+        }
+    }
+    
+    [Rpc(SendTo.Server)]
+    public void SetMaxPlayersServerRpc(int playerCount)
+    {
+        if (!IsServer) return;
+        if (playerCount >= 2 && playerCount <= 4)
+        {
+            maxPlayers.Value = playerCount;
+            Debug.Log("Player count in this game set to " + playerCount);
         }
     }
     private void AssignGoals()
@@ -182,8 +188,14 @@ public class NetworkGameManager : NetworkBehaviour
     {
         GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
         ball.GetComponent<NetworkObject>().Spawn();
-        // syncing individual client's paddle sprites
-        VisualEventsManager.Instance?.AssignPaddleSpritesToAllPlayers();
+        // now syncing all sprites before starting
+        foreach (var kvp in allPlayers)
+        {
+            if (kvp.Value.isConnected)
+            {
+                SyncPlayerSprite(kvp.Key);
+            }
+        }
         TriggerPlayerSelectionUIClientRpc();
     }
     private bool AllPlayersReady()
@@ -198,54 +210,137 @@ public class NetworkGameManager : NetworkBehaviour
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
         }
     }
-
-    /// TEST
-  [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
-    public void RequestSpaceshipModeServerRpc()
+    
+    #endregion
+    
+#region SPRITE SYCING
+private void SyncPlayerSprite(ulong clientId) // sync sprite for a specific player to all clients
+{
+    if (!allPlayers.ContainsKey(clientId)) return;
+        
+    PlayerInfo playerInfo = allPlayers[clientId];
+    SyncPlayerSpriteClientRpc(clientId, playerInfo.paddleSpriteName, playerInfo.rocketSpriteName);
+}
+private void SyncAllPlayersToClient(ulong targetClientId) // syncing all existing players to new joiners
+{
+    foreach (var kvp in allPlayers)
     {
-        Debug.Log("Requesting Spaceship mode.");
-        StartSpaceshipModeClientRpc();
-    }
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    public void StartSpaceshipModeClientRpc()
-    {
-        Debug.Log("Editor launched Spaceship mode.");
-        PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
-
-        foreach (var paddle in allPaddles)
+        if (kvp.Value.isConnected) // kvp = Key-ValuePair for my Dictionary<ulong, PlayerInfo> ('allPlayers') :)
         {
-            if (paddle == null) continue;
-            ulong ownerId = paddle.OwnerClientId;
-            PlayerInfo playerInfo = GetPlayerInfo(ownerId);
-            if (playerInfo == null) continue;
-            GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
-            paddle.SetSpaceshipMode(
-                true,
-                playerInfo.rocketSprite,
-                bulletPrefab,
-                10f,
-                0.5f
+            SyncPlayerSpriteToSpecificClientRpc(
+                kvp.Key, 
+                kvp.Value.paddleSpriteName, 
+                kvp.Value.rocketSpriteName,
+                RpcTarget.Single(targetClientId, RpcTargetUse.Temp)
             );
         }
-        StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
     }
-    private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
+}
+[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+private void SyncPlayerSpriteClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
+{
+    ApplyPlayerSprite(targetClientId, paddleSpriteName, rocketSpriteName);
+}
+
+[Rpc(SendTo.SpecifiedInParams, Delivery = RpcDelivery.Reliable)]
+private void SyncPlayerSpriteToSpecificClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName, RpcParams rpcParams = default)
+{
+    ApplyPlayerSprite(targetClientId, paddleSpriteName, rocketSpriteName);
+}
+private void ApplyPlayerSprite(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
+{
+    PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
+    foreach (var paddle in paddles)
     {
-        yield return new WaitForSeconds(seconds);
-        // fine unity whatever -_- i do sort
-        PaddleController[] allPaddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
-        foreach (var paddle in allPaddles)
+        if (paddle.OwnerClientId == targetClientId)
         {
-            paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
-            // reset paddle position to pong
-            var info = GetPlayerInfo(paddle.OwnerClientId);
-            if (info != null && info.spawnPos != null)
+            var renderer = paddle.GetComponent<SpriteRenderer>();
+            if (renderer != null)
             {
-                paddle.transform.position = info.spawnPos.position;
-                paddle.transform.rotation = info.spawnPos.rotation;
+                Sprite paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
+                if (paddleSprite != null)
+                {
+                    renderer.sprite = paddleSprite;
+                }
+                else
+                {
+                    Debug.LogWarning($"can't find paddle sprite {paddleSpriteName}");
+                }
+            }
+            if (allPlayers.ContainsKey(targetClientId)) // update PlayerInfo
+            {
+                PlayerInfo playerInfo = allPlayers[targetClientId];
+                playerInfo.paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
+                playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+            }
+            break;
+        }
+    }
+}
+
+#endregion
+
+#region  SPACESHIP MODE
+
+[Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+public void RequestSpaceshipModeServerRpc()
+{
+    Debug.Log("Requesting Spaceship mode.");
+    StartSpaceshipModeClientRpc();
+}
+[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+public void StartSpaceshipModeClientRpc()
+{
+    Debug.Log("Editor launched Spaceship mode.");
+    PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
+
+    foreach (var paddle in allPaddles)
+    {
+        if (paddle == null) continue;
+        ulong ownerId = paddle.OwnerClientId;
+        PlayerInfo playerInfo = GetPlayerInfo(ownerId);
+        if (playerInfo == null) continue;
+        // loading player sprites locally
+        if (playerInfo.rocketSprite == null)
+        {
+            playerInfo.LoadSprites();
+        }
+        GameObject bulletPrefab = Resources.Load<GameObject>("Prefabs/Bullet");
+        paddle.SetSpaceshipMode(
+            true,
+            playerInfo.rocketSprite,
+            bulletPrefab,
+            10f,
+            0.5f
+        );
+    }
+    StartCoroutine(StopSpaceshipModeAfterSeconds(10f));
+}
+private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
+{
+    yield return new WaitForSeconds(seconds);
+    // fine unity whatever -_- i do sort
+    PaddleController[] allPaddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
+    foreach (var paddle in allPaddles)
+    {
+        paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
+        // reset paddle position to pong
+        var info = GetPlayerInfo(paddle.OwnerClientId);
+        if (info != null && info.spawnPos != null)
+        {
+            paddle.transform.position = info.spawnPos.position;
+            paddle.transform.rotation = info.spawnPos.rotation;
+            // Restoring paddle sprite
+            var renderer = paddle.GetComponent<SpriteRenderer>();
+            if (renderer != null && info.paddleSprite != null)
+            {
+                renderer.sprite = info.paddleSprite;
             }
         }
-        Debug.Log("Spaceship Mode Ended");
     }
+    Debug.Log("Spaceship Mode Ended");
+}
+#endregion
+
 }
 

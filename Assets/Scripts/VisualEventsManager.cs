@@ -64,66 +64,57 @@ public class VisualEventsManager : NetworkBehaviour
     
     public Sprite GetPaddleSprite(int playerId)
     {
-        if (paddleSpriteNames.TryGetValue(playerId, out string spriteName))
-        {
-            return Resources.Load<Sprite>($"Sprites/{spriteName}");
-        }
-        return null;
+        return Resources.Load<Sprite>($"Sprites/Player{playerId}Paddle");
     }
-    
     public Sprite GetRocketSprite(int playerId)
     {
-        if (rocketSpriteNames.TryGetValue(playerId, out string spriteName))
-        {
-            return Resources.Load<Sprite>($"Sprites/{spriteName}");
-        }
-        return null;
+        return Resources.Load<Sprite>($"Sprites/Player{playerId}Rocket");
     }
 
-    public void AssignPaddleSpritesToAllPlayers()
-    {
-        if(!IsServer) return;
-        var gameManager = FindFirstObjectByType<NetworkGameManager>();
-        if (gameManager == null) return;
-        foreach (var playerInfo in gameManager.GetAllPlayers())
-        {
-            Sprite paddleSprite = GetPaddleSprite(playerInfo.playerId);
-            Sprite rocketSprite = GetRocketSprite(playerInfo.playerId);
-            playerInfo.paddleSprite = paddleSprite;
-            playerInfo.rocketSprite = rocketSprite;
-            
-            // sending sprite names to all clients to sync
-            AssignPlayerSpritesClientRpc(playerInfo.clientId, playerInfo.playerId,
-                paddleSpriteNames[playerInfo.playerId],
-                rocketSpriteNames[playerInfo.playerId]);
-        }
-    }
+    // public void AssignPaddleSpritesToAllPlayers()
+    // {
+    //     if(!IsServer) return;
+    //     var gameManager = FindFirstObjectByType<NetworkGameManager>();
+    //     if (gameManager == null) return;
+    //     foreach (var playerInfo in gameManager.GetAllPlayers())
+    //     {
+    //         Sprite paddleSprite = GetPaddleSprite(playerInfo.playerId);
+    //         Sprite rocketSprite = GetRocketSprite(playerInfo.playerId);
+    //         playerInfo.paddleSprite = paddleSprite;
+    //         playerInfo.rocketSprite = rocketSprite;
+    //         
+    //         // sending sprite names to all clients to sync
+    //         AssignPlayerSpritesClientRpc(playerInfo.clientId, playerInfo.playerId,
+    //             paddleSpriteNames[playerInfo.playerId],
+    //             rocketSpriteNames[playerInfo.playerId]);
+    //     }
+    // }
 
-    [Rpc(SendTo.Everyone, Delivery = RpcDelivery.Reliable)]
-    private void AssignPlayerSpritesClientRpc(ulong targetClientId, int playerId, string paddleSpriteName,
-        string rocketSpriteName)
-    {
-        //if (IsServer) return;
-        PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
-        foreach (var paddle in paddles)
-        {
-            if (paddle.OwnerClientId == targetClientId)
-            {
-                var renderer = paddle.GetComponent<SpriteRenderer>();
-                Sprite newPaddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
-                renderer.sprite = newPaddleSprite;
-                // Store rocket sprite for spaceship mode
-                var playerInfo = FindFirstObjectByType<NetworkGameManager>().GetPlayerInfo(paddle.OwnerClientId);
-                if (playerInfo != null)
-                {
-                    playerInfo.paddleSprite = newPaddleSprite;
-                    playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
-                }
-
-                break;
-            }
-        }
-    }
+    // [Rpc(SendTo.Everyone, Delivery = RpcDelivery.Reliable)]
+    // private void AssignPlayerSpritesClientRpc(ulong targetClientId, int playerId, string paddleSpriteName,
+    //     string rocketSpriteName)
+    // {
+    //     //if (IsServer) return;
+    //     PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
+    //     foreach (var paddle in paddles)
+    //     {
+    //         if (paddle.OwnerClientId == targetClientId)
+    //         {
+    //             var renderer = paddle.GetComponent<SpriteRenderer>();
+    //             Sprite newPaddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
+    //             renderer.sprite = newPaddleSprite;
+    //             // Store rocket sprite for spaceship mode
+    //             var playerInfo = FindFirstObjectByType<NetworkGameManager>().GetPlayerInfo(paddle.OwnerClientId);
+    //             if (playerInfo != null)
+    //             {
+    //                 playerInfo.paddleSprite = newPaddleSprite;
+    //                 playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+    //             }
+    //
+    //             break;
+    //         }
+    //     }
+    // }
 
     public void RegisterPaddle(PaddleController paddle)
     {
