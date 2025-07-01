@@ -162,7 +162,13 @@ public class PaddleController : NetworkBehaviour
     private void FireServerRpc(Vector2 direction)
     {
         GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
-        bullet.GetComponent<Rigidbody2D>().linearVelocity = direction * bulletSpeed;
+
+        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
+        rb.linearVelocity = direction * bulletSpeed;
+
+        // shoot bullet to face direction
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        bullet.transform.rotation = Quaternion.Euler(0, 0, angle);
 
         NetworkObject bulletNetObj = bullet.GetComponent<NetworkObject>();
         bulletNetObj.Spawn();

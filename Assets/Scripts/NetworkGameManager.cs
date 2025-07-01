@@ -11,6 +11,7 @@ public class NetworkGameManager : NetworkBehaviour
     public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
     public GameObject playerPaddlePrefab;
     public GameObject ballPrefab;
+    private GameObject spawnedBall; // current ball in scene
     
     public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -205,8 +206,8 @@ public class NetworkGameManager : NetworkBehaviour
     }
     private void StartGame()
     {
-        GameObject ball = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
-        ball.GetComponent<NetworkObject>().Spawn();
+        spawnedBall = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
+        spawnedBall.GetComponent<NetworkObject>().Spawn();
         // now syncing all sprites before starting
         foreach (var kvp in allPlayers)
         {
@@ -382,6 +383,10 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
 } */
     private void StartSpaceshipMode()
     {
+        if (spawnedBall != null && spawnedBall.TryGetComponent(out NetworkObject netObj) && netObj.IsSpawned)
+        {
+            netObj.Despawn();
+        }
         foreach (var player in GetAllPlayers())
         {
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(player.clientId)) continue;
@@ -400,6 +405,7 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
             if (!paddle.IsOwner) continue;
 
             Sprite rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+            PlayerInfo playerInfo = GetPlayerInfo(paddle.OwnerClientId);
             if (rocketSprite == null)
             {
                 Debug.LogWarning($"Could not load rocket sprite: {rocketSpriteName}");
@@ -439,6 +445,12 @@ private IEnumerator StopSpaceshipModeAfterSeconds(float seconds)
                     renderer.sprite = info.paddleSprite;
                 }
             }
+        }
+        // Respawn ball
+        if (spawnedBall != null && !spawnedBall.GetComponent<NetworkObject>().IsSpawned)
+        {
+            spawnedBall.GetComponent<NetworkObject>().Spawn();
+            spawnedBall.transform.position = Vector3.zero;
         }
 
         Debug.Log("Spaceship Mode Ended");
