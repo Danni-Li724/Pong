@@ -282,12 +282,21 @@ private void ApplyPlayerSprite(ulong targetClientId, string paddleSpriteName, st
 
 #region  SPACESHIP MODE
 
-[Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
-public void RequestSpaceshipModeServerRpc()
-{
-    Debug.Log("Requesting Spaceship mode.");
-    StartSpaceshipModeClientRpc();
-}
+// [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+// public void RequestSpaceshipModeServerRpc()
+// {
+//     Debug.Log("Requesting Spaceship mode.");
+//     StartSpaceshipModeClientRpc();
+// }
+
+    public void ActivateSpaceshipModeFromEditor()
+    {
+        if (!IsServer) return;
+    
+        Debug.Log("Editor launched Spaceship mode.");
+        StartSpaceshipModeClientRpc();
+    }
+    
 [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
 public void StartSpaceshipModeClientRpc()
 {

@@ -131,11 +131,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  moveSpeed: 60
-  topLimit: 51
-  bottomLimit: -51
-  leftLimit: -72
-  rightLimit: 72
+  moveSpeed: 80
+  topLimit: 36
+  bottomLimit: -36
+  leftLimit: -60
+  rightLimit: 60
 --- !u!114 &-2406434400426874364
 MonoBehaviour:
   m_ObjectHideFlags: 0
