@@ -7,6 +7,12 @@ public class BoonEffect : ScriptableObject
     public string description;
     public Sprite icon;
     public float duration;
-    //public BoonType type;
-    public GameObject effectPrefab;
+    public BoonType type;
+}
+public enum BoonType
+{
+    SpaceshipMode,
+    DoubleBall,
+    BallSpeedBoost,
+    BallSpeedSlow
 }

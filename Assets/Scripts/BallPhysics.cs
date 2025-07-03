@@ -71,4 +71,17 @@ public class BallPhysics : NetworkBehaviour
             return;
         }
     }
+    
+    public void ModifySpeed(float multiplier, float duration)
+    {
+        StartCoroutine(ModifySpeedCoroutine(multiplier, duration));
+    }
+    
+    private System.Collections.IEnumerator ModifySpeedCoroutine(float multiplier, float duration)
+    {
+        float originalSpeed = speed; 
+        speed *= multiplier;
+        yield return new WaitForSeconds(duration);
+        speed = originalSpeed;
+    }
 }

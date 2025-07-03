@@ -21,6 +21,7 @@ public class NetworkGameManager : NetworkBehaviour
 
     private int playerCount = 0;
     private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
+    public static NetworkGameManager Instance { get; private set; }
     
     // Get list of other players for a specific client
     public List<PlayerInfo> GetOtherPlayers(ulong clientId)
@@ -218,7 +219,11 @@ public class NetworkGameManager : NetworkBehaviour
                 SyncPlayerSprite(kvp.Key);
             }
         }
+        // start player selection
         TriggerPlayerSelectionUIClientRpc();
+        if (!IsServer) return;
+        // start boon selection
+        BoonManager.Instance.StartBoonSelection();
     }
     private bool AllPlayersReady()
     {
@@ -325,7 +330,7 @@ public void ActivateSpaceshipModeFromEditor()
     Debug.Log("Editor launched Spaceship mode.");
     StartSpaceshipMode();
 }
-    private void StartSpaceshipMode()
+    public void StartSpaceshipMode()
 {
     Debug.Log("Mode launched");
 
@@ -416,6 +421,29 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
         if (circles != null) circles.SetActive(!enableSpaceshipMode);
         if (stars != null) stars.SetActive(enableSpaceshipMode);
     }
+#endregion
+
+#region DOUBLE BALL MODE
+
+public void SpawnAdditionalBall(float duration)
+{
+    if (!IsServer) return;
+    GameObject additionalBall = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
+    var networkObject = additionalBall.GetComponent<NetworkObject>();
+    networkObject.Spawn();
+    StartCoroutine(DestroyBallAfterDuration(additionalBall, duration));
+}
+
+private IEnumerator DestroyBallAfterDuration(GameObject ball, float duration)
+{
+    yield return new WaitForSeconds(duration);
+    if (ball != null)
+    {
+        var networkObject = ball.GetComponent<NetworkObject>();
+        networkObject.Despawn();
+    }
+}
+
 #endregion
 
 }
