@@ -38,6 +38,18 @@ public class NetworkGameManager : NetworkBehaviour
     {
         return allPlayers.Values.Where(p => p.isConnected).ToList();
     }
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
     public override void OnNetworkSpawn()
     {
         if (IsServer)
