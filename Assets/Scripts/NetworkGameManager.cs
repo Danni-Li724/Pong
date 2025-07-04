@@ -2,26 +2,38 @@ using System.Collections.Generic;
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 
 public class NetworkGameManager : NetworkBehaviour
 {
+    [Header("Game Settings")]
+    public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> connectedPlayersCount = new NetworkVariable<int>(0,
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private bool allPlayersJoined = false;
+    private bool gameStarted = false;
+    private int playerCount = 0;
+    private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>(); 
+    public static NetworkGameManager Instance { get; private set; }
+    
+    [Header("Level Objects")]
    public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
     public GameObject playerPaddlePrefab;
     public GameObject ballPrefab;
     private GameObject spawnedBall; // current ball in scene
+    
+    [Header("Game Visuals")]
     [SerializeField] private GameObject circles;
     [SerializeField] private GameObject stars;
     
-    public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    private bool allPlayersJoined = false;
-
-    private int playerCount = 0;
-    private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
-    public static NetworkGameManager Instance { get; private set; }
+    [Header("Game UIs")]
+    [SerializeField] private GameObject playerCountSelectionPanel;
+    [SerializeField] private GameObject startGamePanel;
+    [SerializeField] private Text playerCountText;
     
     // Get list of other players for a specific client
     public List<PlayerInfo> GetOtherPlayers(ulong clientId)
@@ -60,8 +72,10 @@ public class NetworkGameManager : NetworkBehaviour
             // spawn paddle 1 for host
             SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1);
             playerCount = 1;
-            //ShowPlayerSelectionForHost();
+            connectedPlayersCount.Value = 1;
+            ShowPlayerSelectionForHost();
         }
+        connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
     }
 
    
@@ -84,6 +98,7 @@ public class NetworkGameManager : NetworkBehaviour
             // NOW show button
             if (playerCount == maxPlayers.Value)
             {
+                allPlayersJoined = true;
                 EnableReadyUpButtonClientRpc();
             }
         }
@@ -94,7 +109,16 @@ public class NetworkGameManager : NetworkBehaviour
         if (allPlayers.ContainsKey(clientId))
         {
             allPlayers[clientId].isConnected = false;
+            playerCount--;
+            connectedPlayersCount.Value = playerCount;
+            allPlayersJoined = false;
             Debug.Log($"Player {allPlayers[clientId].playerId} disconnected");
+            
+            // hide ready button if not all players are connected
+            if (playerCount < maxPlayers.Value)
+            {
+                DisableReadyUpButtonClientRpc();
+            }
         }
     }
     
@@ -127,6 +151,44 @@ public class NetworkGameManager : NetworkBehaviour
         }
     }
     
+    private void ShowPlayerSelectionForHost()
+    {
+        if (IsHost && playerCountSelectionPanel != null)
+        {
+            playerCountSelectionPanel.SetActive(true);
+            UpdatePlayerCountDisplay();
+        }
+    }
+    
+    private void OnConnectedPlayersCountChanged(int previousValue, int newValue)
+    {
+        UpdatePlayerCountDisplay();
+    }
+    
+    private void UpdatePlayerCountDisplay()
+    {
+        if (playerCountText != null)
+        {
+            playerCountText.text = $"Players Connected: {connectedPlayersCount.Value}/{maxPlayers.Value}";
+        }
+    }
+    
+    public void OnPlayerCountSelected(int count)
+    {
+        if (!IsHost) return;
+        SetMaxPlayersServerRpc(count);
+        HidePlayerCountSelectionPanel();
+    }
+    
+    private void HidePlayerCountSelectionPanel()
+    {
+        if (playerCountSelectionPanel != null)
+        {
+            playerCountSelectionPanel.SetActive(false);
+        }
+    }
+
+    
     [Rpc(SendTo.Server)]
     public void SetMaxPlayersServerRpc(int playerCount)
     {
@@ -145,6 +207,16 @@ public class NetworkGameManager : NetworkBehaviour
         foreach (var button in readyButtons)
         {
             button.EnableButton();
+        }
+    }
+    
+    [Rpc(SendTo.ClientsAndHost)]
+    private void DisableReadyUpButtonClientRpc()
+    {
+        ReadyUpButton[] readyButtons = FindObjectsOfType<ReadyUpButton>();
+        foreach (var button in readyButtons)
+        {
+            button.DisableButton();
         }
     }
     
@@ -215,14 +287,13 @@ public class NetworkGameManager : NetworkBehaviour
             allPlayers[clientId].isReady = true;
             if (AllPlayersReady())
             {
-                StartGame();
+                StartBoonSelection();
             }
         };
     }
-    private void StartGame()
+    
+    private void StartBoonSelection()
     {
-        spawnedBall = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
-        spawnedBall.GetComponent<NetworkObject>().Spawn();
         // now syncing all sprites before starting
         foreach (var kvp in allPlayers)
         {
@@ -233,9 +304,59 @@ public class NetworkGameManager : NetworkBehaviour
         }
         // start player selection
         TriggerPlayerSelectionUIClientRpc();
+        
         if (!IsServer) return;
         // start boon selection
         BoonManager.Instance.StartBoonSelection();
+    }
+    
+    // called by BoonManager when all players have selected their boons
+    public void OnAllBoonsSelected()
+    {
+        if (!IsServer) return;
+        ShowStartGameButtonClientRpc();
+    }
+    
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowStartGameButtonClientRpc()
+    {
+        if (IsHost && startGamePanel != null)
+        {
+            startGamePanel.SetActive(true);
+        }
+    }
+    
+    // Called by the start game button
+    public void OnStartGameButtonPressed()
+    {
+        if (!IsHost) return;
+        StartGameServerRpc();
+    }
+    
+    [Rpc(SendTo.Server)]
+    private void StartGameServerRpc()
+    {
+        if (!IsServer) return;
+        StartGame();
+    }
+    private void StartGame()
+    {
+        if (gameStarted) return;
+        gameStarted = true;
+        // Spawn the ball
+        spawnedBall = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
+        spawnedBall.GetComponent<NetworkObject>().Spawn();
+        HideStartGameButtonClientRpc();
+        Debug.Log("Game officially started!");
+    }
+    
+    [Rpc(SendTo.ClientsAndHost)]
+    private void HideStartGameButtonClientRpc()
+    {
+        if (startGamePanel != null)
+        {
+            startGamePanel.SetActive(false);
+        }
     }
     private bool AllPlayersReady()
     {
@@ -455,8 +576,6 @@ private IEnumerator DestroyBallAfterDuration(GameObject ball, float duration)
         networkObject.Despawn();
     }
 }
-
 #endregion
-
 }
 

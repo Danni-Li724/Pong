@@ -142,6 +142,11 @@ public class BoonManager : NetworkBehaviour
         {
             boonSelectionActive = false;
             ClearRemainingButtonsClientRpc();
+            var gameManager = NetworkGameManager.Instance;
+            if (gameManager != null)
+            {
+                gameManager.OnAllBoonsSelected();
+            }
         }
     }
     
