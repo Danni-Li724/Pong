@@ -244,6 +244,12 @@ public class BoonManager : NetworkBehaviour
         if (!IsServer) return;
         
         var allPlayers = NetworkGameManager.Instance.GetAllPlayers();
+        Debug.Log($"All players count: {allPlayers.Count}");
+        if (allPlayers.Count == 0)
+        {
+            // had to add this because the All() in Linq apparently returns true by default if I have an empty collection...debugged for hours
+            return;
+        }
         bool allSelected = allPlayers.All(p => playerInventories.ContainsKey(p.clientId) && playerInventories[p.clientId].Count > 0);
         
         Debug.Log($"Checking all players selected: {allPlayers.Count} players, {playerInventories.Count} have boons");
@@ -260,6 +266,7 @@ public class BoonManager : NetworkBehaviour
             }
         }
     }
+    
     
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void ClearRemainingButtonsClientRpc()

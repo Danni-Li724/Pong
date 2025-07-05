@@ -81,7 +81,8 @@ public class NetworkGameManager : NetworkBehaviour
     void OnClientConnected(ulong clientId)
         {
             if (!IsServer) return;
-
+            Debug.Log($"Client connected with ID: {clientId}");
+            Debug.Log($"Host LocalClientId: {NetworkManager.Singleton.LocalClientId}");
             if (clientId == NetworkManager.Singleton.LocalClientId) return; // host doesn't reconnect
 
             if (playerCount >= maxPlayers.Value)
