@@ -36,14 +36,17 @@ public class PlayerInventorySlot : NetworkBehaviour
         if (nameText != null) nameText.text = boon.effectName;
         
         // show use button only for the owner.
-        if (useButton != null && NetworkManager.Singleton.LocalClientId == clientId)
+        if (useButton != null)
         {
             bool isOwner = NetworkManager.Singleton.LocalClientId == clientId;
-            useButton.gameObject.SetActive(isOwner); // only enable button for its owner
-            useButton.interactable = isOwner;         // only clickable by owner
-            useButton.onClick.RemoveAllListeners(); 
+            useButton.gameObject.SetActive(isOwner); // only show button if this is your boon
+            useButton.interactable = isOwner;
+
+            useButton.onClick.RemoveAllListeners();
             if (isOwner)
-                useButton.onClick.AddListener(OnUseButtonClicked);
+            {
+                useButton.onClick.AddListener(OnUseButtonClicked); // add listener only for the owner
+            }
         }
         
         // update player ID text
@@ -72,6 +75,7 @@ public class PlayerInventorySlot : NetworkBehaviour
         if (hasBoon && currentBoon != null)
         {
             BoonManager.Instance.UseBoon(ownerClientId, currentBoon.type);
+            Debug.Log($"Player {ownerClientId} clicked to use boon {currentBoon.type}");
         }
     }
 }

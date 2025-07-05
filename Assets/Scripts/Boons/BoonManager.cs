@@ -5,7 +5,7 @@ using System.Linq;
 
 public class BoonManager : NetworkBehaviour
 {
-     [Header("Boon Setup")]
+   [Header("Boon Setup")]
     [SerializeField] private List<BoonEffect> availableBoons;
     [SerializeField] private Transform boonButtonContainer;
     [SerializeField] private GameObject boonButtonPrefab;
@@ -13,11 +13,12 @@ public class BoonManager : NetworkBehaviour
     [Header("Player Inventories")]
     [SerializeField] private Transform[] playerInventorySlots = new Transform[4];
 
-    
     public static BoonManager Instance { get; private set; }
     
     // Server-side data - fixed to using boonTypes instead of strings because netcode has issues sending string[] in rpc :(...
     private Dictionary<ulong, List<BoonType>> playerInventories = new Dictionary<ulong, List<BoonType>>();
+    // Client-side data - synced from server
+    private Dictionary<ulong, List<BoonType>> clientPlayerInventories = new Dictionary<ulong, List<BoonType>>();
     private Dictionary<BoonType, GameObject> activeBoonButtons = new Dictionary<BoonType, GameObject>();
     private bool boonSelectionActive = false;
     
@@ -34,13 +35,26 @@ public class BoonManager : NetworkBehaviour
         }
     }
     
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        
+        // initializing client inventory tracking
+        if (IsClient)
+        {
+            clientPlayerInventories.Clear();
+        }
+    }
+    
     // called by NetworkGameManager when all players are ready
     public void StartBoonSelection()
     {
         if (!IsServer) return;
 
         boonSelectionActive = true;
-
+        playerInventories.Clear();
+        // Sending a clear inventory state to all clients
+        SyncAllInventoriesClientRpc(new ulong[0], new BoonType[0], new int[0]);
         var selectedBoons = availableBoons
             .OrderBy(x => Random.value) // randomnizes the boon list
             .Take(4) // select the first 4, for now i only have 4
@@ -91,14 +105,12 @@ public class BoonManager : NetworkBehaviour
             return;
         }
         
-        // check if boon is still available
         if (!activeBoonButtons.ContainsKey(boonType)) 
         {
             Debug.Log($"Boon {boonType} not available");
             return;
         }
         
-        // check if player already has a boon
         if (playerInventories.ContainsKey(clientId) && playerInventories[clientId].Count > 0) 
         {
             Debug.Log($"Player {clientId} already has a boon");
@@ -112,20 +124,86 @@ public class BoonManager : NetworkBehaviour
         playerInventories[clientId].Add(boonType);
         Debug.Log($"Added boon {boonType} to player {clientId} inventory");
         
-        // remove boon from selection list and update all clients
+        // remove boon from selection and sync all inventories
         RemoveBoonButtonClientRpc(boonType);
-        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
-        if (playerInfo != null)
+        SyncAllInventoriesToClients();
+        CheckAllPlayersSelected();
+    }
+    
+    private void SyncAllInventoriesToClients() // syncing all player inventories to all clients
+    {
+        if (!IsServer) return;
+        
+        List<ulong> clientIds = new List<ulong>();
+        List<BoonType> boonTypes = new List<BoonType>();
+        List<int> playerIds = new List<int>();
+        
+        foreach (var kvp in playerInventories)
         {
-            UpdatePlayerInventoryClientRpc(clientId, boonType, playerInfo.playerId); // sending player id
-        }
-        else
-        {
-            Debug.LogError($"playerInfo is null for {clientId}");
+            ulong clientId = kvp.Key;
+            var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+            
+            if (playerInfo != null)
+            {
+                foreach (var boonType in kvp.Value)
+                {
+                    clientIds.Add(clientId);
+                    boonTypes.Add(boonType);
+                    playerIds.Add(playerInfo.playerId);
+                }
+            }
         }
         
-        // check if all players have selected boon
-        CheckAllPlayersSelected();
+        SyncAllInventoriesClientRpc(clientIds.ToArray(), boonTypes.ToArray(), playerIds.ToArray());
+    }
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void SyncAllInventoriesClientRpc(ulong[] clientIds, BoonType[] boonTypes, int[] playerIds)
+    {
+        // Clear all inventory slots first
+        foreach (var slot in playerInventorySlots)
+        {
+            if (slot != null)
+            {
+                var inventorySlot = slot.GetComponent<PlayerInventorySlot>();
+                if (inventorySlot != null)
+                {
+                    inventorySlot.ClearBoon();
+                }
+            }
+        }
+        
+        // clear client inventory
+        clientPlayerInventories.Clear();
+        
+        // rebuild inventories from synced data x_x
+        for (int i = 0; i < clientIds.Length; i++)
+        {
+            ulong clientId = clientIds[i];
+            BoonType boonType = boonTypes[i];
+            int playerId = playerIds[i];
+            
+            // Track client inventory
+            if (!clientPlayerInventories.ContainsKey(clientId))
+                clientPlayerInventories[clientId] = new List<BoonType>();
+            clientPlayerInventories[clientId].Add(boonType);
+            
+            // Update visual slot
+            int slotIndex = playerId - 1;
+            if (slotIndex < playerInventorySlots.Length && slotIndex >= 0)
+            {
+                var inventorySlot = playerInventorySlots[slotIndex].GetComponent<PlayerInventorySlot>();
+                if (inventorySlot != null)
+                {
+                    var boonEffect = availableBoons.Find(b => b.type == boonType);
+                    if (boonEffect != null)
+                    {
+                        inventorySlot.SetBoon(boonEffect, clientId);
+                        Debug.Log($"Synced boon {boonEffect.effectName} for player {playerId} (client {clientId})");
+                    }
+                }
+            }
+        }
     }
     
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
@@ -136,40 +214,6 @@ public class BoonManager : NetworkBehaviour
         {
             Destroy(activeBoonButtons[boonType]);
             activeBoonButtons.Remove(boonType);
-        }
-    }
-
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void UpdatePlayerInventoryClientRpc(ulong clientId, BoonType boonType, int playerId)
-    {
-        Debug.Log($"Updating inventory for client {clientId} with boon {boonType}");
-
-        // find which player slot this client corresponds to
-        int slotIndex = playerId - 1;
-        if (slotIndex < playerInventorySlots.Length && slotIndex >= 0)
-        {
-            var inventorySlot = playerInventorySlots[slotIndex].GetComponent<PlayerInventorySlot>();
-            if (inventorySlot != null)
-            {
-                var boonEffect = availableBoons.Find(b => b.type == boonType);
-                if (boonEffect != null)
-                {
-                    inventorySlot.SetBoon(boonEffect, clientId);
-                    Debug.Log($"Set boon {boonEffect.effectName} for player {playerId}");
-                }
-                else
-                {
-                    Debug.LogError($"could not find BoonEffect for BoonType {boonType}");
-                }
-            }
-            else
-            {
-                Debug.LogError($"PlayerInventorySlot not found on slot {slotIndex}");
-            }
-        }
-        else
-        {
-            Debug.LogError($"Slot index {slotIndex} out of range");
         }
     }
 
@@ -204,30 +248,34 @@ public class BoonManager : NetworkBehaviour
     {
         if (!IsClient) return;
         
-        UseBoonServerRpc(clientId, boonType);
+        // Only allow the owner to use their boon
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+        
+        RequestUseBoonServerRpc(clientId, boonType);
     }
     
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
-    private void UseBoonServerRpc(ulong clientId, BoonType boonType)
+    private void RequestUseBoonServerRpc(ulong clientId, BoonType boonType)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId)
-        {
-            Debug.LogWarning($"Client {NetworkManager.Singleton.LocalClientId} tried to use boon owned by {clientId}. Ignored.");
-            return;
-        }
-
+        Debug.Log($"Server received use boon request from client {clientId} for boon {boonType}");
+        
+        // check if player has this boon
         if (!playerInventories.ContainsKey(clientId) || !playerInventories[clientId].Contains(boonType))
         {
-            Debug.LogWarning($"Client {clientId} tried to use an invalid or unauthorized boon.");
+            Debug.Log($"Player {clientId} doesn't have boon {boonType}");
             return;
         }
         
-        playerInventories[clientId].Remove(boonType);
+        // apply boon effect to all clients
         ApplyBoonEffectClientRpc(boonType);
-        ClearPlayerInventoryClientRpc(clientId);
+        
+        // remove boon from player inventory
+        playerInventories[clientId].Remove(boonType);
+        
+        // Sync updated inventories to all clients
+        SyncAllInventoriesToClients();
     }
 
-    
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void ApplyBoonEffectClientRpc(BoonType boonType)
     {
@@ -235,24 +283,6 @@ public class BoonManager : NetworkBehaviour
         if (boonEffect != null)
         {
             ApplyBoonEffect(boonEffect);
-        }
-    }
-    
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void ClearPlayerInventoryClientRpc(ulong clientId)
-    {
-        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
-        if (playerInfo != null)
-        {
-            int slotIndex = playerInfo.playerId - 1;
-            if (slotIndex < playerInventorySlots.Length)
-            {
-                var inventorySlot = playerInventorySlots[slotIndex].GetComponent<PlayerInventorySlot>();
-                if (inventorySlot != null)
-                {
-                    inventorySlot.ClearBoon();
-                }
-            }
         }
     }
     
@@ -297,12 +327,26 @@ public class BoonManager : NetworkBehaviour
             gameManager.SpawnAdditionalBall(duration);
         }
     }
+    
     private void ModifyBallSpeed(float multiplier, float duration)
     {
         var balls = FindObjectsOfType<BallPhysics>();
         foreach (var ball in balls)
         {
             ball.ModifySpeed(multiplier, duration);
+        }
+    }
+    
+    // helper method to get player's boons (for debugging or UI)
+    public List<BoonType> GetPlayerBoons(ulong clientId)
+    {
+        if (IsServer)
+        {
+            return playerInventories.ContainsKey(clientId) ? playerInventories[clientId] : new List<BoonType>();
+        }
+        else
+        {
+            return clientPlayerInventories.ContainsKey(clientId) ? clientPlayerInventories[clientId] : new List<BoonType>();
         }
     }
 }
