@@ -20,6 +20,9 @@ public class BoonManager : NetworkBehaviour
     // Client-side data - synced from server
     private Dictionary<ulong, List<BoonType>> clientPlayerInventories = new Dictionary<ulong, List<BoonType>>();
     private Dictionary<BoonType, GameObject> activeBoonButtons = new Dictionary<BoonType, GameObject>();
+    
+    // Server-side tracking of available boons
+    private List<BoonType> availableBoonTypes = new List<BoonType>();
     private bool boonSelectionActive = false;
     
     private void Awake()
@@ -53,15 +56,19 @@ public class BoonManager : NetworkBehaviour
 
         boonSelectionActive = true;
         playerInventories.Clear();
-        // Sending a clear inventory state to all clients
-        SyncAllInventoriesClientRpc(new ulong[0], new BoonType[0], new int[0]);
-        var selectedBoons = availableBoons
+        
+        // Set up available boons on server
+        availableBoonTypes = availableBoons
             .OrderBy(x => Random.value) // randomnizes the boon list
             .Take(4) // select the first 4, for now i only have 4
             .Select(b => b.type) // project each boonEffect to its boonType enum
-            .ToArray(); // converts to an array
+            .ToList(); // keep as list for easier manipulation
+        
+        // Sending a clear inventory state to all clients
+        SyncAllInventoriesClientRpc(new ulong[0], new BoonType[0], new int[0]);
+        
         // send these boons to clients so they display the right buttons
-        SpawnBoonButtonsClientRpc(selectedBoons);
+        SpawnBoonButtonsClientRpc(availableBoonTypes.ToArray());
     }
     
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
@@ -105,7 +112,8 @@ public class BoonManager : NetworkBehaviour
             return;
         }
         
-        if (!activeBoonButtons.ContainsKey(boonType)) 
+        // check if boon is still available in server list
+        if (!availableBoonTypes.Contains(boonType)) 
         {
             Debug.Log($"Boon {boonType} not available");
             return;
@@ -124,10 +132,22 @@ public class BoonManager : NetworkBehaviour
         playerInventories[clientId].Add(boonType);
         Debug.Log($"Added boon {boonType} to player {clientId} inventory");
         
+        // remove boon from available list
+        availableBoonTypes.Remove(boonType);
+        
         // remove boon from selection and sync all inventories
         RemoveBoonButtonClientRpc(boonType);
-        SyncAllInventoriesToClients();
+        
+        // Add a small delay before syncing to ensure button removal is processed
+        StartCoroutine(DelayedSync());
+        
         CheckAllPlayersSelected();
+    }
+    
+    private System.Collections.IEnumerator DelayedSync()
+    {
+        yield return new WaitForSeconds(0.1f); // small delay to ensure proper order
+        SyncAllInventoriesToClients();
     }
     
     private void SyncAllInventoriesToClients() // syncing all player inventories to all clients
@@ -160,6 +180,8 @@ public class BoonManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void SyncAllInventoriesClientRpc(ulong[] clientIds, BoonType[] boonTypes, int[] playerIds)
     {
+        Debug.Log($"Syncing inventories - received {clientIds.Length} boons");
+        
         // Clear all inventory slots first
         foreach (var slot in playerInventorySlots)
         {
@@ -219,11 +241,16 @@ public class BoonManager : NetworkBehaviour
 
     private void CheckAllPlayersSelected()
     {
+        if (!IsServer) return;
+        
         var allPlayers = NetworkGameManager.Instance.GetAllPlayers();
         bool allSelected = allPlayers.All(p => playerInventories.ContainsKey(p.clientId) && playerInventories[p.clientId].Count > 0);
         
+        Debug.Log($"Checking all players selected: {allPlayers.Count} players, {playerInventories.Count} have boons");
+        
         if (allSelected)
         {
+            Debug.Log("All players have selected boons!");
             boonSelectionActive = false;
             ClearRemainingButtonsClientRpc();
             var gameManager = NetworkGameManager.Instance;
@@ -291,19 +318,15 @@ public class BoonManager : NetworkBehaviour
         switch (boonEffect.type)
         {
             case BoonType.SpaceshipMode:
-                // enable spaceship mode for all paddles
                 EnableSpaceshipMode(boonEffect.duration);
                 break;
             case BoonType.DoubleBall:
-                // Spawn additional ball
                 SpawnDoubleBall(boonEffect.duration);
                 break;
             case BoonType.BallSpeedBoost:
-                // Increase ball speed
                 ModifyBallSpeed(1.5f, boonEffect.duration);
                 break;
             case BoonType.BallSpeedSlow:
-                // Decrease ball speed
                 ModifyBallSpeed(0.5f, boonEffect.duration);
                 break;
         }
@@ -336,9 +359,7 @@ public class BoonManager : NetworkBehaviour
             ball.ModifySpeed(multiplier, duration);
         }
     }
-    
-    // helper method to get player's boons (for debugging or UI)
-    public List<BoonType> GetPlayerBoons(ulong clientId)
+    public List<BoonType> GetPlayerBoons(ulong clientId) // debug/helper function
     {
         if (IsServer)
         {

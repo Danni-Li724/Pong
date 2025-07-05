@@ -21,7 +21,7 @@ public class BoonButton : MonoBehaviour, IPointerClickHandler
         if (nameText != null) nameText.text = effect.effectName;
         if (descriptionText != null) descriptionText.text = effect.description;
         
-        // making sure button is interactable doe debugging sake
+        // making sure button is interactable foe debugging sake
         if (button != null)
         {
             button.interactable = true;

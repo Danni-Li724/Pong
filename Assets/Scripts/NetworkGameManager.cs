@@ -6,7 +6,6 @@ using UnityEngine.UI;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-
 public class NetworkGameManager : NetworkBehaviour
 {
     [Header("Game Settings")]

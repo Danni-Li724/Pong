@@ -39,7 +39,6 @@ public class PlayerInventorySlot : NetworkBehaviour
         if (useButton != null)
         {
             bool isOwner = NetworkManager.Singleton.LocalClientId == clientId;
-            useButton.gameObject.SetActive(isOwner); // only show button if this is your boon
             useButton.interactable = isOwner;
 
             useButton.onClick.RemoveAllListeners();
