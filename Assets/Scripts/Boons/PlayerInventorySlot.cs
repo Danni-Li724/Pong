@@ -28,10 +28,14 @@ public class PlayerInventorySlot : NetworkBehaviour
         ownerClientId = clientId;
         hasBoon = true;
         
-        if (iconImage != null) iconImage.sprite = boon.icon;
+        if (iconImage != null) 
+        {
+            iconImage.sprite = boon.icon;
+            iconImage.gameObject.SetActive(true);
+        }
         if (nameText != null) nameText.text = boon.effectName;
         
-        // show use button only for the owner
+        // show use button only for the owner.
         if (useButton != null && NetworkManager.Singleton.LocalClientId == clientId)
         {
             useButton.gameObject.SetActive(true);
@@ -43,6 +47,8 @@ public class PlayerInventorySlot : NetworkBehaviour
         {
             playerIdText.text = $"Player {playerInfo.playerId}";
         }
+        
+        Debug.Log($"Set boon {boon.effectName} for client {clientId} in inventory slot");
     }
     
     public void ClearBoon()
@@ -60,7 +66,7 @@ public class PlayerInventorySlot : NetworkBehaviour
     {
         if (hasBoon && currentBoon != null)
         {
-            BoonManager.Instance.UseBoon(ownerClientId, currentBoon.name);
+            BoonManager.Instance.UseBoon(ownerClientId, currentBoon.type);
         }
     }
 }

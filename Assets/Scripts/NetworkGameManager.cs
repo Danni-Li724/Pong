@@ -91,10 +91,13 @@ public class NetworkGameManager : NetworkBehaviour
                 return;
             }
             playerCount++;
+            connectedPlayersCount.Value = playerCount;
+            
             SpawnPlayerPaddle(clientId, playerCount);
             AssignGoals();
             SyncPlayerSprite(clientId); // IMMEDIATELY syncing sprites for new players
             SyncAllPlayersToClient(clientId); // Also sync all existing players to the new client
+            
             // NOW show button
             if (playerCount == maxPlayers.Value)
             {

@@ -262,6 +262,7 @@ MonoBehaviour:
   iconImage: {fileID: 5564837117405830717}
   nameText: {fileID: 6849197049184427380}
   descriptionText: {fileID: 5318411232967476589}
+  button: {fileID: 2031699644786860469}
 --- !u!1 &6345008827011202580
 GameObject:
   m_ObjectHideFlags: 0
