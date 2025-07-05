@@ -11,7 +11,8 @@ public class BoonManager : NetworkBehaviour
     [SerializeField] private GameObject boonButtonPrefab;
     
     [Header("Player Inventories")]
-    [SerializeField] private Transform[] playerInventorySlots = new Transform[4]; // Assign in inspector
+    [SerializeField] private Transform[] playerInventorySlots = new Transform[4];
+
     
     public static BoonManager Instance { get; private set; }
     
@@ -113,7 +114,15 @@ public class BoonManager : NetworkBehaviour
         
         // remove boon from selection list and update all clients
         RemoveBoonButtonClientRpc(boonType);
-        UpdatePlayerInventoryClientRpc(clientId, boonType);
+        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+        if (playerInfo != null)
+        {
+            UpdatePlayerInventoryClientRpc(clientId, boonType, playerInfo.playerId); // sending player id
+        }
+        else
+        {
+            Debug.LogError($"playerInfo is null for {clientId}");
+        }
         
         // check if all players have selected boon
         CheckAllPlayersSelected();
@@ -129,49 +138,41 @@ public class BoonManager : NetworkBehaviour
             activeBoonButtons.Remove(boonType);
         }
     }
-    
+
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void UpdatePlayerInventoryClientRpc(ulong clientId, BoonType boonType)
+    private void UpdatePlayerInventoryClientRpc(ulong clientId, BoonType boonType, int playerId)
     {
         Debug.Log($"Updating inventory for client {clientId} with boon {boonType}");
-        
+
         // find which player slot this client corresponds to
-        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
-        if (playerInfo != null)
+        int slotIndex = playerId - 1;
+        if (slotIndex < playerInventorySlots.Length && slotIndex >= 0)
         {
-            int slotIndex = playerInfo.playerId - 1;
-            if (slotIndex < playerInventorySlots.Length)
+            var inventorySlot = playerInventorySlots[slotIndex].GetComponent<PlayerInventorySlot>();
+            if (inventorySlot != null)
             {
-                var inventorySlot = playerInventorySlots[slotIndex].GetComponent<PlayerInventorySlot>();
-                if (inventorySlot != null)
+                var boonEffect = availableBoons.Find(b => b.type == boonType);
+                if (boonEffect != null)
                 {
-                    var boonEffect = availableBoons.Find(b => b.type == boonType);
-                    if (boonEffect != null)
-                    {
-                        inventorySlot.SetBoon(boonEffect, clientId);
-                        Debug.Log($"Set boon {boonEffect.effectName} for player {playerInfo.playerId}"); // sorry about the huge if statement, i really needed it for the extensive debugging i did...
-                    }
-                    else
-                    {
-                        Debug.LogError($"Could not find boon effect for type {boonType}");
-                    }
+                    inventorySlot.SetBoon(boonEffect, clientId);
+                    Debug.Log($"Set boon {boonEffect.effectName} for player {playerId}");
                 }
                 else
                 {
-                    Debug.LogError($"PlayerInventorySlot component not found on slot {slotIndex}");
+                    Debug.LogError($"could not find BoonEffect for BoonType {boonType}");
                 }
             }
             else
             {
-                Debug.LogError($"Slot index {slotIndex} out of range");
+                Debug.LogError($"PlayerInventorySlot not found on slot {slotIndex}");
             }
         }
         else
         {
-            Debug.LogError($"Player info not found for client {clientId}");
+            Debug.LogError($"Slot index {slotIndex} out of range");
         }
     }
-    
+
     private void CheckAllPlayersSelected()
     {
         var allPlayers = NetworkGameManager.Instance.GetAllPlayers();
@@ -209,8 +210,17 @@ public class BoonManager : NetworkBehaviour
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
     private void UseBoonServerRpc(ulong clientId, BoonType boonType)
     {
-        if (!playerInventories.ContainsKey(clientId) || !playerInventories[clientId].Contains(boonType))
+        if (NetworkManager.Singleton.LocalClientId != clientId)
+        {
+            Debug.LogWarning($"Client {NetworkManager.Singleton.LocalClientId} tried to use boon owned by {clientId}. Ignored.");
             return;
+        }
+
+        if (!playerInventories.ContainsKey(clientId) || !playerInventories[clientId].Contains(boonType))
+        {
+            Debug.LogWarning($"Client {clientId} tried to use an invalid or unauthorized boon.");
+            return;
+        }
         
         playerInventories[clientId].Remove(boonType);
         ApplyBoonEffectClientRpc(boonType);

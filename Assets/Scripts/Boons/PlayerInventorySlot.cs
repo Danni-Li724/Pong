@@ -38,7 +38,12 @@ public class PlayerInventorySlot : NetworkBehaviour
         // show use button only for the owner.
         if (useButton != null && NetworkManager.Singleton.LocalClientId == clientId)
         {
-            useButton.gameObject.SetActive(true);
+            bool isOwner = NetworkManager.Singleton.LocalClientId == clientId;
+            useButton.gameObject.SetActive(isOwner); // only enable button for its owner
+            useButton.interactable = isOwner;         // only clickable by owner
+            useButton.onClick.RemoveAllListeners(); 
+            if (isOwner)
+                useButton.onClick.AddListener(OnUseButtonClicked);
         }
         
         // update player ID text
