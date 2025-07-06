@@ -307,7 +307,12 @@ public class BoonManager : NetworkBehaviour
         playerInventories[clientId].Remove(boonType);
         
         // Sync updated inventories to all clients
-        SyncAllInventoriesToClients();
+        // not removing MusicChange boon after use
+        if (boonType != BoonType.MusicChange)
+        {
+            playerInventories[clientId].Remove(boonType);
+            SyncAllInventoriesToClients();
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
@@ -333,9 +338,18 @@ public class BoonManager : NetworkBehaviour
             case BoonType.BallSpeedBoost:
                 ModifyBallSpeed(1.5f, boonEffect.duration);
                 break;
-            case BoonType.BallSpeedSlow:
-                ModifyBallSpeed(0.5f, boonEffect.duration);
+            case BoonType.MusicChange:
+                CycleMusicTrack();
                 break;
+        }
+    }
+    
+    private void CycleMusicTrack()
+    {
+        var audioManager = AudioManager.instance;
+        if (audioManager != null)
+        {
+            audioManager.CycleMusicServerRpc();
         }
     }
     

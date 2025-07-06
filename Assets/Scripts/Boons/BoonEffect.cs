@@ -14,5 +14,5 @@ public enum BoonType
     SpaceshipMode,
     DoubleBall,
     BallSpeedBoost,
-    BallSpeedSlow
+    MusicChange,
 }

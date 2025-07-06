@@ -13,8 +13,6 @@ public class AudioManager : NetworkBehaviour
         Music4,
         Music5,
         Music6,
-        Music7,
-        Music8,
     }
 
     [Header("Selectable Clips")]
@@ -24,10 +22,9 @@ public class AudioManager : NetworkBehaviour
     public AudioClip music4;
     public AudioClip music5;
     public AudioClip music6;
-    public AudioClip music7;
-    public AudioClip music8;
     
     private AudioSource audioSource;
+    private MusicType currentMusicType = MusicType.Music1;
 
     private void Awake()
     {
@@ -43,6 +40,11 @@ public class AudioManager : NetworkBehaviour
         }
     }
 
+    private void Start()
+    {
+        PlayMusic(music1);
+    }
+
     private void PlayMusic(AudioClip clip)
     {
         audioSource.clip = clip;
@@ -52,23 +54,24 @@ public class AudioManager : NetworkBehaviour
         audioSource.Play();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void RequestMusicChangeServerRpc(MusicType musicType, ServerRpcParams rpcParams = default)
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, RequireOwnership= false)]
+    public void CycleMusicServerRpc()
     {
-        ulong clientId = rpcParams.Receive.SenderClientId;
-        // if (ScoreManager.TrySpendPoints(clientId, 3))
-        // {
-        //     SwitchMusicClientRPC(musicType);
-        // }
-        //else
-        {
-            Debug.Log($"Client {clientId} tried changing music but doesnt have enough points");
-        }
+        Debug.Log("Music cycle requested");
+        // Cycle to next music track
+        int currentIndex = (int)currentMusicType;
+        int nextIndex = (currentIndex + 1) % System.Enum.GetValues(typeof(MusicType)).Length;
+        currentMusicType = (MusicType)nextIndex;
+        
+        // Sync to all clients
+        SwitchMusicClientRPC(currentMusicType);
     }
-
-    [ClientRpc]
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Unreliable, RequireOwnership= false)]
     public void SwitchMusicClientRPC(MusicType musicType)
     {
+        currentMusicType = musicType;
+        
         switch (musicType)
         {
             case MusicType.Music1: PlayMusic(music1); break;
@@ -77,9 +80,11 @@ public class AudioManager : NetworkBehaviour
             case MusicType.Music4: PlayMusic(music4); break;
             case MusicType.Music5: PlayMusic(music5); break;
             case MusicType.Music6: PlayMusic(music6); break;
-            case MusicType.Music7: PlayMusic(music7); break;
-            case MusicType.Music8: PlayMusic(music8); break;
         }
-            
+    }
+    
+    public MusicType GetCurrentMusicType()
+    {
+        return currentMusicType;
     }
 }

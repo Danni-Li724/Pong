@@ -9161,7 +9161,7 @@ MonoBehaviour:
   availableBoons:
   - {fileID: 11400000, guid: d640e6e0dd6cac44da7479758a759cf7, type: 2}
   - {fileID: 11400000, guid: 82a9bf03b32275244a23678d0feab32d, type: 2}
-  - {fileID: 11400000, guid: fbda81e90fc27714292f326efc633986, type: 2}
+  - {fileID: 11400000, guid: e89adb4368b82614993be9dce6b120c9, type: 2}
   - {fileID: 11400000, guid: 326c21f37c1c4054a89aad772c946c43, type: 2}
   boonButtonContainer: {fileID: 1798769303}
   boonButtonPrefab: {fileID: 5733232320309955691, guid: 6a243096eb2dd724b8abfe58fa682d16, type: 3}
@@ -11543,7 +11543,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1250022342158390727, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3330683858542188159, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
       propertyPath: GlobalObjectIdHash
@@ -11553,6 +11553,10 @@ PrefabInstance:
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
       value: 4163624425
       objectReference: {fileID: 0}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: music1
+      value: 
+      objectReference: {fileID: 8300000, guid: 824f2581a64f3724dbc02e98e549cb44, type: 3}
     - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
       propertyPath: backgroundMusic
       value: 
