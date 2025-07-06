@@ -4,13 +4,14 @@ using UnityEngine.UI;
 
 public class ScoreManager : NetworkBehaviour
 {
+    public int maxScoreToWin = 20;
     public NetworkVariable<int> player1Score = new();
     public NetworkVariable<int> player2Score = new();
     public NetworkVariable<int> player3Score = new();
     public NetworkVariable<int> player4Score = new();
 
     public BallPhysics ballPhysics;
-
+    private bool gameEnded = false;
     private void OnEnable()
     {
         BallPhysics.OnPlayerScored += HandleScore;
@@ -37,8 +38,83 @@ public class ScoreManager : NetworkBehaviour
             player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
         );
 
-        ballPhysics?.ResetBall();
+        CheckForWinner();
+
+        if (!gameEnded)
+        {
+            ballPhysics?.ResetBall();
+        }
     }
+    
+    private void CheckForWinner()
+    {
+        if (!IsServer || gameEnded) return;
+
+        int winnerPlayerId = 0;
+        int maxScore = 0;
+
+        // Check each player's score and give Ids
+        if (player1Score.Value >= maxScoreToWin && player1Score.Value > maxScore)
+        {
+            winnerPlayerId = 1;
+            maxScore = player1Score.Value;
+        }
+        if (player2Score.Value >= maxScoreToWin && player2Score.Value > maxScore)
+        {
+            winnerPlayerId = 2;
+            maxScore = player2Score.Value;
+        }
+        if (player3Score.Value >= maxScoreToWin && player3Score.Value > maxScore)
+        {
+            winnerPlayerId = 3;
+            maxScore = player3Score.Value;
+        }
+        if (player4Score.Value >= maxScoreToWin && player4Score.Value > maxScore)
+        {
+            winnerPlayerId = 4;
+            maxScore = player4Score.Value;
+        }
+
+        if (winnerPlayerId > 0)
+        {
+            EndGame(winnerPlayerId);
+        }
+    }
+    
+    private void EndGame(int winnerPlayerId)
+    {
+        if (!IsServer) return;
+
+        gameEnded = true;
+        
+        // Stop the ball
+        if (ballPhysics != null)
+        {
+            ballPhysics.StopBall();
+            Debug.Log("ball stopped");
+        }
+
+        // Tell NetworkGameManager to handle the game end
+        if (NetworkGameManager.Instance != null)
+        {
+            NetworkGameManager.Instance.HandleGameEnd(winnerPlayerId);
+        }
+        
+        Debug.Log($"Game ended! Player {winnerPlayerId} wins!");
+    }
+    public void ResetScores()
+    {
+        if (!IsServer) return;
+        
+        player1Score.Value = 0;
+        player2Score.Value = 0;
+        player3Score.Value = 0;
+        player4Score.Value = 0;
+        
+        gameEnded = false;
+        VisualEventsManager.Instance?.UpdateScoreUIClientRpc(0, 0, 0, 0);
+    }
+
 
     public int GetScore(ulong clientId)
     {
@@ -51,7 +127,7 @@ public class ScoreManager : NetworkBehaviour
             _ => 0,
         };
     }
-
+    
     public bool TrySpendPoints(ulong clientId, int amount)
     {
         if (GetScore(clientId) < amount) return false;

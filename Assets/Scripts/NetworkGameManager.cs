@@ -17,6 +17,9 @@ public class NetworkGameManager : NetworkBehaviour
     private bool gameStarted = false;
     private int playerCount = 0;
     private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>(); 
+    
+    [Header("Script Refs")]
+    [SerializeField] private ScoreManager scoreManager;
     public static NetworkGameManager Instance { get; private set; }
     
     [Header("Level Objects")]
@@ -33,7 +36,13 @@ public class NetworkGameManager : NetworkBehaviour
     [SerializeField] private GameObject playerCountSelectionPanel;
     [SerializeField] private GameObject startGamePanel;
     [SerializeField] private Text playerCountText;
-    
+    [SerializeField] private GameObject gameEndPanel;
+    [SerializeField] private Text gameEndText;
+    [SerializeField] private Text winnerText;
+    [SerializeField] private Button restartButton;
+
+    #region INITIALIZING
+
     // Get list of other players for a specific client
     public List<PlayerInfo> GetOtherPlayers(ulong clientId)
     {
@@ -73,6 +82,7 @@ public class NetworkGameManager : NetworkBehaviour
             playerCount = 1;
             connectedPlayersCount.Value = 1;
             ShowPlayerSelectionForHost();
+            SetupGameEndUI(); // initializing end game button
         }
         connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
     }
@@ -124,8 +134,10 @@ public class NetworkGameManager : NetworkBehaviour
             }
         }
     }
+
+    #endregion
     
-    #region STARTING GAME
+    #region START GAME
     void SpawnPlayerPaddle(ulong clientId, int playerId)
     {
         Transform spawnTransform = GetSpawnTransform(playerId);
@@ -577,6 +589,147 @@ private IEnumerator DestroyBallAfterDuration(GameObject ball, float duration)
     {
         var networkObject = ball.GetComponent<NetworkObject>();
         networkObject.Despawn();
+    }
+}
+#endregion
+
+#region END GAME
+
+public void HandleGameEnd(int winnerPlayerId)
+{
+    if (!IsServer) return;
+    
+    ShowGameEndUIClientRpc(winnerPlayerId);
+    Debug.Log($"NetworkGameManager handling game end for Player {winnerPlayerId}");
+}
+
+[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+private void ShowGameEndUIClientRpc(int winnerPlayerId)
+{
+    if (gameEndPanel != null)
+    {
+        gameEndPanel.SetActive(true);
+    }
+
+    if (winnerText != null)
+    {
+        winnerText.text = $"Player {winnerPlayerId} has won this game!";
+    }
+
+    // Show restart button ONLY for host
+    if (restartButton != null)
+    {
+        restartButton.gameObject.SetActive(IsHost);
+    }
+}
+
+public void OnRestartButtonPressed()
+{
+    if (!IsHost) return;
+    
+    RestartGameServerRpc();
+}
+
+[Rpc(SendTo.Server)]
+private void RestartGameServerRpc()
+{
+    if (!IsServer) return;
+    
+    RestartGame();
+}
+
+private void RestartGame()
+{
+    if (!IsServer) return;
+    Debug.Log("Host is restarting the game...");
+    // hide game end UI first
+    HideGameEndUIClientRpc();
+    // Reset scores
+    if (scoreManager != null)
+    {
+        scoreManager.ResetScores();
+    }
+    
+    // disconnect all clients except host
+    var connectedClients = new List<ulong>(NetworkManager.Singleton.ConnectedClientsIds);
+    foreach (var clientId in connectedClients)
+    {
+        if (clientId != NetworkManager.Singleton.LocalClientId)
+        {
+            NetworkManager.Singleton.DisconnectClient(clientId);
+        }
+    }
+    ReturnToHostLobby();
+}
+
+[Rpc(SendTo.ClientsAndHost)]
+private void HideGameEndUIClientRpc()
+{
+    if (gameEndPanel != null)
+    {
+        gameEndPanel.SetActive(false);
+    }
+}
+
+public void ReturnToHostLobby()
+{
+    if (!IsHost) return;
+    
+    // Reset game state
+    gameStarted = false;
+    allPlayersJoined = false;
+    playerCount = 1; // Host stays for game 2
+    connectedPlayersCount.Value = 1;
+    
+    // Clear all players except host
+    var hostClientId = NetworkManager.Singleton.LocalClientId;
+    var playersToRemove = new List<ulong>();
+    
+    foreach (var kvp in allPlayers)
+    {
+        if (kvp.Key != hostClientId)
+        {
+            playersToRemove.Add(kvp.Key);
+        }
+    }
+    
+    foreach (var clientId in playersToRemove)
+    {
+        allPlayers.Remove(clientId);
+    }
+    
+    // Despawn ball
+    if (spawnedBall != null)
+    {
+        var ballNetObj = spawnedBall.GetComponent<NetworkObject>();
+        if (ballNetObj != null && ballNetObj.IsSpawned)
+        {
+            ballNetObj.Despawn();
+        }
+        spawnedBall = null;
+    }
+    
+    // Show player count selection for host again
+    ShowPlayerSelectionForHost();
+    
+    // Hide start game panel
+    if (startGamePanel != null)
+    {
+        startGamePanel.SetActive(false);
+    }
+    
+    // Reset visual elements
+    if (circles != null) circles.SetActive(true);
+    if (stars != null) stars.SetActive(false);
+    
+    Debug.Log("Returned to host lobby");
+}
+
+private void SetupGameEndUI()
+{
+    if (restartButton != null)
+    {
+        restartButton.onClick.AddListener(OnRestartButtonPressed);
     }
 }
 #endregion
