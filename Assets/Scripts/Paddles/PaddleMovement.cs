@@ -41,5 +41,11 @@ public class PaddleMovement : NetworkBehaviour
 
             transform.position = pos;
         }
+        else if (movementDirection.sqrMagnitude > 0.01f)
+        {
+            // face movement direction when it's a spaceship
+            float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0, 0, angle);
+        }
     }
 }

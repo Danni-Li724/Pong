@@ -20,6 +20,7 @@ public class PaddleController : NetworkBehaviour
     private float bulletSpeed;
     private float fireCooldown;
     private float lastFireTime;
+    private Vector3 originalScale;
     public bool isInSpaceshipMode() => inSpaceshipMode;
     public override void OnNetworkSpawn()
     {
@@ -120,8 +121,13 @@ public class PaddleController : NetworkBehaviour
         var renderer = GetComponent<SpriteRenderer>();
         if (active)
         {
-            defaultSprite = renderer.sprite;
+            if (defaultSprite == null)
+                defaultSprite = renderer.sprite;
             renderer.sprite = rocketSprite;
+            if (originalScale == Vector3.zero)
+                originalScale = transform.localScale;
+
+            transform.localScale = originalScale * 0.5f; // Shrink player so i don't have to redraw sprites
             // give player spaceship controls if local
             if (IsOwner)
             {
@@ -130,11 +136,15 @@ public class PaddleController : NetworkBehaviour
         }
         else
         {
+            if (originalScale != Vector3.zero)
+                transform.localScale = originalScale;
+            else
+                transform.localScale = Vector3.one; // fallback
+
             renderer.sprite = defaultSprite;
+
             if (IsOwner)
-            {
                 GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
-            }
         }
     }
     
@@ -163,7 +173,6 @@ public class PaddleController : NetworkBehaviour
                 Debug.LogError("[PaddleController] Missing bullet prefab");
                 return;
             }
-
             SetSpaceshipMode(true, rocketSprite, bulletPrefab, bulletSpeed, fireCooldown);
         }
         else
