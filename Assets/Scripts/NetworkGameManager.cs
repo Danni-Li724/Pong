@@ -150,7 +150,8 @@ public class NetworkGameManager : NetworkBehaviour
         PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
         allPlayers[clientId] = playerInfo;
         // Spawn the paddle
-        GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, spawnTransform.rotation);
+        //GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, spawnTransform.rotation);
+        GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, Quaternion.identity);
         NetworkObject networkObject = paddle.GetComponent<NetworkObject>();
         networkObject.SpawnAsPlayerObject(clientId);
         PaddleController paddleController = paddle.GetComponent<PaddleController>();

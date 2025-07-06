@@ -10,7 +10,10 @@ public class PaddleController : NetworkBehaviour
 {
     [Header("Pong Settings")]
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>();
+    public int PlayerId { get; private set; }
+    public GameObject playerTargetUIPrefab;
     public bool IsHorizontal => (PlayerId == 3 || PlayerId == 4);
+    [SerializeField] private Transform spriteContainer;
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
@@ -20,10 +23,6 @@ public class PaddleController : NetworkBehaviour
     private float fireCooldown;
     private float lastFireTime;
     public bool isInSpaceshipMode() => inSpaceshipMode;
-    private NetworkVariable<int> currentSpriteIndex = new NetworkVariable<int>(-1);
-
-    public int PlayerId { get; private set; }
-    public GameObject playerTargetUIPrefab;
     public override void OnNetworkSpawn()
     {
         if (!IsOwner) return;
@@ -47,13 +46,18 @@ public class PaddleController : NetworkBehaviour
             VisualEventsManager.Instance.RegisterPaddle(this);
         }
     }
+    public int GetPlayerId() => playerIdVar.Value;
 
     public void SetPlayerId(int id)
     {
         playerIdVar.Value = id;
+        PlayerId = id;
+        // rotating horizontal paddle
+        if (IsHorizontal)
+        {
+            transform.localRotation = Quaternion.Euler(0, 0, 90);
+        }
     }
-
-    public int GetPlayerId() => playerIdVar.Value;
 
     public void ReadyUp()
     {
