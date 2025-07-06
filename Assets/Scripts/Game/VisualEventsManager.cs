@@ -14,9 +14,11 @@ public class VisualEventsManager : NetworkBehaviour
     public Text player3ScoreText;
     public Text player4ScoreText;
     
-    public VisualEffects visualEffects;
+    // controls background visuals. This VisualEffects class is fully local and registers events from this manager for color switching
+    public VisualEffects visualEffects; 
 
     [Header("Ball Visuals Reference")]
+    // This class handles ball color changes depending on the last hit paddle
     public BallVisuals ballVisuals;
 
     [Header("Paddle Sprites Reference")] 
@@ -36,6 +38,7 @@ public class VisualEventsManager : NetworkBehaviour
         { 4, "Player4Rocket" }
     };
 
+    // Global instance ref used by other scripts like PaddleController and ScoreManager for events communication
     public static VisualEventsManager Instance { get; private set; }
 
     private void Awake()
@@ -71,51 +74,7 @@ public class VisualEventsManager : NetworkBehaviour
         return Resources.Load<Sprite>($"Sprites/Player{playerId}Rocket");
     }
 
-    // public void AssignPaddleSpritesToAllPlayers()
-    // {
-    //     if(!IsServer) return;
-    //     var gameManager = FindFirstObjectByType<NetworkGameManager>();
-    //     if (gameManager == null) return;
-    //     foreach (var playerInfo in gameManager.GetAllPlayers())
-    //     {
-    //         Sprite paddleSprite = GetPaddleSprite(playerInfo.playerId);
-    //         Sprite rocketSprite = GetRocketSprite(playerInfo.playerId);
-    //         playerInfo.paddleSprite = paddleSprite;
-    //         playerInfo.rocketSprite = rocketSprite;
-    //         
-    //         // sending sprite names to all clients to sync
-    //         AssignPlayerSpritesClientRpc(playerInfo.clientId, playerInfo.playerId,
-    //             paddleSpriteNames[playerInfo.playerId],
-    //             rocketSpriteNames[playerInfo.playerId]);
-    //     }
-    // }
-
-    // [Rpc(SendTo.Everyone, Delivery = RpcDelivery.Reliable)]
-    // private void AssignPlayerSpritesClientRpc(ulong targetClientId, int playerId, string paddleSpriteName,
-    //     string rocketSpriteName)
-    // {
-    //     //if (IsServer) return;
-    //     PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
-    //     foreach (var paddle in paddles)
-    //     {
-    //         if (paddle.OwnerClientId == targetClientId)
-    //         {
-    //             var renderer = paddle.GetComponent<SpriteRenderer>();
-    //             Sprite newPaddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
-    //             renderer.sprite = newPaddleSprite;
-    //             // Store rocket sprite for spaceship mode
-    //             var playerInfo = FindFirstObjectByType<NetworkGameManager>().GetPlayerInfo(paddle.OwnerClientId);
-    //             if (playerInfo != null)
-    //             {
-    //                 playerInfo.paddleSprite = newPaddleSprite;
-    //                 playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
-    //             }
-    //
-    //             break;
-    //         }
-    //     }
-    // }
-
+    // Called by PaddleController on spawn
     public void RegisterPaddle(PaddleController paddle)
     {
         var spriteRenderer = paddle.GetComponent<SpriteRenderer>();
@@ -124,9 +83,10 @@ public class VisualEventsManager : NetworkBehaviour
     }
     private void HandlePlayerScored(int playerId)
     {
-       //
+       // empty for now, was going to add sound or vfx effects if I had time
     }
 
+    // Called on the server when ball hits a player paddle
     private void HandlePlayerHit(int playerId)
     {
         if (!IsServer) return;
@@ -136,18 +96,19 @@ public class VisualEventsManager : NetworkBehaviour
         TriggerBallColorChangeClientRpc(playerId);
     }
 
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    // Client Rpc - updates background visuals on all clients. Doesn't need to be reliable as it's not significant to gameplay
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Unreliable)]
     private void TriggerBackgroundChangeClientRpc(int playerId)
     {
         visualEffects?.HandleColorChange(playerId);
     }
-
+    // Client Rpc - tells all clients to update ball color
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void TriggerBallColorChangeClientRpc(int playerId)
     {
         ballVisuals?.HandleColorChange(playerId);
     }
-
+    // Client Rpc - updates visible score text for all clients
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     public void UpdateScoreUIClientRpc(int p1, int p2, int p3, int p4)
     {
@@ -155,14 +116,5 @@ public class VisualEventsManager : NetworkBehaviour
         if (player2ScoreText != null) player2ScoreText.text = p2.ToString();
         if (player3ScoreText != null) player3ScoreText.text = p3.ToString();
         if (player4ScoreText != null) player4ScoreText.text = p4.ToString();
-    }
-
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)] // future method
-    public void TriggerInventoryUIClientRpc(int effectId, int playerId)
-    {
-        switch (effectId)
-        {
-           case 1:  break; 
-        }
     }
 }

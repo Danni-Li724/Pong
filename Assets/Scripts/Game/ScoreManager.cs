@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class ScoreManager : NetworkBehaviour
 {
     public int maxScoreToWin = 20;
+    // Because the scores are constantly updating at runtime and significant to everyone, using Network Var will automatically sync them to all clients
     public NetworkVariable<int> player1Score = new();
     public NetworkVariable<int> player2Score = new();
     public NetworkVariable<int> player3Score = new();
@@ -22,6 +23,7 @@ public class ScoreManager : NetworkBehaviour
         BallPhysics.OnPlayerScored -= HandleScore;
     }
 
+    // Server-side only: called when a player scores
     private void HandleScore(int playerId)
     {
         if (!IsServer) return;
@@ -33,7 +35,7 @@ public class ScoreManager : NetworkBehaviour
             case 3: player3Score.Value++; break;
             case 4: player4Score.Value++; break;
         }
-
+        // Pushing latest score values to all clients
         VisualEventsManager.Instance?.UpdateScoreUIClientRpc(
             player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
         );
@@ -94,6 +96,7 @@ public class ScoreManager : NetworkBehaviour
         
         Debug.Log($"Game ended! Player {winnerPlayerId} wins!");
     }
+    // Resets scores and visuals when the host restarts a game – this is Server only
     public void ResetScores()
     {
         if (!IsServer) return;
@@ -120,6 +123,7 @@ public class ScoreManager : NetworkBehaviour
         };
     }
     
+    // Called by boon system to spend points. I had no time to fix & implement for now but will get it to work in my own time :(
     public bool TrySpendPoints(ulong clientId, int amount)
     {
         if (GetScore(clientId) < amount) return false;
@@ -139,7 +143,7 @@ public class ScoreManager : NetworkBehaviour
         return true;
     }
     
-    // for spaceship mode
+    // Called when bullet hits a paddle in spaceship mode on the server side
     public void HandleBulletHit(int playerId)
     {
         if (!IsServer) return;
