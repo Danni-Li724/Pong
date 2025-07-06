@@ -7,6 +7,7 @@ public class Bullet : NetworkBehaviour
     public float maxDistance = 30f; 
 
     private Vector2 spawnPosition;
+    private float despawnTime = 5f;
 
     private Rigidbody2D rb;
 
@@ -14,6 +15,11 @@ public class Bullet : NetworkBehaviour
     {
         spawnPosition = transform.position;
         rb = GetComponent<Rigidbody2D>();
+        if (IsServer)
+        {
+            // Start despawn countdown
+            Invoke(nameof(DespawnBullet), despawnTime);
+        }
     }
 
     private void Update()
@@ -23,7 +29,7 @@ public class Bullet : NetworkBehaviour
         // disappear if max distance exceeded
         if (Vector2.Distance(spawnPosition, transform.position) > maxDistance)
         {
-            NetworkObject.Despawn(); // destroy
+            DespawnBullet();
         }
     }
 
@@ -41,6 +47,13 @@ public class Bullet : NetworkBehaviour
                 scoreManager.HandleBulletHit(id);
             }
 
+            DespawnBullet();
+        }
+    }
+    private void DespawnBullet()
+    {
+        if (NetworkObject != null && NetworkObject.IsSpawned)
+        {
             NetworkObject.Despawn();
         }
     }

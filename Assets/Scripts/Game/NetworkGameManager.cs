@@ -702,11 +702,19 @@ public void ReturnToHostLobby()
     // Reset game state
     gameStarted = false;
     allPlayersJoined = false;
-    playerCount = 1; // Host stays for game 2
+
+// Reset player count tracking
+    playerCount = 0;
+    connectedPlayersCount.Value = 0;
+    allPlayers.Clear();
+
+// Re-register host as a player so that maxPlayerCount can be reached
+    ulong hostClientId = NetworkManager.Singleton.LocalClientId;
+    SpawnPlayerPaddle(hostClientId, 1);
+    playerCount = 1;
     connectedPlayersCount.Value = 1;
     
     // Clear all players except host
-    var hostClientId = NetworkManager.Singleton.LocalClientId;
     var playersToRemove = new List<ulong>();
     
     foreach (var kvp in allPlayers)
