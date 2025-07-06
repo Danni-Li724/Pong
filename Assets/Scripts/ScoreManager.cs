@@ -86,14 +86,6 @@ public class ScoreManager : NetworkBehaviour
         if (!IsServer) return;
 
         gameEnded = true;
-        
-        // Stop the ball
-        if (ballPhysics != null)
-        {
-            ballPhysics.StopBall();
-            Debug.Log("ball stopped");
-        }
-
         // Tell NetworkGameManager to handle the game end
         if (NetworkGameManager.Instance != null)
         {

@@ -598,7 +598,12 @@ private IEnumerator DestroyBallAfterDuration(GameObject ball, float duration)
 public void HandleGameEnd(int winnerPlayerId)
 {
     if (!IsServer) return;
-    
+    BallPhysics ball = FindFirstObjectByType<BallPhysics>();
+    if (ball != null)
+    {
+        var networkObject = ball.GetComponent<NetworkObject>();
+        networkObject.Despawn();
+    }
     ShowGameEndUIClientRpc(winnerPlayerId);
     Debug.Log($"NetworkGameManager handling game end for Player {winnerPlayerId}");
 }

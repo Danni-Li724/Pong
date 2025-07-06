@@ -84,17 +84,4 @@ public class BallPhysics : NetworkBehaviour
         yield return new WaitForSeconds(duration);
         speed = originalSpeed;
     }
-    
-    public void StopBall()
-    {
-        if (!IsServer) return;
-    
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f;
-        }
-        gameObject.SetActive(false);
-    }
 }
