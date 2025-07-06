@@ -1,7 +1,10 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
+/// <summary>
+/// Paddle Input: handles its initializing and switching to spaceship input if needed.
+/// It also sends input (move requests) to the server where movement logic exists.
+/// </summary>
 public class PaddleInputHandler : NetworkBehaviour
 {
     private PlayerInput playerInput;
@@ -53,6 +56,7 @@ public class PaddleInputHandler : NetworkBehaviour
             playerInput.Disable();
     }
 
+    // Sent by local client to move their paddle because server owns the movement logic.
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
     void MoveRequest_ServerRpc(float inputX, float inputY)
     {
