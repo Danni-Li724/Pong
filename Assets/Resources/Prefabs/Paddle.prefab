@@ -162,7 +162,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  playerTargetUIPrefab: {fileID: 3106027875112034120, guid: 596432ebd766c164ebe47f29bf771b66, type: 3}
+  playerSelectionUIPrefab: {fileID: 6360511260611406103, guid: 596432ebd766c164ebe47f29bf771b66, type: 3}
 --- !u!61 &641901330694467435
 BoxCollider2D:
   m_ObjectHideFlags: 0

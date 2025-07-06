@@ -148,6 +148,7 @@ public class NetworkGameManager : NetworkBehaviour
         }
         // Create player info
         PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
+        playerInfo.isConnected = true;
         allPlayers[clientId] = playerInfo;
         // Spawn the paddle
         //GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, spawnTransform.rotation);
@@ -275,7 +276,6 @@ public class NetworkGameManager : NetworkBehaviour
     {
         Debug.Log("All players are ready, making player selection buttons.");
         PaddleController[] allPaddles = FindObjectsOfType<PaddleController>();
-
         foreach (var paddle in allPaddles)
         {
             if (paddle.IsOwner)
@@ -318,9 +318,6 @@ public class NetworkGameManager : NetworkBehaviour
                 SyncPlayerSprite(kvp.Key);
             }
         }
-        // start player selection
-        TriggerPlayerSelectionUIClientRpc();
-        
         if (!IsServer) return;
         // start boon selection
         BoonManager.Instance.StartBoonSelection();
@@ -364,6 +361,8 @@ public class NetworkGameManager : NetworkBehaviour
         spawnedBall.GetComponent<NetworkObject>().Spawn();
         HideStartGameButtonClientRpc();
         Debug.Log("Game officially started!");
+        // initialize player selection ui
+        TriggerPlayerSelectionUIClientRpc();
     }
     
     [Rpc(SendTo.ClientsAndHost)]

@@ -11,9 +11,8 @@ public class PaddleController : NetworkBehaviour
     [Header("Pong Settings")]
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>();
     public int PlayerId { get; private set; }
-    public GameObject playerTargetUIPrefab;
+    public GameObject playerSelectionUIPrefab;
     public bool IsHorizontal => (PlayerId == 3 || PlayerId == 4);
-    [SerializeField] private Transform spriteContainer;
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
@@ -74,14 +73,12 @@ public class PaddleController : NetworkBehaviour
 
     public void SpawnPlayerSelectionUI()
     {
+        Debug.Log($"[PaddleController] Attempting to SpawnPlayerSelectionUI (IsOwner: {IsOwner})");
         if (!IsOwner) return;
-
-        NetworkGameManager manager = FindObjectOfType<NetworkGameManager>();
-        List<PlayerInfo> otherPlayers = manager.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
-
-        GameObject ui = Instantiate(playerTargetUIPrefab);
+        List<PlayerInfo> otherPlayers = NetworkGameManager.Instance.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
+        GameObject ui = Instantiate(playerSelectionUIPrefab); 
         PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
-        uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, IsHorizontal);
+        uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
     }
     
     #region SPRITE SYSTEM
