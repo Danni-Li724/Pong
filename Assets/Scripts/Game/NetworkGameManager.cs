@@ -4,13 +4,26 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
-using System.Runtime.InteropServices;
 
+/// <summary>
+/// The most involved and probably chaotic script in this project, which handled too many things...
+/// If I had more time to optimize this project, I would have: 1. Split this script into smaller manager classes
+/// 2. Created the levelInfo as you have suggested. 3. Have a separate event driven UI manager (like my VisualEventsManager)
+/// for all UI side of things.
+///
+/// This Manager:
+/// - Handles multiplayer game setup, player connection, sprite syncing and game states (such as the spaceship mode),
+/// also spawning paddles and balls; assigns, tracks and sends out playerIds.
+/// - Handles game end/restart logic. Calls subsequent managers to perform functions.
+/// Basically a central hub for all networked flow.
+/// </summary>
 public class NetworkGameManager : NetworkBehaviour
 {
     [Header("Game Settings")]
+    // Synced so that all clients know how many total players are allowed.
     public NetworkVariable<int> maxPlayers = new NetworkVariable<int>(2, 
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    // Keeps all clients in sync about how many players are currently connected.
     private NetworkVariable<int> connectedPlayersCount = new NetworkVariable<int>(0,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private bool allPlayersJoined = false;
@@ -79,7 +92,7 @@ public class NetworkGameManager : NetworkBehaviour
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
             // spawn paddle 1 for host
             SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1);
-            playerCount = 1;
+            playerCount = 1; // register host
             connectedPlayersCount.Value = 1;
             ShowPlayerSelectionForHost();
             SetupGameEndUI(); // initializing end game button
@@ -87,7 +100,7 @@ public class NetworkGameManager : NetworkBehaviour
         connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
     }
 
-   
+    // Called on server when a new client connects
     void OnClientConnected(ulong clientId)
         {
             if (!IsServer) return;
@@ -102,10 +115,10 @@ public class NetworkGameManager : NetworkBehaviour
             }
             playerCount++;
             connectedPlayersCount.Value = playerCount;
-            
+            // The order of execution here/below is significant, ensuring that players are spawned, registered and sprite synced in that order
             SpawnPlayerPaddle(clientId, playerCount);
             AssignGoals();
-            SyncPlayerSprite(clientId); // IMMEDIATELY syncing sprites for new players
+            SyncPlayerSprite(clientId); // IMMEDIATELY syncing sprites for new players who joined
             SyncAllPlayersToClient(clientId); // Also sync all existing players to the new client
             
             // NOW show button
@@ -115,6 +128,7 @@ public class NetworkGameManager : NetworkBehaviour
                 EnableReadyUpButtonClientRpc();
             }
         }
+    // Server handles player disconnects
     void OnClientDisconnected(ulong clientId)
     {
         if (!IsServer) return;
@@ -127,7 +141,7 @@ public class NetworkGameManager : NetworkBehaviour
             allPlayersJoined = false;
             Debug.Log($"Player {allPlayers[clientId].playerId} disconnected");
             
-            // hide ready button if not all players are connected
+            // hide ready button if not all players are connected, preventing players form readying up too early
             if (playerCount < maxPlayers.Value)
             {
                 DisableReadyUpButtonClientRpc();
@@ -140,6 +154,7 @@ public class NetworkGameManager : NetworkBehaviour
     #region START GAME
     void SpawnPlayerPaddle(ulong clientId, int playerId)
     {
+        // Assign spawn location and instantiate paddle
         Transform spawnTransform = GetSpawnTransform(playerId);
         if (spawnTransform == null)
         {
@@ -150,7 +165,7 @@ public class NetworkGameManager : NetworkBehaviour
         PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
         playerInfo.isConnected = true;
         allPlayers[clientId] = playerInfo;
-        // Spawn the paddle
+        // * I abandoned the spawnPos rotation spawning during later debugging
         //GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, spawnTransform.rotation);
         GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, Quaternion.identity);
         NetworkObject networkObject = paddle.GetComponent<NetworkObject>();
@@ -167,7 +182,7 @@ public class NetworkGameManager : NetworkBehaviour
             }
         }
     }
-    
+    // Only the host can select total player count because this decision can only be made by one person to avoid conflict
     private void ShowPlayerSelectionForHost()
     {
         if (IsHost && playerCountSelectionPanel != null)
@@ -176,12 +191,12 @@ public class NetworkGameManager : NetworkBehaviour
             UpdatePlayerCountDisplay();
         }
     }
-    
+    // Useful UI to tell players how many have connected using a networked variable
     private void OnConnectedPlayersCountChanged(int previousValue, int newValue)
     {
         UpdatePlayerCountDisplay();
     }
-    
+    // shown in a fraction:)
     private void UpdatePlayerCountDisplay()
     {
         if (playerCountText != null)
@@ -189,7 +204,6 @@ public class NetworkGameManager : NetworkBehaviour
             playerCountText.text = $"Players Connected: {connectedPlayersCount.Value}/{maxPlayers.Value}";
         }
     }
-    
     public void OnPlayerCountSelected(int count)
     {
         if (!IsHost) return;
@@ -205,8 +219,8 @@ public class NetworkGameManager : NetworkBehaviour
         }
     }
 
-    
-    [Rpc(SendTo.Server)]
+    // From host to server: setting player count. This is important and needs to be reliable (same for most function calls in this calss)
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)] 
     public void SetMaxPlayersServerRpc(int playerCount)
     {
         if (!IsServer) return;
@@ -216,8 +230,8 @@ public class NetworkGameManager : NetworkBehaviour
             Debug.Log("Player count in this game set to " + playerCount);
         }
     }
-    
-    [Rpc(SendTo.ClientsAndHost)]
+    // Show ready up button for all clients when all joined
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void EnableReadyUpButtonClientRpc()
     {
         ReadyUpButton[] readyButtons = FindObjectsOfType<ReadyUpButton>();
@@ -271,6 +285,8 @@ public class NetworkGameManager : NetworkBehaviour
             }
         }
     }
+    
+    // Called by server when all players are ready: sets of buttons for player excluding themselves will be spawned
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void TriggerPlayerSelectionUIClientRpc()
     {
@@ -308,6 +324,7 @@ public class NetworkGameManager : NetworkBehaviour
         };
     }
     
+    // When all players have readied up, tell BoonManager to start the Boon selection process/System
     private void StartBoonSelection()
     {
         // now syncing all sprites before starting
@@ -330,7 +347,8 @@ public class NetworkGameManager : NetworkBehaviour
         ShowStartGameButtonClientRpc();
     }
     
-    [Rpc(SendTo.ClientsAndHost)]
+    // shows start button after boons
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void ShowStartGameButtonClientRpc()
     {
         if (IsHost && startGamePanel != null)
@@ -339,14 +357,15 @@ public class NetworkGameManager : NetworkBehaviour
         }
     }
     
-    // Called by the start game button
+    // Called by pressing the start game button (Host only)
     public void OnStartGameButtonPressed()
     {
         if (!IsHost) return;
         StartGameServerRpc();
     }
     
-    [Rpc(SendTo.Server)]
+    // Host tells the server to start the game
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)] 
     private void StartGameServerRpc()
     {
         if (!IsServer) return;

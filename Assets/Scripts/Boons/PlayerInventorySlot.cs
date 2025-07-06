@@ -1,7 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
-
+/// <summary>
+/// Attached to the UI inventory slots to display a player's selected boon.
+/// Created and managed by BoonManager via Sync RPCs.
+/// </summary>
 public class PlayerInventorySlot : NetworkBehaviour
 {
     [SerializeField] private Image iconImage;
@@ -22,6 +25,7 @@ public class PlayerInventorySlot : NetworkBehaviour
         }
     }
     
+    // called by BoonManager when syncing inventories (this syncs their visuals and descriptions)
     public void SetBoon(BoonEffect boon, ulong clientId)
     {
         currentBoon = boon;
@@ -68,7 +72,7 @@ public class PlayerInventorySlot : NetworkBehaviour
         if (useButton != null) useButton.gameObject.SetActive(false);
         if (playerIdText != null) playerIdText.text = "";
     }
-    
+    // Called locally when a player clicks to use their boon
     private void OnUseButtonClicked()
     {
         if (hasBoon && currentBoon != null)

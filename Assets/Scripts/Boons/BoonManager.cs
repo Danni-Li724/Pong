@@ -2,7 +2,11 @@ using Unity.Netcode;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-
+/// <summary>
+/// Handles boon selection, syncing, and applying effects across all players.
+/// This class is owned by the server, referenced by BoonButton and PlayerInventorySlot.
+/// It manages both server-side and client-side inventories and UI buttons.
+/// </summary>
 public class BoonManager : NetworkBehaviour
 {
    [Header("Boon Setup")]
@@ -16,9 +20,11 @@ public class BoonManager : NetworkBehaviour
     public static BoonManager Instance { get; private set; }
     
     // Server-side data - fixed to using boonTypes instead of strings because netcode has issues sending string[] in rpc :(...
+    // This is a server side inventory that tracks which client owns which boons
     private Dictionary<ulong, List<BoonType>> playerInventories = new Dictionary<ulong, List<BoonType>>();
-    // Client-side data - synced from server
+    // Client-side data synced from server. It's a client-side cache of inventories which are used for displaying UIs/visuals. 
     private Dictionary<ulong, List<BoonType>> clientPlayerInventories = new Dictionary<ulong, List<BoonType>>();
+    // a reference of active boon buttons on screen
     private Dictionary<BoonType, GameObject> activeBoonButtons = new Dictionary<BoonType, GameObject>();
     
     // Server-side tracking of available boons
@@ -49,7 +55,7 @@ public class BoonManager : NetworkBehaviour
         }
     }
     
-    // called by NetworkGameManager when all players are ready
+    // This is server-side: called by NetworkGameManager when all players are ready
     public void StartBoonSelection()
     {
         if (!IsServer) return;
@@ -59,7 +65,7 @@ public class BoonManager : NetworkBehaviour
         
         // Set up available boons on server
         availableBoonTypes = availableBoons
-            .OrderBy(x => Random.value) // randomnizes the boon list
+            .OrderBy(x => Random.value) // randomly choose 4 bools from the pool, so that it's different every game
             .Take(4) // select the first 4, for now i only have 4
             .Select(b => b.type) // project each boonEffect to its boonType enum
             .ToList(); // keep as list for easier manipulation
@@ -71,6 +77,7 @@ public class BoonManager : NetworkBehaviour
         SpawnBoonButtonsClientRpc(availableBoonTypes.ToArray());
     }
     
+    // Client-Rpc: sent by the server to all clients to show buttons for the boons to all clients
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void SpawnBoonButtonsClientRpc(BoonType[] selectedBoons)
     {
@@ -92,7 +99,7 @@ public class BoonManager : NetworkBehaviour
         }
     }
     
-    // called by BoonButton when clicked
+    // called by BoonButton on client when player clicks the boons
     public void TrySelectBoon(BoonType boonType)
     {
         if (!IsClient) return;
@@ -101,6 +108,7 @@ public class BoonManager : NetworkBehaviour
         RequestBoonServerRpc(clientId, boonType);
     }
     
+    // Server-Rpc (requesting) sent from client to server to request for a boon when they click on it
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
     private void RequestBoonServerRpc(ulong clientId, BoonType boonType)
     {
@@ -146,10 +154,11 @@ public class BoonManager : NetworkBehaviour
     
     private System.Collections.IEnumerator DelayedSync()
     {
-        yield return new WaitForSeconds(0.1f); // small delay to ensure proper order
+        yield return new WaitForSeconds(0.1f); // small delay to ensure proper order; needed to cuz issues
         SyncAllInventoriesToClients();
     }
     
+    // This is server only function - syncs full (everyone's) inventories to all clients
     private void SyncAllInventoriesToClients() // syncing all player inventories to all clients
     {
         if (!IsServer) return;
@@ -177,6 +186,7 @@ public class BoonManager : NetworkBehaviour
         SyncAllInventoriesClientRpc(clientIds.ToArray(), boonTypes.ToArray(), playerIds.ToArray());
     }
     
+    // Client Rpc - sent from server to all clients to update visuals on all clients
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void SyncAllInventoriesClientRpc(ulong[] clientIds, BoonType[] boonTypes, int[] playerIds)
     {
@@ -228,6 +238,7 @@ public class BoonManager : NetworkBehaviour
         }
     }
     
+    // When a boon has been chosen, remove it from the selection for all players
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void RemoveBoonButtonClientRpc(BoonType boonType)
     {
@@ -239,6 +250,7 @@ public class BoonManager : NetworkBehaviour
         }
     }
 
+    // Checks if everyone has selected a boon (server only)
     private void CheckAllPlayersSelected()
     {
         if (!IsServer) return;
@@ -267,8 +279,9 @@ public class BoonManager : NetworkBehaviour
         }
     }
     
-    
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    // ensuring that all clients can reliably destroy any leftover boon selection buttons. 
+    // Doesn't have to be reliable because even if buttons remain, each player cannot select more than one anyway
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Unreliable)]
     private void ClearRemainingButtonsClientRpc()
     {
         foreach (var buttonObj in activeBoonButtons.Values)
@@ -278,6 +291,7 @@ public class BoonManager : NetworkBehaviour
         activeBoonButtons.Clear();
     }
     
+    // Called on the client when a boon button is clicked
     public void UseBoon(ulong clientId, BoonType boonType)
     {
         if (!IsClient) return;
@@ -293,7 +307,7 @@ public class BoonManager : NetworkBehaviour
     {
         Debug.Log($"Server received use boon request from client {clientId} for boon {boonType}");
         
-        // check if player has this boon
+        // Validate that player owns this boon before applying
         if (!playerInventories.ContainsKey(clientId) || !playerInventories[clientId].Contains(boonType))
         {
             Debug.Log($"Player {clientId} doesn't have boon {boonType}");
@@ -314,10 +328,12 @@ public class BoonManager : NetworkBehaviour
             SyncAllInventoriesToClients();
         }
     }
-
+    
+    // Actually performs the boon effect on client side
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void ApplyBoonEffectClientRpc(BoonType boonType)
     {
+        // Look up the effect and apply it locally
         var boonEffect = availableBoons.Find(b => b.type == boonType);
         if (boonEffect != null)
         {
@@ -344,6 +360,7 @@ public class BoonManager : NetworkBehaviour
         }
     }
     
+    // below are functions for each boon effects. Possibly ideal to separate into an independent event driven class.
     private void CycleMusicTrack()
     {
         var audioManager = AudioManager.instance;
