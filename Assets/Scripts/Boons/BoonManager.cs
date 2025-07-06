@@ -263,9 +263,7 @@ public class BoonManager : NetworkBehaviour
             return;
         }
         bool allSelected = allPlayers.All(p => playerInventories.ContainsKey(p.clientId) && playerInventories[p.clientId].Count > 0);
-        
         Debug.Log($"Checking all players selected: {allPlayers.Count} players, {playerInventories.Count} have boons");
-        
         if (allSelected)
         {
             Debug.Log("All players have selected boons!");

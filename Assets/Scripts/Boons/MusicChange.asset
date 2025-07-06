@@ -15,5 +15,5 @@ MonoBehaviour:
   effectName: Music Change
   description: Changes Music
   icon: {fileID: 21300000, guid: 80e159dab3e6f1142bc5062eb184ccaf, type: 3}
-  duration: 300
+  duration: 3000
   type: 3

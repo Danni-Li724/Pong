@@ -219,7 +219,7 @@ public class NetworkGameManager : NetworkBehaviour
         }
     }
 
-    // From host to server: setting player count. This is important and needs to be reliable (same for most function calls in this calss)
+    // From host to server: setting player count. This is important and needs to be reliable (same for most function calls in this class)
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)] 
     public void SetMaxPlayersServerRpc(int playerCount)
     {
@@ -710,7 +710,16 @@ public void ReturnToHostLobby()
 
 // Re-register host as a player so that maxPlayerCount can be reached
     ulong hostClientId = NetworkManager.Singleton.LocalClientId;
-    SpawnPlayerPaddle(hostClientId, 1);
+    if (!allPlayers.ContainsKey(hostClientId))
+    {
+        SpawnPlayerPaddle(hostClientId, 1);
+        playerCount = 1;
+        connectedPlayersCount.Value = 1;
+    }
+    else
+    {
+        Debug.Log("Host paddle already exists.");
+    }
     playerCount = 1;
     connectedPlayersCount.Value = 1;
     
