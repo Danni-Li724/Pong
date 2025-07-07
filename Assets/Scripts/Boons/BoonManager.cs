@@ -13,6 +13,7 @@ public class BoonManager : NetworkBehaviour
     [SerializeField] private List<BoonEffect> availableBoons;
     [SerializeField] private Transform boonButtonContainer;
     [SerializeField] private GameObject boonButtonPrefab;
+    private List<ulong> expectedPlayerIds = new List<ulong>();
     
     [Header("Player Inventories")]
     [SerializeField] private Transform[] playerInventorySlots = new Transform[4];
@@ -59,6 +60,12 @@ public class BoonManager : NetworkBehaviour
     public void StartBoonSelection()
     {
         if (!IsServer) return;
+        
+        // Set the list of expected players once
+        expectedPlayerIds = NetworkGameManager.Instance.GetAllPlayers()
+            .Where(p => p.isConnected)
+            .Select(p => p.clientId)
+            .ToList();
 
         boonSelectionActive = true;
         playerInventories.Clear();
@@ -262,7 +269,9 @@ public class BoonManager : NetworkBehaviour
             // had to add this because the All() in Linq apparently returns true by default if I have an empty collection...debugged for hours
             return;
         }
-        bool allSelected = allPlayers.All(p => playerInventories.ContainsKey(p.clientId) && playerInventories[p.clientId].Count > 0);
+        bool allSelected = expectedPlayerIds.All(clientId =>
+            playerInventories.ContainsKey(clientId) &&
+            playerInventories[clientId].Count > 0);
         Debug.Log($"Checking all players selected: {allPlayers.Count} players, {playerInventories.Count} have boons");
         if (allSelected)
         {
