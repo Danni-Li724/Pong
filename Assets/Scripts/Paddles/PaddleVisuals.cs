@@ -17,10 +17,11 @@ public class PaddleVisuals : NetworkBehaviour
         originalScale = transform.localScale;
     }
 
-    public void SetPaddleSprite(Sprite paddleSprite)
+    public void SetPaddleSpriteAsDefault(Sprite paddleSprite)
     {
         if (spriteRenderer != null && paddleSprite != null)
         {
+            defaultSprite = paddleSprite;
             spriteRenderer.sprite = paddleSprite;
         }
     }

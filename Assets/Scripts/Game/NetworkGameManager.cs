@@ -457,7 +457,7 @@ public class NetworkGameManager : NetworkBehaviour
                     Sprite paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
                     if (paddleSprite != null)
                     {
-                        paddleVisuals.SetPaddleSprite(paddleSprite);
+                        paddleVisuals.SetPaddleSpriteAsDefault(paddleSprite);
                     }
                     else
                     {
@@ -543,24 +543,8 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
     {
         yield return new WaitForSeconds(seconds);
 
-        PaddleController[] allPaddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
-        foreach (var paddle in allPaddles)
-        {
-            paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
-
-            var info = GetPlayerInfo(paddle.OwnerClientId);
-            if (info != null && info.spawnPos != null)
-            {
-                paddle.transform.position = info.spawnPos.position;
-                paddle.transform.rotation = info.spawnPos.rotation;
-
-                var renderer = paddle.GetComponent<SpriteRenderer>();
-                if (renderer != null && info.paddleSprite != null)
-                {
-                    renderer.sprite = info.paddleSprite;
-                }
-            }
-        }
+        EndSpaceshipModeClientRpc();
+    
         // Respawn ball
         if (spawnedBall != null && !spawnedBall.GetComponent<NetworkObject>().IsSpawned)
         {
@@ -568,7 +552,36 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
             spawnedBall.transform.position = Vector3.zero;
         }
         ToggleSpaceshipVisualsClientRpc(false);
+    
+        // Sync all player sprites to ensure correct personalized sprites are restored
+        foreach (var kvp in allPlayers)
+        {
+            if (kvp.Value.isConnected)
+            {
+                SyncPlayerSprite(kvp.Key);
+            }
+        }
+    
         Debug.Log("Spaceship Mode Ended");
+    }
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void EndSpaceshipModeClientRpc()
+    {
+        PaddleController[] allPaddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
+        foreach (var paddle in allPaddles)
+        {
+            // Exit spaceship mode
+            paddle.SetSpaceshipMode(false, null, null, 0f, 0f);
+
+            // Reset position and rotation
+            var info = GetPlayerInfo(paddle.OwnerClientId);
+            if (info != null && info.spawnPos != null)
+            {
+                paddle.transform.position = info.spawnPos.position;
+                paddle.transform.rotation = info.spawnPos.rotation;
+            }
+        }
     }
     
     [Rpc(SendTo.ClientsAndHost)]
