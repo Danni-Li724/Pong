@@ -64,11 +64,15 @@ public class PaddleInputHandler : NetworkBehaviour
     }
 
     #region Spaceship Input
-
     public void EnableSpaceshipControls()
     {
+        // disabling normal paddle input first
+        if (playerInput != null)
+        {
+            playerInput.Disable();
+        }
+        
         spaceshipInput = new PlayerInput();
-
         spaceshipInput.Spaceship.Move.performed += ctx =>
         {
             Vector2 input = ctx.ReadValue<Vector2>();
@@ -86,12 +90,17 @@ public class PaddleInputHandler : NetworkBehaviour
         };
         spaceshipInput.Enable();
     }
-
+    
     public void DisableSpaceshipControls()
     {
         spaceshipInput?.Disable();
         spaceshipInput = null;
+        
+        // Re-enable normal paddle input
+        if (playerInput != null)
+        {
+            playerInput.Enable();
+        }
     }
-
     #endregion
 }
