@@ -179,6 +179,11 @@ public class PaddleController : NetworkBehaviour
         }
     }
     
+    public void UpdateSpaceshipRotation(Vector2 input)
+    {
+        if (!inSpaceshipMode || paddleVisuals == null) return;
+        paddleVisuals.RotateInDirection(input);
+    }
     
     // Called by GameManager's server-side operations to put a player into spaceship mode
     public void EnterSpaceshipMode(float bulletSpeed, float fireCooldown, string rocketSpriteName)

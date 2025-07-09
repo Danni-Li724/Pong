@@ -6,6 +6,7 @@ public class PaddleVisuals : NetworkBehaviour
     private SpriteRenderer spriteRenderer;
     private Sprite defaultSprite;
     private Vector3 originalScale;
+    [SerializeField] private float spriteRotationOffset = -90f;
 
     private void Awake()
     {
@@ -16,7 +17,6 @@ public class PaddleVisuals : NetworkBehaviour
         }
         originalScale = transform.localScale;
     }
-
     public void SetPaddleSpriteAsDefault(Sprite paddleSprite)
     {
         if (spriteRenderer != null && paddleSprite != null)
@@ -54,4 +54,14 @@ public class PaddleVisuals : NetworkBehaviour
                 transform.localScale = Vector3.one; // fallback
         }
     }
+    
+    public void RotateInDirection(Vector2 direction)
+    {
+        if (direction.sqrMagnitude > 0.01f)
+        {
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + spriteRotationOffset;
+            transform.localRotation = Quaternion.Euler(0, 0, angle);
+        }
+    }
+
 }
