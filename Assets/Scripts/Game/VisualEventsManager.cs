@@ -14,6 +14,11 @@ public class VisualEventsManager : NetworkBehaviour
     public Text player3ScoreText;
     public Text player4ScoreText;
     
+    [Header("Game Visuals")] // visuals to toggle
+    [SerializeField] private GameObject stars;
+    [SerializeField] private GameObject circles;
+    [SerializeField] private GameObject city;
+    [SerializeField] private GameObject horror;
     // controls background visuals. This VisualEffects class is fully local and registers events from this manager for color switching
     public VisualEffects visualEffects; 
 
@@ -116,5 +121,21 @@ public class VisualEventsManager : NetworkBehaviour
         if (player2ScoreText != null) player2ScoreText.text = p2.ToString();
         if (player3ScoreText != null) player3ScoreText.text = p3.ToString();
         if (player4ScoreText != null) player4ScoreText.text = p4.ToString();
+    }
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    public void ToggleVisualsClientRpc(string visualName)
+    {
+        visualName = visualName.ToLowerInvariant();
+
+        bool showStars = visualName == "stars";
+        bool showCircles = visualName == "circles";
+        bool showCity = visualName == "city";
+        bool showHorror = visualName == "horror";
+
+        if (stars != null) stars.SetActive(showStars);
+        if (circles != null) circles.SetActive(showCircles);
+        if (city != null) city.SetActive(showCity);
+        if (horror != null) horror.SetActive(showHorror);
     }
 }

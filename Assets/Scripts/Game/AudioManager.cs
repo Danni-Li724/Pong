@@ -7,24 +7,24 @@ public class AudioManager : NetworkBehaviour
     public static AudioManager instance;
     public enum MusicType
     {
-        Music1,
-        Music2,
-        Music3,
-        Music4,
-        Music5,
-        Music6,
+        Hillage1,
+        Hillage2,
+        Dust1,
+        Dust2,
+        Sabbath1,
+        Sabbath2,
     }
 
-    [Header("Selectable Clips")]
-    public AudioClip music1;
-    public AudioClip music2;
-    public AudioClip music3;
-    public AudioClip music4;
-    public AudioClip music5;
-    public AudioClip music6;
+    [Header("Audio Clips")]
+    public AudioClip Hillage1;
+    public AudioClip Hillage2;
+    public AudioClip Dust1;
+    public AudioClip Dust2;
+    public AudioClip Sabbath1;
+    public AudioClip Sabbath2;
     
     private AudioSource audioSource;
-    private MusicType currentMusicType = MusicType.Music1;
+    private MusicType currentMusicType = MusicType.Hillage1;
 
     private void Awake()
     {
@@ -42,7 +42,7 @@ public class AudioManager : NetworkBehaviour
 
     private void Start()
     {
-        PlayMusic(music1);
+        PlayMusic(Hillage1);
     }
 
     private void PlayMusic(AudioClip clip)
@@ -52,6 +52,24 @@ public class AudioManager : NetworkBehaviour
         audioSource.playOnAwake = false;
         audioSource.volume = 0.5f;
         audioSource.Play();
+    }
+    
+    private void UpdateVisualsForMusic(MusicType musicType)
+    {
+        if (!VisualEventsManager.Instance) return;
+
+        string visualToShow = musicType switch
+        {
+            MusicType.Hillage1 => "circles",
+            MusicType.Hillage2 => "circles",
+            MusicType.Dust1 => "city",
+            MusicType.Dust2 => "city",
+            MusicType.Sabbath1 => "horror",
+            MusicType.Sabbath2 => "horror",
+            _ => "none"
+        };
+
+        VisualEventsManager.Instance.ToggleVisualsClientRpc(visualToShow);
     }
 
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership= false)]
@@ -75,13 +93,14 @@ public class AudioManager : NetworkBehaviour
         
         switch (musicType)
         {
-            case MusicType.Music1: PlayMusic(music1); break;
-            case MusicType.Music2: PlayMusic(music2); break;
-            case MusicType.Music3: PlayMusic(music3); break;
-            case MusicType.Music4: PlayMusic(music4); break;
-            case MusicType.Music5: PlayMusic(music5); break;
-            case MusicType.Music6: PlayMusic(music6); break;
+            case MusicType.Hillage1: PlayMusic(Hillage1); break;
+            case MusicType.Hillage2: PlayMusic(Hillage2); break;
+            case MusicType.Dust1: PlayMusic(Dust1); break;
+            case MusicType.Dust2: PlayMusic(Dust2); break;
+            case MusicType.Sabbath1: PlayMusic(Sabbath1); break;
+            case MusicType.Sabbath2: PlayMusic(Sabbath2); break;
         }
+        UpdateVisualsForMusic(musicType);
     }
     
     public MusicType GetCurrentMusicType()

@@ -10031,6 +10031,10 @@ MonoBehaviour:
   player2ScoreText: {fileID: 173308543}
   player3ScoreText: {fileID: 5414354724398069326}
   player4ScoreText: {fileID: 5414354722748402481}
+  stars: {fileID: 1997547889}
+  circles: {fileID: 1171796868}
+  city: {fileID: 330977483}
+  horror: {fileID: 1290301109}
   visualEffects: {fileID: 1171796870}
   ballVisuals: {fileID: 0}
 --- !u!4 &1612838194
@@ -11045,8 +11049,6 @@ MonoBehaviour:
   bottomSpawn: {fileID: 990872989}
   playerPaddlePrefab: {fileID: 6031316684274673900, guid: f6c11f18216894746b7ded65de7a8968, type: 3}
   ballPrefab: {fileID: 7170168011991111577, guid: e59a9002681fe3f4781fc8cff4ac5f71, type: 3}
-  circles: {fileID: 1171796868}
-  stars: {fileID: 1997547889}
   playerCountSelectionPanel: {fileID: 2082816879}
   startGamePanel: {fileID: 1096345133}
   playerCountText: {fileID: 1341164657}
@@ -11852,6 +11854,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3685205096857706057, guid: e59a9002681fe3f4781fc8cff4ac5f71, type: 3}
     - target: {fileID: 2309121956830339150, guid: 7e276f38ff4c67a4384a8123c7f33342, type: 3}
+      propertyPath: maxScoreToWin
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 2309121956830339150, guid: 7e276f38ff4c67a4384a8123c7f33342, type: 3}
       propertyPath: player1ScoreText
       value: 
       objectReference: {fileID: 77287360}
@@ -11905,6 +11911,14 @@ PrefabInstance:
       value: 4163624425
       objectReference: {fileID: 0}
     - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: Dust1
+      value: 
+      objectReference: {fileID: 8300000, guid: 6b300f2e75847424ba51a4ded3576ee7, type: 3}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: Dust2
+      value: 
+      objectReference: {fileID: 8300000, guid: 61dfade4a1868ac4ea7c295486e5eb9b, type: 3}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
       propertyPath: music1
       value: 
       objectReference: {fileID: 8300000, guid: 824f2581a64f3724dbc02e98e549cb44, type: 3}
@@ -11926,6 +11940,22 @@ PrefabInstance:
       objectReference: {fileID: 8300000, guid: 8463357d5ce88cb4d9b879d264ec5035, type: 3}
     - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
       propertyPath: music6
+      value: 
+      objectReference: {fileID: 8300000, guid: 3022fbedc892db54690e0d050ca8d9b8, type: 3}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: Hillage1
+      value: 
+      objectReference: {fileID: 8300000, guid: 824f2581a64f3724dbc02e98e549cb44, type: 3}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: Hillage2
+      value: 
+      objectReference: {fileID: 8300000, guid: bf509dcb2b2965b4088594ee146a54e9, type: 3}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: Sabbath1
+      value: 
+      objectReference: {fileID: 8300000, guid: 8463357d5ce88cb4d9b879d264ec5035, type: 3}
+    - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}
+      propertyPath: Sabbath2
       value: 
       objectReference: {fileID: 8300000, guid: 3022fbedc892db54690e0d050ca8d9b8, type: 3}
     - target: {fileID: 5702797992342016832, guid: 10d99a62461fae94f8a765c0296773c3, type: 3}

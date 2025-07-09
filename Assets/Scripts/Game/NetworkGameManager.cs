@@ -41,10 +41,6 @@ public class NetworkGameManager : NetworkBehaviour
     public GameObject ballPrefab;
     private GameObject spawnedBall; // current ball in scene
     
-    [Header("Game Visuals")]
-    [SerializeField] private GameObject circles;
-    [SerializeField] private GameObject stars;
-    
     [Header("Game UIs")]
     [SerializeField] private GameObject playerCountSelectionPanel;
     [SerializeField] private GameObject startGamePanel;
@@ -495,7 +491,7 @@ public void ActivateSpaceshipModeFromEditor()
         netObj.Despawn();
     }
 
-    ToggleSpaceshipVisualsClientRpc(true);
+    VisualEventsManager.Instance.ToggleVisualsClientRpc("stars");
     foreach (var kvp in allPlayers)
     {
         if (kvp.Value.isConnected)
@@ -551,7 +547,7 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
             spawnedBall.GetComponent<NetworkObject>().Spawn();
             spawnedBall.transform.position = Vector3.zero;
         }
-        ToggleSpaceshipVisualsClientRpc(false);
+        VisualEventsManager.Instance.ToggleVisualsClientRpc("circles");
     
         // Sync all player sprites to ensure correct personalized sprites are restored
         foreach (var kvp in allPlayers)
@@ -584,12 +580,6 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
         }
     }
     
-    [Rpc(SendTo.ClientsAndHost)]
-    private void ToggleSpaceshipVisualsClientRpc(bool enableSpaceshipMode)
-    {
-        if (circles != null) circles.SetActive(!enableSpaceshipMode);
-        if (stars != null) stars.SetActive(enableSpaceshipMode);
-    }
 #endregion
 
 #region DOUBLE BALL MODE
@@ -762,8 +752,8 @@ public void ReturnToHostLobby()
     }
     
     // Reset visual elements
-    if (circles != null) circles.SetActive(true);
-    if (stars != null) stars.SetActive(false);
+    VisualEventsManager.Instance.ToggleVisualsClientRpc("circles");
+
     
     Debug.Log("Returned to host lobby");
 }
