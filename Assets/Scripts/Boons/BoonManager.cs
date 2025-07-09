@@ -321,26 +321,28 @@ public class BoonManager : NetworkBehaviour
             return;
         }
         
-        // apply boon effect to all clients
-        ApplyBoonEffectClientRpc(boonType);
+        // Server applies the effect *locally*
+        var boonEffect = availableBoons.Find(b => b.type == boonType);
+        if (boonEffect != null)
+        {
+            ApplyBoonEffect(boonEffect); // This is now SERVER-ONLY!
+        }
         
-        // remove boon from player inventory
-        playerInventories[clientId].Remove(boonType);
-        
-        // Sync updated inventories to all clients
-        // not removing MusicChange boon after use
-        if (boonType != BoonType.MusicChange)
+        if (boonEffect != null && !boonEffect.isReusable)
         {
             playerInventories[clientId].Remove(boonType);
             SyncAllInventoriesToClients();
         }
+
+        // Send a client RPC to trigger only client-side effects (UI/sound etc.)
+        ApplyClientSideEffectClientRpc(boonType);
     }
     
-    // Actually performs the boon effect on client side
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void ApplyBoonEffectClientRpc(BoonType boonType)
+    private void ApplyClientSideEffectClientRpc(BoonType boonType)
     {
-        // Look up the effect and apply it locally
+        if (IsServer) return; // Prevent host from double-triggering
+
         var boonEffect = availableBoons.Find(b => b.type == boonType);
         if (boonEffect != null)
         {
@@ -370,6 +372,7 @@ public class BoonManager : NetworkBehaviour
     // below are functions for each boon effects. Possibly ideal to separate into an independent event driven class.
     private void CycleMusicTrack()
     {
+        if (!IsServer) return;
         var audioManager = AudioManager.instance;
         if (audioManager != null)
         {

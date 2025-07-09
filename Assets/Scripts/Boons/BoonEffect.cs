@@ -8,6 +8,7 @@ public class BoonEffect : ScriptableObject
     public Sprite icon;
     public float duration;
     public BoonType type;
+    public bool isReusable;
 }
 public enum BoonType
 {

@@ -54,7 +54,7 @@ public class AudioManager : NetworkBehaviour
         audioSource.Play();
     }
 
-    [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, RequireOwnership= false)]
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership= false)]
     public void CycleMusicServerRpc()
     {
         Debug.Log("Music cycle requested");
@@ -67,9 +67,10 @@ public class AudioManager : NetworkBehaviour
         SwitchMusicClientRPC(currentMusicType);
     }
     
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Unreliable, RequireOwnership= false)]
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable, RequireOwnership= false)]
     public void SwitchMusicClientRPC(MusicType musicType)
     {
+        if (!IsClient) return;
         currentMusicType = musicType;
         
         switch (musicType)
