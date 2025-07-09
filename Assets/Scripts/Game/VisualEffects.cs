@@ -20,6 +20,7 @@ public class VisualEffects : MonoBehaviour
       private Color[] currentColors;
       private int currentColorIndex = 0;
       private List<SpriteRenderer> activeRenderers = new List<SpriteRenderer>();
+      private Coroutine spawnLoopCoroutine;
       
       private static VisualEffects instance;
       private void Awake()
@@ -27,11 +28,39 @@ public class VisualEffects : MonoBehaviour
          if (instance == null)
             instance = this;
       }
+      
+      private void OnEnable()
+      {
+         // Clean up old circles
+         foreach (Transform child in transform)
+         {
+            if (child.name != "iris")
+            {
+               Destroy(child.gameObject);
+            }
+         }
+         // Clear list of renderers
+         activeRenderers.Clear();
+
+         // Reset color index
+         currentColorIndex = 0;
+
+         // Start loop
+         spawnLoopCoroutine = StartCoroutine(SpawnLoop());
+      }
+
       private void Start()
       {
          currentColors = player1Colors;
-         // infinite loop coroutine
          StartCoroutine(SpawnLoop());
+      }
+      private void OnDisable()
+      {
+         if (spawnLoopCoroutine != null)
+         {
+            StopCoroutine(spawnLoopCoroutine);
+            spawnLoopCoroutine = null;
+         }
       }
       public void HandleColorChange(int playerId)
       {
