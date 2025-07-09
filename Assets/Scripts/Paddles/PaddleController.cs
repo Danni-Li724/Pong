@@ -26,7 +26,8 @@ public class PaddleController : NetworkBehaviour
     
     private void Awake()
     {
-        paddleVisuals = GetComponent<PaddleVisuals>();
+        paddleVisuals = GetComponentInChildren<PaddleVisuals>();
+        
     }
     
     public override void OnNetworkSpawn()
@@ -117,6 +118,7 @@ public class PaddleController : NetworkBehaviour
         if (active)
         {
             paddleVisuals.SetSpaceshipSprite(rocketSprite);
+            paddleVisuals.transform.localRotation = Quaternion.identity;
             // give player spaceship controls if local
             if (IsOwner)
             {
@@ -126,6 +128,8 @@ public class PaddleController : NetworkBehaviour
         else
         {
             paddleVisuals.RestoreDefaultSprite();
+            paddleVisuals.transform.localRotation = Quaternion.identity;
+
             if (IsOwner)
                 GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
         }

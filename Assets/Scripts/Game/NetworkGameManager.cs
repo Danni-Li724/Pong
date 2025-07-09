@@ -170,11 +170,11 @@ public class NetworkGameManager : NetworkBehaviour
         if (paddleController != null)
         {
             paddleController.SetPlayerId(playerId);
-            // loading custom paddle sprites
-            var renderer = paddle.GetComponent<SpriteRenderer>();
-            if (renderer != null && playerInfo.paddleSprite != null)
+            // loading custom paddle sprites onto PaddleVisuals
+            var visuals = paddle.GetComponentInChildren<PaddleVisuals>();
+            if (visuals != null && playerInfo.paddleSprite != null)
             {
-                renderer.sprite = playerInfo.paddleSprite;
+                visuals.SetPaddleSpriteAsDefault(playerInfo.paddleSprite);
             }
         }
     }
@@ -447,7 +447,7 @@ public class NetworkGameManager : NetworkBehaviour
         {
             if (paddle.OwnerClientId == targetClientId)
             {
-                var paddleVisuals = paddle.GetComponent<PaddleVisuals>();
+                var paddleVisuals = paddle.GetComponentInChildren<PaddleVisuals>();
                 if (paddleVisuals != null)
                 {
                     Sprite paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
@@ -491,7 +491,7 @@ public void ActivateSpaceshipModeFromEditor()
         netObj.Despawn();
     }
 
-    VisualEventsManager.Instance.ToggleVisualsClientRpc("stars");
+    AudioManager.instance.ActivateSpaceshipModeMusic(); // controls both music and visual now
     foreach (var kvp in allPlayers)
     {
         if (kvp.Value.isConnected)
@@ -547,7 +547,7 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
             spawnedBall.GetComponent<NetworkObject>().Spawn();
             spawnedBall.transform.position = Vector3.zero;
         }
-        VisualEventsManager.Instance.ToggleVisualsClientRpc("circles");
+        AudioManager.instance.EndSpaceshipModeMusic();
     
         // Sync all player sprites to ensure correct personalized sprites are restored
         foreach (var kvp in allPlayers)

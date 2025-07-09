@@ -15,33 +15,17 @@ public class VisualEventsManager : NetworkBehaviour
     public Text player4ScoreText;
     
     [Header("Game Visuals")] // visuals to toggle
-    [SerializeField] private GameObject stars;
+    [SerializeField] private GameObject space;
     [SerializeField] private GameObject circles;
     [SerializeField] private GameObject city;
     [SerializeField] private GameObject horror;
+    [SerializeField] private GameObject alien;
     // controls background visuals. This VisualEffects class is fully local and registers events from this manager for color switching
     public VisualEffects visualEffects; 
 
     [Header("Ball Visuals Reference")]
     // This class handles ball color changes depending on the last hit paddle
     public BallVisuals ballVisuals;
-
-    [Header("Paddle Sprites Reference")] 
-    public Dictionary<int, string> paddleSpriteNames =
-        new Dictionary<int, string>()
-        {
-            { 1, "Player1Paddle" },
-            { 2, "Player2Paddle" },
-            { 3, "Player3Paddle" },
-            { 4, "Player4Paddle" }
-        };
-    public Dictionary<int, string> rocketSpriteNames = new Dictionary<int, string>()
-    {
-        { 1, "Player1Rocket" },
-        { 2, "Player2Rocket" },
-        { 3, "Player3Rocket" },
-        { 4, "Player4Rocket" }
-    };
 
     // Global instance ref used by other scripts like PaddleController and ScoreManager for events communication
     public static VisualEventsManager Instance { get; private set; }
@@ -126,16 +110,18 @@ public class VisualEventsManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     public void ToggleVisualsClientRpc(string visualName)
     {
-        visualName = visualName.ToLowerInvariant();
+        visualName = visualName.ToLowerInvariant(); //returns lowercase version of visualName no matter what
 
-        bool showStars = visualName == "stars";
+        bool showSpace = visualName == "space";
         bool showCircles = visualName == "circles";
         bool showCity = visualName == "city";
         bool showHorror = visualName == "horror";
+        bool showAlien = visualName == "alien";
 
-        if (stars != null) stars.SetActive(showStars);
+        if (space != null) space.SetActive(showSpace);
         if (circles != null) circles.SetActive(showCircles);
         if (city != null) city.SetActive(showCity);
         if (horror != null) horror.SetActive(showHorror);
+        if (alien != null) alien.SetActive(showAlien);
     }
 }
