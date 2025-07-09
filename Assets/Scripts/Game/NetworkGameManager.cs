@@ -408,85 +408,74 @@ public class NetworkGameManager : NetworkBehaviour
     #endregion
     
 #region SPRITE SYCING
-private void SyncPlayerSprite(ulong clientId) // sync sprite for a specific player to all clients
-{
-    if (!allPlayers.ContainsKey(clientId)) return;
-        
-    PlayerInfo playerInfo = allPlayers[clientId];
-    SyncPlayerSpriteClientRpc(clientId, playerInfo.paddleSpriteName, playerInfo.rocketSpriteName);
-}
-private void SyncAllPlayersToClient(ulong targetClientId) // syncing all existing players to new joiners
-{
-    foreach (var kvp in allPlayers)
+ private void SyncPlayerSprite(ulong clientId) // sync sprite for a specific player to all clients
     {
-        if (kvp.Value.isConnected) // kvp = Key-ValuePair for my Dictionary<ulong, PlayerInfo> ('allPlayers') :)
+        if (!allPlayers.ContainsKey(clientId)) return;
+            
+        PlayerInfo playerInfo = allPlayers[clientId];
+        SyncPlayerSpriteClientRpc(clientId, playerInfo.paddleSpriteName, playerInfo.rocketSpriteName);
+    }
+    
+    private void SyncAllPlayersToClient(ulong targetClientId) // syncing all existing players to new joiners
+    {
+        foreach (var kvp in allPlayers)
         {
-            SyncPlayerSpriteToSpecificClientRpc(
-                kvp.Key, 
-                kvp.Value.paddleSpriteName, 
-                kvp.Value.rocketSpriteName,
-                RpcTarget.Single(targetClientId, RpcTargetUse.Temp)
-            );
+            if (kvp.Value.isConnected) // kvp = Key-ValuePair for my Dictionary<ulong, PlayerInfo> ('allPlayers') :)
+            {
+                SyncPlayerSpriteToSpecificClientRpc(
+                    kvp.Key, 
+                    kvp.Value.paddleSpriteName, 
+                    kvp.Value.rocketSpriteName,
+                    RpcTarget.Single(targetClientId, RpcTargetUse.Temp)
+                );
+            }
         }
     }
-}
-[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-private void SyncPlayerSpriteClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
-{
-    ApplyPlayerSprite(targetClientId, paddleSpriteName, rocketSpriteName);
-}
-
-[Rpc(SendTo.SpecifiedInParams, Delivery = RpcDelivery.Reliable)]
-private void SyncPlayerSpriteToSpecificClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName, RpcParams rpcParams = default)
-{
-    ApplyPlayerSprite(targetClientId, paddleSpriteName, rocketSpriteName);
-}
-private void ApplyPlayerSprite(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
-{
-    PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
-    foreach (var paddle in paddles)
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void SyncPlayerSpriteClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
     {
-        if (paddle.OwnerClientId == targetClientId)
+        ApplyPlayerSprite(targetClientId, paddleSpriteName, rocketSpriteName);
+    }
+
+    [Rpc(SendTo.SpecifiedInParams, Delivery = RpcDelivery.Reliable)]
+    private void SyncPlayerSpriteToSpecificClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName, RpcParams rpcParams = default)
+    {
+        ApplyPlayerSprite(targetClientId, paddleSpriteName, rocketSpriteName);
+    }
+    
+    private void ApplyPlayerSprite(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
+    {
+        PaddleController[] paddles = FindObjectsByType<PaddleController>(FindObjectsSortMode.None);
+        foreach (var paddle in paddles)
         {
-            var renderer = paddle.GetComponent<SpriteRenderer>();
-            if (renderer != null)
+            if (paddle.OwnerClientId == targetClientId)
             {
-                Sprite paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
-                if (paddleSprite != null)
+                var paddleVisuals = paddle.GetComponent<PaddleVisuals>();
+                if (paddleVisuals != null)
                 {
-                    renderer.sprite = paddleSprite;
+                    Sprite paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
+                    if (paddleSprite != null)
+                    {
+                        paddleVisuals.SetPaddleSprite(paddleSprite);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"can't find paddle sprite {paddleSpriteName}");
+                    }
                 }
-                else
+
+                if (allPlayers.ContainsKey(targetClientId)) // update PlayerInfo
                 {
-                    Debug.LogWarning($"can't find paddle sprite {paddleSpriteName}");
+                    PlayerInfo playerInfo = allPlayers[targetClientId];
+                    playerInfo.paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
+                    playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
                 }
-            }
 
-            if (allPlayers.ContainsKey(targetClientId)) // update PlayerInfo
-            {
-                PlayerInfo playerInfo = allPlayers[targetClientId];
-                playerInfo.paddleSprite = Resources.Load<Sprite>($"Sprites/{paddleSpriteName}");
-                playerInfo.rocketSprite = Resources.Load<Sprite>($"Sprites/{rocketSpriteName}");
+                break;
             }
-
-            break;
         }
     }
-}
-
-private void BroadcastSpaceshipSpriteToAllClients(string spriteName)
-{
-    foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
-    {
-        if(clientId == OwnerClientId) continue;
-        var rpcParams = new RpcParams
-        {
-            // Send = new RpcSendParams { Target = new[] { clientId }}
-
-        };
-    }
-}
-
 #endregion
 
 #region  SPACESHIP MODE

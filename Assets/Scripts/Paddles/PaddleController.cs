@@ -7,7 +7,7 @@ using System.Collections.Generic;
 /// Now handles spaceship mode switching and bullet firing. Ideally, these should be seperate scripts
 public class PaddleController : NetworkBehaviour
 {
-    [Header("Pong Settings")]
+   [Header("Pong Settings")]
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>(); // synced player IDs
     public int PlayerId { get; private set; }
     public GameObject playerSelectionUIPrefab;
@@ -15,13 +15,20 @@ public class PaddleController : NetworkBehaviour
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
-    private Sprite defaultSprite;
     private GameObject bulletPrefab;
     private float bulletSpeed;
     private float fireCooldown;
     private float lastFireTime;
-    private Vector3 originalScale;
+    
+    private PaddleVisuals paddleVisuals;
+    
     public bool isInSpaceshipMode() => inSpaceshipMode;
+    
+    private void Awake()
+    {
+        paddleVisuals = GetComponent<PaddleVisuals>();
+    }
+    
     public override void OnNetworkSpawn()
     {
         if (!IsOwner) return; // only runs for local player
@@ -46,6 +53,7 @@ public class PaddleController : NetworkBehaviour
             VisualEventsManager.Instance.RegisterPaddle(this);
         }
     }
+    
     public int GetPlayerId() => playerIdVar.Value;
 
     // server sets player ID and rotates if horizontal
@@ -66,6 +74,7 @@ public class PaddleController : NetworkBehaviour
         if (IsOwner)
             NotifyReadyServerRpc();
     }
+    
     // Server-Rpc - triggered when the client clicks the ready button.
     // It tells the server - who tracks ready players - that 'I' am ready
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
@@ -88,19 +97,6 @@ public class PaddleController : NetworkBehaviour
         uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
     }
     
-    #region SPRITE SYSTEM
-
-    // private void OnSpriteIndexChanged(int oldValue, int newValue)
-    // {
-    //     if (newValue == -1) return; // load sprite based on index
-    //     // var sprite = GetSpriteByIndex(newValue);
-    //     //GetComponent<SpriteRenderer>().sprite = sprite;
-    // }
-    /// maybe different approach?
-
-    #endregion
-    
-    
     #region SPACESHIP MODE
     /// <summary>
     /// Below are functions for Spaceship controls, firing bullets
@@ -118,16 +114,9 @@ public class PaddleController : NetworkBehaviour
         this.bulletSpeed = bulletSpeed;
         this.fireCooldown = fireCooldown;
 
-        var renderer = GetComponent<SpriteRenderer>();
         if (active)
         {
-            if (defaultSprite == null)
-                defaultSprite = renderer.sprite;
-            renderer.sprite = rocketSprite;
-            if (originalScale == Vector3.zero)
-                originalScale = transform.localScale;
-
-            transform.localScale = originalScale * 0.5f; // Shrink player so i don't have to redraw sprites
+            paddleVisuals.SetSpaceshipSprite(rocketSprite);
             // give player spaceship controls if local
             if (IsOwner)
             {
@@ -136,13 +125,7 @@ public class PaddleController : NetworkBehaviour
         }
         else
         {
-            if (originalScale != Vector3.zero)
-                transform.localScale = originalScale;
-            else
-                transform.localScale = Vector3.one; // fallback
-
-            renderer.sprite = defaultSprite;
-
+            paddleVisuals.RestoreDefaultSprite();
             if (IsOwner)
                 GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
         }
