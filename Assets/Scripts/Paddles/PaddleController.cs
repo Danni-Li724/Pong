@@ -118,6 +118,7 @@ public class PaddleController : NetworkBehaviour
         if (active)
         {
             paddleVisuals.SetSpaceshipSprite(rocketSprite);
+            transform.localRotation = Quaternion.identity;
             paddleVisuals.transform.localRotation = Quaternion.identity;
             // give player spaceship controls if local
             if (IsOwner)
@@ -128,6 +129,16 @@ public class PaddleController : NetworkBehaviour
         else
         {
             paddleVisuals.RestoreDefaultSprite();
+        
+            // Restore original paddle rotation if it was horizontal
+            if (IsHorizontal)
+            {
+                transform.localRotation = Quaternion.Euler(0, 0, 90);
+            }
+            else
+            {
+                transform.localRotation = Quaternion.identity;
+            }
             paddleVisuals.transform.localRotation = Quaternion.identity;
 
             if (IsOwner)
