@@ -14,6 +14,11 @@ public class BoonManager : NetworkBehaviour
     [SerializeField] private Transform boonButtonContainer;
     [SerializeField] private GameObject boonButtonPrefab;
     private List<ulong> expectedPlayerIds = new List<ulong>();
+    // a reference of active boon buttons on screen
+    private Dictionary<BoonType, GameObject> activeBoonButtons = new Dictionary<BoonType, GameObject>();
+    // NetVar to track how many players in boon selection to fix early start bug..
+    private NetworkVariable<int> activePlayersInBoonSelection = new NetworkVariable<int>(0,
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     
     [Header("Player Inventories")]
     [SerializeField] private Transform[] playerInventorySlots = new Transform[4];
@@ -25,8 +30,6 @@ public class BoonManager : NetworkBehaviour
     private Dictionary<ulong, List<BoonType>> playerInventories = new Dictionary<ulong, List<BoonType>>();
     // Client-side data synced from server. It's a client-side cache of inventories which are used for displaying UIs/visuals. 
     private Dictionary<ulong, List<BoonType>> clientPlayerInventories = new Dictionary<ulong, List<BoonType>>();
-    // a reference of active boon buttons on screen
-    private Dictionary<BoonType, GameObject> activeBoonButtons = new Dictionary<BoonType, GameObject>();
     
     // Server-side tracking of available boons
     private List<BoonType> availableBoonTypes = new List<BoonType>();
@@ -66,6 +69,9 @@ public class BoonManager : NetworkBehaviour
             .Where(p => p.isConnected)
             .Select(p => p.clientId)
             .ToList();
+        
+        activePlayersInBoonSelection.Value = expectedPlayerIds.Count; // setting up total count
+        Debug.Log($"Starting boon selection with {activePlayersInBoonSelection.Value} active players");
 
         boonSelectionActive = true;
         playerInventories.Clear();
@@ -262,18 +268,12 @@ public class BoonManager : NetworkBehaviour
     {
         if (!IsServer) return;
         
-        var allPlayers = NetworkGameManager.Instance.GetAllPlayers();
-        Debug.Log($"All players count: {allPlayers.Count}");
-        if (allPlayers.Count == 0)
-        {
-            // had to add this because the All() in Linq apparently returns true by default if I have an empty collection...debugged for hours
-            return;
-        }
-        bool allSelected = expectedPlayerIds.All(clientId =>
-            playerInventories.ContainsKey(clientId) &&
-            playerInventories[clientId].Count > 0);
-        Debug.Log($"Checking all players selected: {allPlayers.Count} players, {playerInventories.Count} have boons");
-        if (allSelected)
+        // Get the count of players who have selected boons
+        int playersWithBoons = playerInventories.Count(kvp => kvp.Value.Count > 0);
+        Debug.Log($"Checking all players selected: {playersWithBoons}/{activePlayersInBoonSelection.Value} players have selected boons");
+        
+        // Check if all active players (not all connected ones now) have selected a boon
+        if (playersWithBoons >= activePlayersInBoonSelection.Value)
         {
             Debug.Log("All players have selected boons!");
             boonSelectionActive = false;
