@@ -66,7 +66,7 @@ public class VisualEventsManager : NetworkBehaviour
     // Called by PaddleController on spawn
     public void RegisterPaddle(PaddleController paddle)
     {
-        var spriteRenderer = paddle.GetComponent<SpriteRenderer>();
+        var spriteRenderer = paddle.GetComponentInChildren<SpriteRenderer>();
         int paddleId = paddle.gameObject.GetInstanceID();
         spriteRenderer.sprite = GetPaddleSprite(paddleId);
     }
