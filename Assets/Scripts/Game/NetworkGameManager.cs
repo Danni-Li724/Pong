@@ -43,6 +43,7 @@ public class NetworkGameManager : NetworkBehaviour
     
     [Header("Game UIs")]
     [SerializeField] private GameObject playerCountSelectionPanel;
+    [SerializeField] private GameObject maxScorePanel;
     [SerializeField] private GameObject startGamePanel;
     [SerializeField] private Text playerCountText;
     [SerializeField] private GameObject gameEndPanel;
@@ -312,13 +313,25 @@ public class NetworkGameManager : NetworkBehaviour
             allPlayers[clientId].isReady = true;
             if (AllPlayersReady())
             {
-                StartBoonSelection();
+                ShowMaxScorePanelClientRpc();
             }
         };
     }
     
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void ShowMaxScorePanelClientRpc()
+    {
+        if (IsHost)
+        {
+            if (maxScorePanel != null)
+            {
+                maxScorePanel.SetActive(true);
+            }
+        }
+    }
+    
     // When all players have readied up, tell BoonManager to start the Boon selection process/System
-    private void StartBoonSelection()
+    public void StartBoonSelection()
     {
         // now syncing all sprites before starting
         foreach (var kvp in allPlayers)

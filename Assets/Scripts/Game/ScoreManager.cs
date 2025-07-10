@@ -4,7 +4,6 @@ using UnityEngine.UI;
 
 public class ScoreManager : NetworkBehaviour
 {
-    public int maxScoreToWin = 20;
     // Because the scores are constantly updating at runtime and significant to everyone, using Network Var will automatically sync them to all clients
     public NetworkVariable<int> player1Score = new();
     public NetworkVariable<int> player2Score = new();
@@ -13,6 +12,10 @@ public class ScoreManager : NetworkBehaviour
 
     public BallPhysics ballPhysics;
     private bool gameEnded = false;
+    public NetworkVariable<int> maxScoreToWin = new NetworkVariable<int>(20, 
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    [SerializeField] private Text maxScoreText;
     private void OnEnable()
     {
         BallPhysics.OnPlayerScored += HandleScore;
@@ -56,22 +59,22 @@ public class ScoreManager : NetworkBehaviour
         int maxScore = 0;
 
         // Check each player's score and give Ids
-        if (player1Score.Value >= maxScoreToWin && player1Score.Value > maxScore)
+        if (player1Score.Value >= maxScoreToWin.Value && player1Score.Value > maxScore)
         {
             winnerPlayerId = 1;
             maxScore = player1Score.Value;
         }
-        if (player2Score.Value >= maxScoreToWin && player2Score.Value > maxScore)
+        if (player2Score.Value >= maxScoreToWin.Value && player2Score.Value > maxScore)
         {
             winnerPlayerId = 2;
             maxScore = player2Score.Value;
         }
-        if (player3Score.Value >= maxScoreToWin && player3Score.Value > maxScore)
+        if (player3Score.Value >= maxScoreToWin.Value && player3Score.Value > maxScore)
         {
             winnerPlayerId = 3;
             maxScore = player3Score.Value;
         }
-        if (player4Score.Value >= maxScoreToWin && player4Score.Value > maxScore)
+        if (player4Score.Value >= maxScoreToWin.Value && player4Score.Value > maxScore)
         {
             winnerPlayerId = 4;
             maxScore = player4Score.Value;
@@ -161,5 +164,21 @@ public class ScoreManager : NetworkBehaviour
         VisualEventsManager.Instance?.UpdateScoreUIClientRpc(
             player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
         );
+    }
+    
+    public void SetMaxScore(int score)
+    {
+        if (!IsServer) return;
+        maxScoreToWin.Value = score;
+        UpdateMaxScoreTextClientRpc(score);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void UpdateMaxScoreTextClientRpc(int score)
+    {
+        if (maxScoreText != null)
+        {
+            maxScoreText.text = $"Score {score} to win!";
+        }
     }
 }
