@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 54bb2b5d37742074d819df5e86a16d8a, type: 3}
-  m_Name: SpaceshipMode
+  m_Name: ScoreThief
   m_EditorClassIdentifier: 
-  effectName: Spaceship Mode
-  description: Starts a 30 seconds spaceship game!
-  icon: {fileID: 21300000, guid: f19e3ead512540e46a46a507bae810e2, type: 3}
-  duration: 30
-  type: 0
+  effectName: Score Thief
+  description: Deducts 3 from a chosen player's score!
+  icon: {fileID: 1469057894519670417, guid: c13f9154f074a284195ed3fcaae924ea, type: 3}
+  duration: 1
+  type: 4
   isReusable: 0

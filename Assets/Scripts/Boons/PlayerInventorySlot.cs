@@ -16,6 +16,9 @@ public class PlayerInventorySlot : NetworkBehaviour
     private ulong ownerClientId;
     private bool hasBoon = false;
     
+    public ulong clientId;
+    public int playerId;
+    
     private void Awake()
     {
         if (useButton != null)
@@ -77,8 +80,23 @@ public class PlayerInventorySlot : NetworkBehaviour
     {
         if (hasBoon && currentBoon != null)
         {
-            BoonManager.Instance.UseBoon(ownerClientId, currentBoon.type);
-            Debug.Log($"Player {ownerClientId} clicked to use boon {currentBoon.type}");
+            // cache currentboon locally to fix
+            var boon = currentBoon;
+            Debug.Log($"Player {ownerClientId} clicked to use boon {boon.type}");
+            BoonManager.Instance.UseBoon(ownerClientId, boon.type);
         }
     }
+    public bool TryAssign(ulong targetClientId, int newPlayerId)
+    {
+        // Assign to empty slot or override if matching clientId
+        if (clientId == 0 || clientId == targetClientId)
+        {
+            clientId = targetClientId;
+            playerId = newPlayerId;
+            playerIdText.text = $"Player {playerId}";
+            return true;
+        }
+        return false;
+    }
+
 }

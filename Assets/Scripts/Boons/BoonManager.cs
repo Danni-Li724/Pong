@@ -1,7 +1,10 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Rendering;
+
 /// <summary>
 /// Handles boon selection, syncing, and applying effects across all players.
 /// This class is owned by the server, referenced by BoonButton and PlayerInventorySlot.
@@ -22,6 +25,7 @@ public class BoonManager : NetworkBehaviour
     
     [Header("Player Inventories")]
     [SerializeField] private Transform[] playerInventorySlots = new Transform[4];
+    [SerializeField] private GameObject nominationButtonPrefab;
 
     public static BoonManager Instance { get; private set; }
     
@@ -79,7 +83,7 @@ public class BoonManager : NetworkBehaviour
         // Set up available boons on server
         availableBoonTypes = availableBoons
             .OrderBy(x => Random.value) // randomly choose 4 bools from the pool, so that it's different every game
-            .Take(4) // select the first 4, for now i only have 4
+            .Take(5) // select available (I added more now:D)
             .Select(b => b.type) // project each boonEffect to its boonType enum
             .ToList(); // keep as list for easier manipulation
         
@@ -313,45 +317,17 @@ public class BoonManager : NetworkBehaviour
     private void RequestUseBoonServerRpc(ulong clientId, BoonType boonType)
     {
         Debug.Log($"Server received use boon request from client {clientId} for boon {boonType}");
-        
-        // Validate that player owns this boon before applying
+
         if (!playerInventories.ContainsKey(clientId) || !playerInventories[clientId].Contains(boonType))
         {
             Debug.Log($"Player {clientId} doesn't have boon {boonType}");
             return;
         }
-        
-        // Server applies the effect *locally*
-        var boonEffect = availableBoons.Find(b => b.type == boonType);
-        if (boonEffect != null)
-        {
-            ApplyBoonEffect(boonEffect); // This is now SERVER-ONLY!
-        }
-        
-        if (boonEffect != null && !boonEffect.isReusable)
-        {
-            playerInventories[clientId].Remove(boonType);
-            SyncAllInventoriesToClients();
-        }
-
-        // Send a client RPC to trigger only client-side effects (UI/sound etc.)
-        ApplyClientSideEffectClientRpc(boonType);
-    }
-    
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void ApplyClientSideEffectClientRpc(BoonType boonType)
-    {
-        if (IsServer) return; // Prevent host from double-triggering
 
         var boonEffect = availableBoons.Find(b => b.type == boonType);
-        if (boonEffect != null)
-        {
-            ApplyBoonEffect(boonEffect);
-        }
-    }
-    
-    private void ApplyBoonEffect(BoonEffect boonEffect)
-    {
+        if (boonEffect == null) return;
+
+        // Run game logic effects on server ONLY
         switch (boonEffect.type)
         {
             case BoonType.SpaceshipMode:
@@ -361,15 +337,147 @@ public class BoonManager : NetworkBehaviour
                 SpawnDoubleBall(boonEffect.duration);
                 break;
             case BoonType.BallSpeedBoost:
-                ModifyBallSpeed(1.5f, boonEffect.duration);
+                ModifyBallSpeed(2f, boonEffect.duration);
                 break;
             case BoonType.MusicChange:
-                CycleMusicTrack();
+                CycleMusicTrack(); // server-side logic
                 break;
+        }
+
+        // Remove non-reusable boons
+        if (!boonEffect.isReusable)
+        {
+            playerInventories[clientId].Remove(boonType);
+            SyncAllInventoriesToClients();
+        }
+
+        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+        if (playerInfo != null)
+        {
+            ApplyClientSideEffectClientRpc(boonType, clientId, playerInfo.playerId);
         }
     }
     
-    // below are functions for each boon effects. Possibly ideal to separate into an independent event driven class.
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void ApplyClientSideEffectClientRpc(BoonType boonType, ulong boonUserId, int boonPlayerId)
+    {
+        if (NetworkManager.Singleton.LocalClientId != boonUserId) return;
+
+        Debug.Log($"[CLIENT] ApplyClientSideEffect for {boonType}");
+
+        var boonEffect = availableBoons.Find(b => b.type == boonType);
+        if (boonEffect == null) return;
+
+        if (boonEffect.type == BoonType.ScoreThief)
+        {
+            PrepareNomination(boonUserId, boonPlayerId); // pass ID directly
+        }
+        // NOT applying gameplay logic here like CycleMusic/SpawnBall to avoid doubling up
+    }
+    
+    #region BOON EFFECTS // below are functions for each boon effects. 
+    
+    // Updated this method to use the boon user's client ID for correct nomination assignment
+    private void PrepareNomination(ulong boonUserId, int boonPlayerId)
+{
+    Debug.Log($"Preparing nomination for local client {NetworkManager.Singleton.LocalClientId}, boon user = {boonUserId}");
+
+    if (NetworkManager.Singleton.LocalClientId != boonUserId)
+    {
+        Debug.Log("Not boon owner, skipping nomination UI");
+        return;
+    }
+
+    int slotIndex = boonPlayerId - 1;
+    if (slotIndex < 0 || slotIndex >= playerInventorySlots.Length)
+    {
+        Debug.LogError($"Invalid slot index: {slotIndex}");
+        return;
+    }
+
+    var slot = playerInventorySlots[slotIndex];
+    var nominationParent = slot.Find("Nomination");
+    if (nominationParent == null)
+    {
+        Debug.LogError("Nomination parent not found!");
+        return;
+    }
+
+    // Clear old buttons
+    foreach (Transform child in nominationParent)
+        Destroy(child.gameObject);
+
+    // Get all visible UI player slots and assign buttons
+    for (int i = 0; i < playerInventorySlots.Length; i++)
+    {
+        if (i == slotIndex) continue; // skip self
+
+        var playerSlot = playerInventorySlots[i];
+        var info = playerSlot.GetComponent<PlayerInventorySlot>();
+        if (info == null) continue;
+
+        GameObject buttonObj = Instantiate(nominationButtonPrefab, nominationParent);
+        var text = buttonObj.GetComponentInChildren<Text>();
+        if (text != null)
+        {
+            text.text = $"Player {i + 1}";
+        }
+
+        var button = buttonObj.GetComponent<Button>();
+        if (button != null)
+        {
+            // Assume mapping is playerId == i + 1
+            ulong victimClientId = clientPlayerInventories.FirstOrDefault(kvp => 
+                NetworkGameManager.Instance.GetPlayerInfo(kvp.Key)?.playerId == i + 1
+            ).Key;
+
+            button.onClick.AddListener(() =>
+            {
+                TryNominatePlayerForScoreThief(victimClientId);
+                foreach (Transform c in nominationParent) Destroy(c.gameObject);
+            });
+        }
+    }
+}
+
+
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+    private void ScoreThiefNominationServerRpc(ulong thiefClientId, ulong victimClientId)
+    {
+        Debug.Log($"Score Thief: Player {thiefClientId} is stealing from {victimClientId}");
+        // Get player info to convert client ID to player ID
+        var victimPlayerInfo = NetworkGameManager.Instance.GetPlayerInfo(victimClientId);
+        if (victimPlayerInfo == null)
+        {
+            Debug.LogError($"No player info found for client {victimClientId}");
+            return;
+        }
+    
+        ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+        var canDeduct = scoreManager.TryDeductPointsByPlayerId(victimPlayerInfo.playerId, 3);
+        if (canDeduct)
+        {
+            Debug.Log($"Successfully deducted 3 points from player {victimPlayerInfo.playerId}");
+        
+            // remove ScoreThief from thief's inventory
+            if (playerInventories.TryGetValue(thiefClientId, out var boons))
+            {
+                boons.Remove(BoonType.ScoreThief);
+                SyncAllInventoriesToClients();
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Score Thief failed - not enough points for player {victimPlayerInfo.playerId}");
+        }
+    }
+
+    private void TryNominatePlayerForScoreThief(ulong targetClientId)
+    {
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        ScoreThiefNominationServerRpc(localId, targetClientId);
+    }
+    
     private void CycleMusicTrack()
     {
         if (!IsServer) return;
@@ -418,4 +526,5 @@ public class BoonManager : NetworkBehaviour
             return clientPlayerInventories.ContainsKey(clientId) ? clientPlayerInventories[clientId] : new List<BoonType>();
         }
     }
+    #endregion
 }

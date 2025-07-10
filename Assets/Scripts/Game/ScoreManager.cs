@@ -126,18 +126,31 @@ public class ScoreManager : NetworkBehaviour
         };
     }
     
-    // Called by boon system to spend points. I had no time to fix & implement for now but will get it to work in my own time :(
-    public bool TrySpendPoints(ulong clientId, int amount)
+    // Fix score deduction method for new boon
+    
+    public bool TryDeductPointsByPlayerId(int playerId, int amount)
     {
-        if (GetScore(clientId) < amount) return false;
+        ref NetworkVariable<int> targetScore = ref player1Score;
 
-        switch (clientId)
+        switch (playerId)
         {
-            case 0: player1Score.Value -= amount; break;
-            case 1: player2Score.Value -= amount; break;
-            case 2: player3Score.Value -= amount; break;
-            case 3: player4Score.Value -= amount; break;
+            case 1: targetScore = ref player1Score; break;
+            case 2: targetScore = ref player2Score; break;
+            case 3: targetScore = ref player3Score; break;
+            case 4: targetScore = ref player4Score; break;
+            default: 
+                Debug.LogError($"Invalid player ID: {playerId}");
+                return false;
         }
+
+        if (targetScore.Value < amount)
+        {
+            Debug.Log($"Player {playerId} doesn't have enough points ({targetScore.Value} < {amount})");
+            return false;
+        }
+
+        targetScore.Value -= amount;
+        Debug.Log($"Deducted {amount} points from player {playerId}. New score: {targetScore.Value}");
 
         VisualEventsManager.Instance?.UpdateScoreUIClientRpc(
             player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
@@ -145,6 +158,30 @@ public class ScoreManager : NetworkBehaviour
 
         return true;
     }
+    // public bool TryDeductPoints(ulong clientId, int amount)
+    // {
+    //     ref NetworkVariable<int> targetScore = ref player1Score;
+    //
+    //     switch (clientId)
+    //     {
+    //         case 0: targetScore = ref player1Score; break;
+    //         case 1: targetScore = ref player2Score; break;
+    //         case 2: targetScore = ref player3Score; break;
+    //         case 3: targetScore = ref player4Score; break;
+    //         default: return false;
+    //     }
+    //
+    //     if (targetScore.Value < amount)
+    //         return false;
+    //
+    //     targetScore.Value -= amount;
+    //
+    //     VisualEventsManager.Instance?.UpdateScoreUIClientRpc(
+    //         player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
+    //     );
+    //
+    //     return true;
+    // }
     
     // Called when bullet hits a paddle in spaceship mode on the server side
     public void HandleBulletHit(int playerId)

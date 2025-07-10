@@ -178,7 +178,19 @@ public class NetworkGameManager : NetworkBehaviour
                 visuals.SetPaddleSpriteAsDefault(playerInfo.paddleSprite);
             }
         }
+        UpdateClientPlayerUIClientRpc(clientId, playerId);
     }
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void UpdateClientPlayerUIClientRpc(ulong clientId, int playerId)
+    {
+        var allSlots = FindObjectsOfType<PlayerInventorySlot>();
+        foreach (var slot in allSlots)
+        {
+            if (slot.TryAssign(clientId, playerId)) break;
+        }
+    }
+
     // Only the host can select total player count because this decision can only be made by one person to avoid conflict
     private void ShowPlayerSelectionForHost()
     {
@@ -436,7 +448,14 @@ public class NetworkGameManager : NetworkBehaviour
                 );
             }
         }
+        SendMaxPlayersToClientRpc(maxPlayers.Value, targetClientId);
     }
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SendMaxPlayersToClientRpc(int maxPlayersValue, ulong targetClientId)
+    {
+        maxPlayers.Value = maxPlayersValue; // client-side override
+    }
+
     
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void SyncPlayerSpriteClientRpc(ulong targetClientId, string paddleSpriteName, string rocketSpriteName)
