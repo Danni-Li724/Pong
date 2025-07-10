@@ -2190,6 +2190,8 @@ MonoBehaviour:
   nameText: {fileID: 419705452}
   useButton: {fileID: 1261330026}
   playerIdText: {fileID: 199816717}
+  clientId: 0
+  playerId: 0
 --- !u!222 &641008152
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2694,6 +2696,8 @@ MonoBehaviour:
   nameText: {fileID: 1149620918}
   useButton: {fileID: 1476855675}
   playerIdText: {fileID: 1493491020}
+  clientId: 0
+  playerId: 0
 --- !u!222 &811569364
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3534,6 +3538,8 @@ MonoBehaviour:
   nameText: {fileID: 20341754}
   useButton: {fileID: 1489480240}
   playerIdText: {fileID: 100002414}
+  clientId: 0
+  playerId: 0
 --- !u!114 &1053645181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5448,8 +5454,6 @@ MonoBehaviour:
   playerInventorySlots:
   - {fileID: 1053645176}
   - {fileID: 641008148}
-  - {fileID: 1740177331}
-  - {fileID: 811569360}
   nominationButtonPrefab: {fileID: 4495128711077280269, guid: 9a07b8ca5fc03d642b0d6f483564f4b9, type: 3}
 --- !u!4 &1438181485
 Transform:
@@ -6260,6 +6264,8 @@ MonoBehaviour:
   nameText: {fileID: 1017740077}
   useButton: {fileID: 67863312}
   playerIdText: {fileID: 2119141857}
+  clientId: 0
+  playerId: 0
 --- !u!222 &1740177335
 CanvasRenderer:
   m_ObjectHideFlags: 0
