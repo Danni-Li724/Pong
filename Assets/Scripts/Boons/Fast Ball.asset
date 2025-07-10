@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   effectName: Fast Ball
   description: Makes the ball go faster!
-  icon: {fileID: 21300000, guid: f30c689e1cd8caa45a28c4947f382374, type: 3}
+  icon: {fileID: 21300000, guid: b44956ec182da284d90fcbceca9eabf5, type: 3}
   duration: 15
   type: 2
+  isReusable: 0

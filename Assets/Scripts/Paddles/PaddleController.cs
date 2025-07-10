@@ -15,7 +15,7 @@ public class PaddleController : NetworkBehaviour
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
-    private GameObject bulletPrefab;
+    [SerializeField] GameObject bulletPrefab;
     private float bulletSpeed;
     private float fireCooldown;
     private float lastFireTime;
@@ -210,15 +210,42 @@ public class PaddleController : NetworkBehaviour
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
     private void FireServerRpc(Vector2 direction)
     {
-        GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
-        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
-        rb.linearVelocity = direction * bulletSpeed;
-        // shoot bullet to face direction
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        bullet.transform.rotation = Quaternion.Euler(0, 0, angle);
+        float bulletSpawnOffset = 1.0f;
+        Vector2 spawnPos = (Vector2)transform.position + direction.normalized * bulletSpawnOffset;
 
-        NetworkObject bulletNetObj = bullet.GetComponent<NetworkObject>();
-        bulletNetObj.Spawn();
+        GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
+
+        // assigns shooter to bullet before anything else
+        Bullet bulletScript = bullet.GetComponent<Bullet>();
+        if (bulletScript != null)
+        {
+            bulletScript.SetShooter(GetComponent<NetworkObject>());
+        }
+
+        // ignore collision with shooter
+        Collider2D playerCol = GetComponent<Collider2D>();
+        Collider2D bulletCol = bullet.GetComponent<Collider2D>();
+        if (playerCol != null && bulletCol != null)
+        {
+            Physics2D.IgnoreCollision(bulletCol, playerCol);
+        }
+
+        // velocity and rotation
+        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.linearVelocity = direction * bulletSpeed;
+
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            bullet.transform.rotation = Quaternion.Euler(0, 0, angle);
+        }
+
+        // netSpawn
+        NetworkObject netObj = bullet.GetComponent<NetworkObject>();
+        if (netObj != null)
+        {
+            netObj.Spawn();
+        }
     }
     #endregion
 }

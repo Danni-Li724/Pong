@@ -3,21 +3,27 @@ using UnityEngine;
 
 public class Bullet : NetworkBehaviour
 {
-    public float damageAmount = 1f;
-    public float maxDistance = 30f; 
-
+    public float damageAmount;
+    public float maxDistance; 
     private Vector2 spawnPosition;
     private float despawnTime = 5f;
 
     private Rigidbody2D rb;
 
+    private NetworkObject shooterNetObject; // Reference to shooter
+
+    public void SetShooter(NetworkObject shooter)
+    {
+        shooterNetObject = shooter;
+    }
+
     public override void OnNetworkSpawn()
     {
         spawnPosition = transform.position;
         rb = GetComponent<Rigidbody2D>();
+
         if (IsServer)
         {
-            // Start despawn countdown
             Invoke(nameof(DespawnBullet), despawnTime);
         }
     }
@@ -26,7 +32,6 @@ public class Bullet : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        // disappear if max distance exceeded
         if (Vector2.Distance(spawnPosition, transform.position) > maxDistance)
         {
             DespawnBullet();
@@ -36,6 +41,13 @@ public class Bullet : NetworkBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!IsServer) return;
+
+        // Prevent hitting the shooter
+        NetworkObject otherNetObj = other.GetComponent<NetworkObject>();
+        if (otherNetObj != null && otherNetObj == shooterNetObject)
+        {
+            return;
+        }
 
         PaddleController pc = other.GetComponent<PaddleController>();
         if (pc != null)
@@ -50,6 +62,7 @@ public class Bullet : NetworkBehaviour
             DespawnBullet();
         }
     }
+
     private void DespawnBullet()
     {
         if (NetworkObject != null && NetworkObject.IsSpawned)

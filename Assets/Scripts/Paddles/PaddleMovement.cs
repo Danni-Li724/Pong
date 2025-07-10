@@ -6,6 +6,7 @@ using UnityEngine;
 public class PaddleMovement : NetworkBehaviour
 {
     private Vector2 moveInput;
+    private Rigidbody2D rb;
 
     public float moveSpeed;
     public float topLimit, bottomLimit, leftLimit, rightLimit;
@@ -15,6 +16,7 @@ public class PaddleMovement : NetworkBehaviour
     private void Awake()
     {
         controller = GetComponent<PaddleController>();
+        rb = GetComponent<Rigidbody2D>();
     }
 
     // Called by server when it receives move input from client via InputHandler
@@ -23,12 +25,15 @@ public class PaddleMovement : NetworkBehaviour
         moveInput = input;
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (!IsServer) return; // Only server moves paddles
 
-        Vector3 movementDirection = new Vector3(moveInput.x, moveInput.y, 0).normalized;
-        transform.Translate(movementDirection * moveSpeed * Time.deltaTime, Space.World);
+        // Vector3 movementDirection = new Vector3(moveInput.x, moveInput.y, 0).normalized;
+        // transform.Translate(movementDirection * moveSpeed * Time.deltaTime, Space.World);
+        Vector2 movementDirection = moveInput.normalized;
+        Vector2 targetPosition = rb.position + movementDirection * moveSpeed * Time.fixedDeltaTime;
+
 
         if (controller == null || !controller.isInSpaceshipMode())
         {
@@ -38,14 +43,8 @@ public class PaddleMovement : NetworkBehaviour
                 pos.x = Mathf.Clamp(pos.x, leftLimit, rightLimit);
             else
                 pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
-
-            transform.position = pos;
         }
-        // else if (movementDirection.sqrMagnitude > 0.01f)
-        // {
-        //     // face movement direction when it's a spaceship
-        //     float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg;
-        //     transform.rotation = Quaternion.Euler(0, 0, angle);
-        // }
+        // transform.position = pos;
+        rb.MovePosition(targetPosition);
     }
 }

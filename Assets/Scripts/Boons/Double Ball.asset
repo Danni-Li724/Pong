@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   effectName: Double Ball
   description: Spawns 2 balls for 20 seconds!
-  icon: {fileID: 21300000, guid: d2c0dc76eca05bb4eb4f3fc4a37f258d, type: 3}
+  icon: {fileID: 21300000, guid: 1ec60d1960417904e9e0a74a92752203, type: 3}
   duration: 20
   type: 1
+  isReusable: 0
