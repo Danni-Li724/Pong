@@ -3,7 +3,7 @@ using UnityEngine.UI;
 [ExecuteAlways]
 public class HexagonLayoutGroup : MonoBehaviour
 {
-    public float radius = 100f;
+    public float radius = 80f;
     public bool includeCenter = true;
     public float rotationSpeed = 10f; // degrees per second (clockwise)
 

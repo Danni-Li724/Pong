@@ -552,9 +552,13 @@ private void ActivateSpaceshipModeClientRpc(float bulletSpeed, float fireCooldow
         EndSpaceshipModeClientRpc();
     
         // Respawn ball
-        if (spawnedBall != null && !spawnedBall.GetComponent<NetworkObject>().IsSpawned)
+        if (spawnedBall == null || !spawnedBall.GetComponent<NetworkObject>().IsSpawned)
         {
+            spawnedBall = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
             spawnedBall.GetComponent<NetworkObject>().Spawn();
+        }
+        else
+        {
             spawnedBall.transform.position = Vector3.zero;
         }
         AudioManager.instance.EndSpaceshipModeMusic();

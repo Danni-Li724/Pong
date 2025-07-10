@@ -20,6 +20,9 @@ public class BallPhysics : NetworkBehaviour
         {
             Debug.LogError("rb2D not found on " + gameObject.name);
         }
+        rb.linearDamping = 0f; // to fix deceleration issue
+        rb.angularDamping = 0f;
+        rb.gravityScale = 0f;
     }
 
     private void Start()
@@ -35,6 +38,20 @@ public class BallPhysics : NetworkBehaviour
         Vector2 direction = new Vector2(UnityEngine.Random.Range(0, 2) == 0 ? -1 : 1, UnityEngine.Random.Range(-1f, 1f)).normalized;
         rb.linearVelocity = direction * speed;
     }
+    
+    private void FixedUpdate()
+    {
+        if (!IsServer) return;
+
+        float expectedSpeed = speed;
+        float actualSpeed = rb.linearVelocity.magnitude;
+        // reapply force if ball drops below a certain velocity - fix to deceleration issue
+        if (actualSpeed < expectedSpeed * 0.9f)
+        {
+            rb.linearVelocity = rb.linearVelocity.normalized * expectedSpeed;
+        }
+    }
+
 
     public void ResetBall()
     {
