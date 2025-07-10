@@ -250,22 +250,19 @@ public class NetworkGameManager : NetworkBehaviour
     private void AssignGoals()
     {
         GoalController[] allGoals = FindObjectsOfType<GoalController>();
-        Transform[] spawnPoints = new Transform[]
-        {
-            leftSpawn,
-            rightSpawn,
-            topSpawn,
-            bottomSpawn
-        };
+        Transform[] activeSpawns = GetAllPlayers()
+            .Select(p => GetSpawnTransform(p.playerId))
+            .Where(t => t != null)
+            .ToArray(); // fix: only using spawn points for players who are actually in the game
         for (int i = 0; i < allGoals.Length; i++)
         {
             GoalController closestGoal = null;
             float closestDistance = float.MaxValue;
             int matchedPlayerId = -1;
             // setting goal to player by checking distance
-            for (int playerId = 1; playerId <= spawnPoints.Length; playerId++)
+            for (int playerId = 1; playerId <= activeSpawns.Length; playerId++)
             {
-                float dist = Vector3.Distance(allGoals[i].transform.position, spawnPoints[playerId - 1].position);
+                float dist = Vector3.Distance(allGoals[i].transform.position, activeSpawns[playerId - 1].position);
                 if (dist < closestDistance)
                 {
                     closestDistance = dist;

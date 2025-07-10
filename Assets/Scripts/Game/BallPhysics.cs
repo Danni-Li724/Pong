@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using System;
+using System.Linq;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class BallPhysics : NetworkBehaviour
@@ -57,9 +58,16 @@ public class BallPhysics : NetworkBehaviour
 
         if (collision.gameObject.TryGetComponent<GoalController>(out var goal))
         {
-            int goalOwner = goal.GetGoalForPlayerId();
-        
-            if (lastPlayerId != -1 && lastPlayerId != goalOwner)
+            int goalOwnerId = goal.GetGoalForPlayerId();
+
+            // get goal owner client ID from player ID
+            var goalOwnerInfo = NetworkGameManager.Instance.GetAllPlayers()
+                .FirstOrDefault(p => p.playerId == goalOwnerId);
+            bool goalOwnerExists = goalOwnerInfo != null;
+            // FIXED: only score if: 1. last player to touch ball is valid
+            //2. goal owner exists and is connected
+            //3. last player don't score on their own goal
+            if (lastPlayerId != -1 && goalOwnerExists && lastPlayerId != goalOwnerId)
             {
                 OnPlayerScored?.Invoke(lastPlayerId);
             }
