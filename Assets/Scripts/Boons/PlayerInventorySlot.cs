@@ -80,7 +80,27 @@ public class PlayerInventorySlot : NetworkBehaviour
     {
         if (hasBoon && currentBoon != null)
         {
-            // cache currentboon locally to fix
+            // Check if it's PaddleTilt boon and if we're in spaceship mode
+            if (currentBoon.type == BoonType.PaddleTilt)
+            {
+                // Find the paddle controller for this client to check spaceship mode
+                var paddles = FindObjectsOfType<PaddleController>();
+                foreach (var paddle in paddles)
+                {
+                    var networkObject = paddle.GetComponent<NetworkObject>();
+                    if (networkObject != null && networkObject.OwnerClientId == ownerClientId)
+                    {
+                        if (paddle.isInSpaceshipMode())
+                        {
+                            Debug.Log("[PlayerInventorySlot] Cannot use Paddle Tilt during Spaceship Mode");
+                            return; // Exit early and don't use the boon
+                        }
+                        break;
+                    }
+                }
+            }
+        
+            // Cache currentboon locally
             var boon = currentBoon;
             Debug.Log($"Player {ownerClientId} clicked to use boon {boon.type}");
             BoonManager.Instance.UseBoon(ownerClientId, boon.type);

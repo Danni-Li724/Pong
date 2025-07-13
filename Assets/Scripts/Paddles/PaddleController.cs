@@ -20,6 +20,19 @@ public class PaddleController : NetworkBehaviour
     private float fireCooldown;
     private float lastFireTime;
     
+    [Header("Paddle Tilt Settings")]
+    [SerializeField] private float maxTiltAngle = 45f;
+    [SerializeField] private float tiltSpeed = 5f;
+    private bool tiltActive = false;
+    private float tiltDuration = 0f;
+    private float tiltTimer = 0f;
+    private float currentTiltAngle = 0f;
+    // Network variables to sync tilt state across all clients
+    private NetworkVariable<float> networkTiltAngle = new NetworkVariable<float>(0f, 
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> networkTiltActive = new NetworkVariable<bool>(false,
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    
     private PaddleVisuals paddleVisuals;
     
     public bool isInSpaceshipMode() => inSpaceshipMode;
@@ -33,6 +46,9 @@ public class PaddleController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (!IsOwner) return; // only runs for local player
+        
+        networkTiltAngle.OnValueChanged += OnTiltAngleChanged;
+        networkTiltActive.OnValueChanged += OnTiltActiveChanged;
         
         // when server updated the ID, sync it and initializes input
         playerIdVar.OnValueChanged += (_, newId) =>
@@ -55,6 +71,15 @@ public class PaddleController : NetworkBehaviour
         }
     }
     
+    public override void OnNetworkDespawn()
+    {
+        if (IsOwner)
+        {
+            networkTiltAngle.OnValueChanged -= OnTiltAngleChanged;
+            networkTiltActive.OnValueChanged -= OnTiltActiveChanged;
+        }
+        base.OnNetworkDespawn();
+    }
     public int GetPlayerId() => playerIdVar.Value;
 
     // server sets player ID and rotates if horizontal
@@ -98,6 +123,130 @@ public class PaddleController : NetworkBehaviour
         uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
     }
     
+    private void Update()
+    {
+        if (!IsOwner) return;
+        
+        // Handle tilt boon
+        if (tiltActive)
+        {
+            tiltTimer -= Time.deltaTime;
+            if (tiltTimer <= 0f)
+            {
+                DeactivateTilt();
+                return;
+            }
+            
+            // Handle tilt input ONLY if not in spaceship mode, it only works for Pong mode
+            if (!inSpaceshipMode)
+            {
+                HandleTiltInput();
+            }
+        }
+        else
+        {
+            // Return to original position when not tilting
+            if (currentTiltAngle != 0f)
+            {
+                currentTiltAngle = Mathf.Lerp(currentTiltAngle, 0f, Time.deltaTime * tiltSpeed);
+                networkTiltAngle.Value = currentTiltAngle;
+                
+                if (Mathf.Abs(currentTiltAngle) < 0.1f)
+                {
+                    currentTiltAngle = 0f;
+                    networkTiltAngle.Value = 0f;
+                }
+            }
+        }
+    }
+    
+     #region PADDLE TILT METHODS
+    
+    private void HandleTiltInput()
+    {
+        float targetAngle = 0f;
+        
+        if (Mouse.current.leftButton.isPressed)
+        {
+            targetAngle = -maxTiltAngle;
+        }
+        else if (Mouse.current.rightButton.isPressed)
+        {
+            targetAngle = maxTiltAngle;
+        }
+        
+        // Smoothly interpolate to target angle
+        currentTiltAngle = Mathf.Lerp(currentTiltAngle, targetAngle, Time.deltaTime * tiltSpeed);
+        networkTiltAngle.Value = currentTiltAngle;
+    }
+    
+    public void ActivateTilt(float duration)
+    {
+        if (!IsOwner) return;
+        
+        tiltActive = true;
+        tiltDuration = duration;
+        tiltTimer = duration;
+        networkTiltActive.Value = true;
+        
+        Debug.Log($"[PaddleController] Paddle tilt activated for {duration} seconds");
+    }
+    
+    public void DeactivateTilt()
+    {
+        if (!IsOwner) return;
+        
+        tiltActive = false;
+        networkTiltActive.Value = false;
+        
+        Debug.Log("[PaddleController] Paddle tilt deactivated");
+    }
+    
+    // Called when network tilt angle changes (for visual sync)
+    private void OnTiltAngleChanged(float previousValue, float newValue)
+    {
+        ApplyTiltRotation(newValue);
+    }
+    
+    // Called when network tilt active state changes
+    private void OnTiltActiveChanged(bool previousValue, bool newValue)
+    {
+        Debug.Log($"[PaddleController] Tilt active state changed to: {newValue}");
+    }
+    
+    private void ApplyTiltRotation(float angle)
+    {
+        // Apply the tilt rotation in original paddle orientation
+        Quaternion baseTiltRotation = Quaternion.Euler(0f, 0f, angle);
+        
+        if (inSpaceshipMode)
+        {
+            return;
+        }
+        
+        if (IsHorizontal)
+        {
+            // combine the horizontal rotation with tilt if it's horizontal paddle
+            transform.localRotation = Quaternion.Euler(0, 0, 90 + angle);
+        }
+        else
+        {
+            transform.localRotation = baseTiltRotation;
+        }
+    }
+    
+    public bool IsTiltActive()
+    {
+        return networkTiltActive.Value;
+    }
+    
+    public float GetRemainingTiltTime()
+    {
+        return tiltTimer;
+    }
+    
+    #endregion
+    
     #region SPACESHIP MODE
     /// <summary>
     /// Below are functions for Spaceship controls, firing bullets
@@ -120,6 +269,12 @@ public class PaddleController : NetworkBehaviour
             paddleVisuals.SetSpaceshipSprite(rocketSprite);
             transform.localRotation = Quaternion.identity;
             paddleVisuals.transform.localRotation = Quaternion.identity;
+            // Reset tilt when entering spaceship mode
+            if (IsOwner && tiltActive)
+            {
+                currentTiltAngle = 0f;
+                networkTiltAngle.Value = 0f;
+            }
             // give player spaceship controls if local
             if (IsOwner)
             {

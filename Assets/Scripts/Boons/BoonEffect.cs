@@ -16,5 +16,6 @@ public enum BoonType
     DoubleBall,
     BallSpeedBoost,
     MusicChange,
-    ScoreThief
+    ScoreThief,
+    PaddleTilt
 }

@@ -81,11 +81,18 @@ public class BoonManager : NetworkBehaviour
         playerInventories.Clear();
         
         // Set up available boons on server
+        // availableBoonTypes = availableBoons
+        //     .OrderBy(x => Random.value) // randomly choose 4 bools from the pool, so that it's different every game
+        //     .Take(6) // select available (I added more now:D)
+        //     .Select(b => b.type) // project each boonEffect to its boonType enum
+        //     .ToList(); // keep as list for later manipulation
+        
+        // Select all boon types (I made all 6 now!) from the list of available BoonEffects
         availableBoonTypes = availableBoons
-            .OrderBy(x => Random.value) // randomly choose 4 bools from the pool, so that it's different every game
-            .Take(5) // select available (I added more now:D)
-            .Select(b => b.type) // project each boonEffect to its boonType enum
-            .ToList(); // keep as list for easier manipulation
+            .Select(b => b.type) // get boon type from each boon effect
+            .Distinct() // ensuring each type is only included once - all unique boons will be shown
+            .OrderBy(x => Random.value) // still randomly shuffle order
+            .ToList();
         
         // Sending a clear inventory state to all clients
         SyncAllInventoriesClientRpc(new ulong[0], new BoonType[0], new int[0]);
@@ -342,6 +349,10 @@ public class BoonManager : NetworkBehaviour
             case BoonType.MusicChange:
                 CycleMusicTrack(); // server-side logic
                 break;
+            case BoonType.PaddleTilt:
+                EnablePaddleTilt(clientId, boonEffect.duration);
+                break;
+
         }
 
         // Remove non-reusable boons
@@ -378,23 +389,23 @@ public class BoonManager : NetworkBehaviour
     #region BOON EFFECTS // below are functions for each boon effects. 
     
     // Updated this method to use the boon user's client ID for correct nomination assignment
-    private void PrepareNomination(ulong boonUserId, int boonPlayerId)
+    private void PrepareNomination(ulong boonUserId, int boonPlayerId) 
 {
     Debug.Log($"Preparing nomination for local client {NetworkManager.Singleton.LocalClientId}, boon user = {boonUserId}");
-
+    
     if (NetworkManager.Singleton.LocalClientId != boonUserId)
     {
         Debug.Log("Not boon owner, skipping nomination UI");
         return;
     }
-
+    
     int slotIndex = boonPlayerId - 1;
     if (slotIndex < 0 || slotIndex >= playerInventorySlots.Length)
     {
         Debug.LogError($"Invalid slot index: {slotIndex}");
         return;
     }
-
+    
     var slot = playerInventorySlots[slotIndex];
     var nominationParent = slot.Find("Nomination");
     if (nominationParent == null)
@@ -402,45 +413,45 @@ public class BoonManager : NetworkBehaviour
         Debug.LogError("Nomination parent not found!");
         return;
     }
-
+    
     // Clear old buttons
     foreach (Transform child in nominationParent)
         Destroy(child.gameObject);
-
-    // Get all visible UI player slots and assign buttons
-    for (int i = 0; i < playerInventorySlots.Length; i++)
+    
+    // Get all connected players from NetworkGameManager
+    var allConnectedPlayers = NetworkGameManager.Instance.GetAllPlayers();
+    
+    // Filter out the current player (boon user) from the list
+    var otherPlayers = allConnectedPlayers.Where(p => p.playerId != boonPlayerId).ToList();
+    
+    Debug.Log($"Found {otherPlayers.Count} other players for nomination");
+    
+    // Create nomination buttons for each other player
+    foreach (var playerInfo in otherPlayers)
     {
-        if (i == slotIndex) continue; // skip self
-
-        var playerSlot = playerInventorySlots[i];
-        var info = playerSlot.GetComponent<PlayerInventorySlot>();
-        if (info == null) continue;
-
         GameObject buttonObj = Instantiate(nominationButtonPrefab, nominationParent);
         var text = buttonObj.GetComponentInChildren<Text>();
         if (text != null)
         {
-            text.text = $"Player {i + 1}";
+            text.text = $"Player {playerInfo.playerId}";
         }
-
+        
         var button = buttonObj.GetComponent<Button>();
         if (button != null)
         {
-            // Assume mapping is playerId == i + 1
-            ulong victimClientId = clientPlayerInventories.FirstOrDefault(kvp => 
-                NetworkGameManager.Instance.GetPlayerInfo(kvp.Key)?.playerId == i + 1
-            ).Key;
-
+            // Capture the client ID for this player
+            ulong victimClientId = playerInfo.clientId;
+            
             button.onClick.AddListener(() =>
             {
+                Debug.Log($"Nominating player {playerInfo.playerId} (clientId: {victimClientId})");
                 TryNominatePlayerForScoreThief(victimClientId);
                 foreach (Transform c in nominationParent) Destroy(c.gameObject);
             });
         }
     }
 }
-
-
+    
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
     private void ScoreThiefNominationServerRpc(ulong thiefClientId, ulong victimClientId)
     {
@@ -504,6 +515,35 @@ public class BoonManager : NetworkBehaviour
         if (gameManager != null)
         {
             gameManager.SpawnAdditionalBall(duration);
+        }
+    }
+    
+    private void EnablePaddleTilt(ulong clientId, float duration)
+    {
+        if (!IsServer) return;
+    
+        Debug.Log($"[BoonManager] Enabling paddle tilt for client {clientId} with duration {duration}");
+    
+        // enable tilt for the specific player's paddle
+        EnablePaddleTiltClientRpc(clientId, duration);
+    }
+    
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void EnablePaddleTiltClientRpc(ulong targetClientId, float duration)
+    {
+        Debug.Log($"[BoonManager] EnablePaddleTiltClientRpc called for client {targetClientId}");
+    
+        // Find the paddle controller for the target client
+        var paddles = FindObjectsOfType<PaddleController>();
+        foreach (var paddle in paddles)
+        {
+            var networkObject = paddle.GetComponent<NetworkObject>();
+            if (networkObject != null && networkObject.OwnerClientId == targetClientId)
+            {
+                paddle.ActivateTilt(duration);
+                Debug.Log($"[BoonManager] Activated tilt for paddle owned by client {targetClientId}");
+                break;
+            }
         }
     }
     

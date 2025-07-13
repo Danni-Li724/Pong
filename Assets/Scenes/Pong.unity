@@ -964,6 +964,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   playerSelectionUIPrefab: {fileID: 0}
   bulletPrefab: {fileID: 0}
+  maxTiltAngle: 45
+  tiltSpeed: 5
 --- !u!114 &389067693
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5449,11 +5451,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e89adb4368b82614993be9dce6b120c9, type: 2}
   - {fileID: 11400000, guid: 326c21f37c1c4054a89aad772c946c43, type: 2}
   - {fileID: 11400000, guid: ad4626241b12d3b499a747abad61f4a1, type: 2}
+  - {fileID: 11400000, guid: f0ca543ff45865d43a44471522c6ebcb, type: 2}
   boonButtonContainer: {fileID: 1378622660}
   boonButtonPrefab: {fileID: 5733232320309955691, guid: 6a243096eb2dd724b8abfe58fa682d16, type: 3}
   playerInventorySlots:
   - {fileID: 1053645176}
   - {fileID: 641008148}
+  - {fileID: 1740177331}
+  - {fileID: 811569360}
   nominationButtonPrefab: {fileID: 4495128711077280269, guid: 9a07b8ca5fc03d642b0d6f483564f4b9, type: 3}
 --- !u!4 &1438181485
 Transform:
