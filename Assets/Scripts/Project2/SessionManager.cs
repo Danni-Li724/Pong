@@ -10,7 +10,7 @@ using Unity.Services.Lobbies; // Manages lobby systems where players can group u
 public class SessionManager : MonoBehaviour
 {
     private ISession activeSession;  // stores all information relating to the current session
-
+    const string playerNamePropertyKey = "playerName";
     ISession ActiveSession
     {
         get => (ISession)activeSession;
@@ -20,9 +20,6 @@ public class SessionManager : MonoBehaviour
             Debug.Log(activeSession);
         }
     }
-    
-    const string playerNamePropertyKey = "playerName";
-
     async void Start() // Start() marked with async so that it can use 'await' for asynchronous tasks
     // 'asynchronous' means it can pause execution while waiting for tasks to finish (without freezing main thread)
     {
@@ -54,7 +51,7 @@ public class SessionManager : MonoBehaviour
         var playerNameProperty = new PlayerProperty(playerName, VisibilityPropertyOptions.Member);
         return new Dictionary<string, PlayerProperty> {{playerNamePropertyKey, playerNameProperty}}; // returns a new kvp of this property
     }
-
+    
     async void StartSessionAsHost()
     {
         var playerProperties = await GetPlayerProperties(); // store player properties as a variable, then, below -
