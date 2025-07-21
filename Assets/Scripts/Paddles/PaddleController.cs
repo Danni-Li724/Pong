@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -32,6 +33,8 @@ public class PaddleController : NetworkBehaviour
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> networkTiltActive = new NetworkVariable<bool>(false,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private int paddleLayer;
+    private int goalLayer;
     
     private PaddleVisuals paddleVisuals;
     
@@ -40,6 +43,11 @@ public class PaddleController : NetworkBehaviour
     private void Awake()
     {
         paddleVisuals = GetComponentInChildren<PaddleVisuals>();
+        // setting up layers for avoiding collision in certain modes
+        paddleLayer = LayerMask.NameToLayer("Paddle");
+        Debug.Log("Paddle Layer: " + paddleLayer);
+        goalLayer = LayerMask.NameToLayer("Goal");
+        Debug.Log("Goal Layer: " + goalLayer); 
         
     }
     
@@ -190,7 +198,7 @@ public class PaddleController : NetworkBehaviour
         tiltDuration = duration;
         tiltTimer = duration;
         networkTiltActive.Value = true;
-        
+        Physics.IgnoreLayerCollision(paddleLayer, goalLayer, true);
         Debug.Log($"[PaddleController] Paddle tilt activated for {duration} seconds");
     }
     
@@ -200,7 +208,7 @@ public class PaddleController : NetworkBehaviour
         
         tiltActive = false;
         networkTiltActive.Value = false;
-        
+        Physics.IgnoreLayerCollision(paddleLayer, goalLayer, false);
         Debug.Log("[PaddleController] Paddle tilt deactivated");
     }
     
@@ -246,7 +254,7 @@ public class PaddleController : NetworkBehaviour
     {
         return tiltTimer;
     }
-    
+
     #endregion
     
     #region SPACESHIP MODE

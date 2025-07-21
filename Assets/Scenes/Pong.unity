@@ -1779,7 +1779,7 @@ GameObject:
   - component: {fileID: 596299114}
   - component: {fileID: 596299117}
   - component: {fileID: 596299118}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: LeftWall
   m_TagString: GoalLeft
   m_Icon: {fileID: 0}
@@ -3034,7 +3034,7 @@ GameObject:
   - component: {fileID: 990237906}
   - component: {fileID: 990237909}
   - component: {fileID: 990237910}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: UpperWall
   m_TagString: GoalTop
   m_Icon: {fileID: 0}
@@ -6436,7 +6436,7 @@ GameObject:
   - component: {fileID: 1804056068}
   - component: {fileID: 1804056071}
   - component: {fileID: 1804056072}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: RightWall
   m_TagString: GoalRight
   m_Icon: {fileID: 0}
@@ -6757,7 +6757,7 @@ GameObject:
   - component: {fileID: 1890414762}
   - component: {fileID: 1890414765}
   - component: {fileID: 1890414766}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: LowerWall
   m_TagString: GoalBottom
   m_Icon: {fileID: 0}

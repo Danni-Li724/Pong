@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 5448114218210431576}
   - component: {fileID: -554788218470056983}
   - component: {fileID: 8818844223816360299}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Paddle
   m_TagString: Player1
   m_Icon: {fileID: 0}
@@ -112,6 +112,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   playerSelectionUIPrefab: {fileID: 6360511260611406103, guid: 596432ebd766c164ebe47f29bf771b66, type: 3}
   bulletPrefab: {fileID: 1224990874399319024, guid: 9eea08a7bb7033a41b6c263f995149ea, type: 3}
+  maxTiltAngle: 45
+  tiltSpeed: 5
 --- !u!61 &641901330694467435
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -305,7 +307,7 @@ GameObject:
   - component: {fileID: 6572149133174235628}
   - component: {fileID: 8681269661716954227}
   - component: {fileID: 8467101749856892651}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: PaddleVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
