@@ -389,7 +389,7 @@ public class BoonManager : NetworkBehaviour
     #region BOON EFFECTS // below are functions for each boon effects. 
     
     // Updated this method to use the boon user's client ID for correct nomination assignment
-    private void PrepareNomination(ulong boonUserId, int boonPlayerId) 
+private void PrepareNomination(ulong boonUserId, int boonPlayerId) 
 {
     Debug.Log($"Preparing nomination for local client {NetworkManager.Singleton.LocalClientId}, boon user = {boonUserId}");
     
@@ -418,76 +418,103 @@ public class BoonManager : NetworkBehaviour
     foreach (Transform child in nominationParent)
         Destroy(child.gameObject);
     
-    // Get all connected players from NetworkGameManager
-    var allConnectedPlayers = NetworkGameManager.Instance.GetAllPlayers();
+    // Find all paddle controllers in the scene (these exist on all clients)
+    var allPaddles = FindObjectsOfType<PaddleController>();
+    var otherPaddles = allPaddles.Where(p => p.GetPlayerId() != boonPlayerId).ToList();
     
-    // Filter out the current player (boon user) from the list
-    var otherPlayers = allConnectedPlayers.Where(p => p.playerId != boonPlayerId).ToList();
+    Debug.Log($"Found {otherPaddles.Count} other paddles for nomination");
     
-    Debug.Log($"Found {otherPlayers.Count} other players for nomination");
-    
-    // Create nomination buttons for each other player
-    foreach (var playerInfo in otherPlayers)
+    // Create nomination buttons for each other player's paddle
+    foreach (var paddle in otherPaddles)
     {
+        int targetPlayerId = paddle.GetPlayerId();
+        ulong targetClientId = paddle.GetComponent<NetworkObject>().OwnerClientId;
+        
         GameObject buttonObj = Instantiate(nominationButtonPrefab, nominationParent);
         var text = buttonObj.GetComponentInChildren<Text>();
         if (text != null)
         {
-            text.text = $"Player {playerInfo.playerId}";
+            text.text = $"Player {targetPlayerId}";
         }
         
         var button = buttonObj.GetComponent<Button>();
         if (button != null)
         {
-            // Capture the client ID for this player
-            ulong victimClientId = playerInfo.clientId;
+            // Capture both player ID and client ID for this player
+            int capturedPlayerId = targetPlayerId;
+            ulong capturedClientId = targetClientId;
             
             button.onClick.AddListener(() =>
             {
-                Debug.Log($"Nominating player {playerInfo.playerId} (clientId: {victimClientId})");
-                TryNominatePlayerForScoreThief(victimClientId);
+                Debug.Log($"Nominating player {capturedPlayerId} (clientId: {capturedClientId})");
+                TryNominatePlayerForScoreThief(capturedClientId, capturedPlayerId);
                 foreach (Transform c in nominationParent) Destroy(c.gameObject);
             });
         }
     }
 }
-    
-    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
-    private void ScoreThiefNominationServerRpc(ulong thiefClientId, ulong victimClientId)
-    {
-        Debug.Log($"Score Thief: Player {thiefClientId} is stealing from {victimClientId}");
-        // Get player info to convert client ID to player ID
-        var victimPlayerInfo = NetworkGameManager.Instance.GetPlayerInfo(victimClientId);
-        if (victimPlayerInfo == null)
-        {
-            Debug.LogError($"No player info found for client {victimClientId}");
-            return;
-        }
-    
-        ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
-        var canDeduct = scoreManager.TryDeductPointsByPlayerId(victimPlayerInfo.playerId, 3);
-        if (canDeduct)
-        {
-            Debug.Log($"Successfully deducted 3 points from player {victimPlayerInfo.playerId}");
-        
-            // remove ScoreThief from thief's inventory
-            if (playerInventories.TryGetValue(thiefClientId, out var boons))
-            {
-                boons.Remove(BoonType.ScoreThief);
-                SyncAllInventoriesToClients();
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"Score Thief failed - not enough points for player {victimPlayerInfo.playerId}");
-        }
-    }
 
-    private void TryNominatePlayerForScoreThief(ulong targetClientId)
+// Updated nomination method to pass both client ID and player ID
+private void TryNominatePlayerForScoreThief(ulong targetClientId, int targetPlayerId)
+{
+    ulong localId = NetworkManager.Singleton.LocalClientId;
+    ScoreThiefNominationServerRpc(localId, targetClientId, targetPlayerId);
+}
+
+// Updated ServerRpc to accept player ID directly (more reliable than looking it up)
+[Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+private void ScoreThiefNominationServerRpc(ulong thiefClientId, ulong victimClientId, int victimPlayerId)
+{
+    Debug.Log($"Score Thief: Player {thiefClientId} is stealing from player {victimPlayerId} (client {victimClientId})");
+    
+    ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+    if (scoreManager == null)
     {
-        ulong localId = NetworkManager.Singleton.LocalClientId;
-        ScoreThiefNominationServerRpc(localId, targetClientId);
+        Debug.LogError("ScoreManager not found!");
+        return;
     }
+    
+    var canDeduct = scoreManager.TryDeductPointsByPlayerId(victimPlayerId, 3);
+    if (canDeduct)
+    {
+        Debug.Log($"Successfully deducted 3 points from player {victimPlayerId}");
+    
+        // Remove ScoreThief from thief's inventory
+        if (playerInventories.TryGetValue(thiefClientId, out var boons))
+        {
+            boons.Remove(BoonType.ScoreThief);
+            SyncAllInventoriesToClients();
+        }
+        
+        // Notify all clients about the score theft
+        NotifyScoreTheftClientRpc(thiefClientId, victimClientId, victimPlayerId);
+    }
+    else
+    {
+        Debug.LogWarning($"Score Thief failed - not enough points for player {victimPlayerId}");
+        // notify thief that the theft failed
+        NotifyScoreTheftFailedClientRpc(thiefClientId);
+    }
+}
+
+// Notify clients about successful score theft for visual feedback
+[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+private void NotifyScoreTheftClientRpc(ulong thiefClientId, ulong victimClientId, int victimPlayerId)
+{
+    Debug.Log($"Score theft notification: Thief {thiefClientId} stole from player {victimPlayerId}");
+    // Add visual/audio feedback here if desired
+}
+
+// Notify thief if the theft failed
+[Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
+{
+    if (NetworkManager.Singleton.LocalClientId == thiefClientId)
+    {
+        Debug.Log("Score theft failed - target doesn't have enough points");
+        // Show UI feedback to the player
+    }
+}
     
     private void CycleMusicTrack()
     {

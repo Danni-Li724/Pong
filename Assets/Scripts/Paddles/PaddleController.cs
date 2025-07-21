@@ -81,12 +81,14 @@ public class PaddleController : NetworkBehaviour
         base.OnNetworkDespawn();
     }
     public int GetPlayerId() => playerIdVar.Value;
-
     // server sets player ID and rotates if horizontal
     public void SetPlayerId(int id)
     {
-        playerIdVar.Value = id;
-        PlayerId = id;
+        if (IsServer)
+        {
+            playerIdVar.Value = id;
+            PlayerId = id;
+        }
         // rotating horizontal paddle
         if (IsHorizontal)
         {
