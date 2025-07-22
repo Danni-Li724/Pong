@@ -13,6 +13,7 @@ public class PaddleController : NetworkBehaviour
     public int PlayerId { get; private set; }
     public GameObject playerSelectionUIPrefab;
     public bool IsHorizontal => (PlayerId == 3 || PlayerId == 4);
+    private PaddleVisuals paddleVisuals;
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
@@ -20,6 +21,7 @@ public class PaddleController : NetworkBehaviour
     private float bulletSpeed;
     private float fireCooldown;
     private float lastFireTime;
+    public bool isInSpaceshipMode() => inSpaceshipMode;
     
     [Header("Paddle Tilt Settings")]
     [SerializeField] private float maxTiltAngle = 45f;
@@ -35,10 +37,6 @@ public class PaddleController : NetworkBehaviour
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int paddleLayer;
     private int goalLayer;
-    
-    private PaddleVisuals paddleVisuals;
-    
-    public bool isInSpaceshipMode() => inSpaceshipMode;
     
     private void Awake()
     {

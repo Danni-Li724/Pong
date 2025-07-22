@@ -3,6 +3,7 @@ using UnityEngine;
 public class PlayerInfo
 {
     public int playerId;
+    public string playerName;
     public ulong clientId;
     public bool isConnected;
     public Transform spawnPos;
@@ -18,6 +19,7 @@ public class PlayerInfo
     public PlayerInfo(int playerId, ulong client, Transform spawn)
     {
         this.playerId = playerId;
+        this.playerName = playerName;
         this.clientId = clientId;
         this.spawnPos = spawn;
         this.isReady = false;
