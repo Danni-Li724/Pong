@@ -94,7 +94,6 @@ public class PongSessionManager : MonoBehaviour
 #endregion
 
 #region Session
-
 public async Task<bool> StartSessionAsHost(int maxPlayers = -1, string sessionName = null)
 {
     try
@@ -197,7 +196,6 @@ public async void LeaveSession()
 #endregion
 
 #region Lobby 
-
 public async Task<bool> CreateLobby(int maxPlayers, string lobbyName)
 {
     try
@@ -223,7 +221,6 @@ public async Task<bool> CreateLobby(int maxPlayers, string lobbyName)
         return false;
     }
 }
-
 private async Task<Player> GetLocalLobbyPlayer() // Player: information about the player creating the lobby (also part of lobby namespace)
 {
     string playerName = await GetPlayerName(); 
@@ -236,6 +233,8 @@ private async Task<Player> GetLocalLobbyPlayer() // Player: information about th
         }
     };
 }
+
+// no need for configure transport
 private async Task<bool> JoinLobbyByCode(string sessionCode)
 {
     try
@@ -247,7 +246,7 @@ private async Task<bool> JoinLobbyByCode(string sessionCode)
             {
                 var player = GetLocalLobbyPlayer();
                 // hmmmmm....
-                //currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, new JoinLobbyByIdOptions { Player = PlayerInfo.playerId});
+                // currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, new JoinLobbyByIdOptions { Player = player});
                 return true;
             }
         }
@@ -271,7 +270,6 @@ private async Task SendLobbyHeartbeat()
         Debug.LogWarning($"[SessionManager] Lobby heartbeat failed: {e.Message}");
     }
 }
-
 private void Update()
 {
     // handles heartbeat to keep lobby alive
@@ -311,7 +309,6 @@ public void RegisterPlayer(string playerId, PlayerInfo playerInfo)
 #endregion
 
 #region Helper Methods
-
 private async Task<Dictionary<string, PlayerProperty>> GetLocalPlayerProperties()
     {
         string playerName = await GetPlayerName();
