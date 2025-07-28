@@ -97,7 +97,6 @@ public class PaddleInputHandler : NetworkBehaviour
     {
         spaceshipInput?.Disable();
         spaceshipInput = null;
-        
         // Re-enable normal paddle input
         if (playerInput != null)
         {

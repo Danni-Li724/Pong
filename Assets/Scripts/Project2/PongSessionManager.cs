@@ -18,478 +18,234 @@ using Unity.Netcode.Transports.UTP; // for network communication
 
 public class PongSessionManager : MonoBehaviour
 {
-    [Header("Session Properties")]
-    public static PongSessionManager Instance { get; private set; }
-    private ISession activeSession;
-    private Lobby currentLobby;
-    public string SessionCode => activeSession?.Code;
-    public bool IsSessionActive => activeSession != null;
-    // session settings
-    [SerializeField] private int defaultMaxPlayers = 4;
-    [SerializeField] private bool autoStartNetcode = true; // To automatically start Netcode when session starts
+    [Header("Session Settings")]
+    public static PongSessionManager Instance { get; private set; } // singleton so any script can easily call PongSessionManager.Instance
 
-    [Header("Player Properties")]
-    private Dictionary<string, PlayerInfo> allPlayers = new();
-    private Dictionary<string, bool> playerReadyStatus = new();
-    /// <summary>
-    /// Dictionary Keys
-    /// </summary>
-    private const string playerNameKey = "playerName";
-    private const string readyKey = "ready";
-    private const string playerDataKey = "playerData";
-    public int MaxPlayers => activeSession?.MaxPlayers ?? 0;  // if activeSesh not null, access MaxPlayer and return null instead of error if it's null
-    public bool IsHost => activeSession?.IsHost ?? false; // same here
-    public string LocalPlayerId => AuthenticationService.Instance?.PlayerId;
+    private Lobby currentLobby;         // stores the currently joined or hosted lobby
+    private Allocation relayAllocation; // stores host's relay server info (used to start netcode host)
+
+    public string SessionCode => currentLobby?.LobbyCode; // safely returns the lobby code (used for players to join)
+
+    // checks if this player is the host by comparing local ID to lobby host ID
+    public bool IsLobbyHost => currentLobby?.HostId == AuthenticationService.Instance.PlayerId; 
     
-    /// <summary>
-    /// Session Events that manages the session and uses event registration to write data
-    /// </summary>
-    public event Action<PlayerInfo> OnPlayerJoined;
-    public event Action<PlayerInfo> OnPlayerLeft;
-    public event Action OnAllPlayersReady;
-    public event Action<string> OnSessionCreated;
-    public event Action<string> OnSessionJoined;
-    public event Action OnSessionLeft;
+    // returns the current lobby object (for bridge or UI access)
+    public Lobby GetCurrentLobby() => currentLobby;
+
+    // returns the player's Unity-assigned ID
+     public string LocalPlayerId => AuthenticationService.Instance?.PlayerId;
+
+
+    public bool IsInLobby => currentLobby != null; // quick check if we're currently inside a lobby
+
+    // these events help UI and other systems respond to lobby state changes
+    public event Action OnLobbyCreated;
+    public event Action OnLobbyJoined;
+    public event Action OnLobbyLeft;
     public event Action<string> OnError;
-    
-    [Header("Lobby & Heartbeat")]
-    private const float LOBBY_HEARTBEAT_INTERVAL = 15f;
-    private float lobbyHeartbeatTimer;
-    
-    #region Initialization
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            InitializeServices(); // initialize here rather than start
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
 
-    private async void InitializeServices()
-    {
-        try
-        {
-            await UnityServices.InitializeAsync();
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            Debug.Log($"Signed in as {AuthenticationService.Instance.PlayerId}");
-            SetupEvents();
-        }
-        catch (Exception e)
-        {
-            Debug.LogException(e);
-            OnError?.Invoke($"Failed to initialize: {e.Message}");
-        }
-    }
+    private float lobbyHeartbeatTimer;         // timer used to send periodic heartbeats
+    private const float LobbyHeartbeatInterval = 15f; // how often host should ping to keep lobby alive
 
-    private void SetupEvents()
+    private async void Awake()
     {
-        
-    }
-#endregion
-
-#region Session
-public async Task<bool> StartSessionAsHost(int maxPlayers = -1, string sessionName = null)
-{
-    try
-    {
-        // first, create lobby
-        var lobbyCreated = await CreateLobby(maxPlayers, sessionName ?? "Pong!"); // create lobby with a name
-        if (!lobbyCreated) return false; // exit if didn't create successfully
-
-        var playerProperties = await GetLocalPlayerProperties();
-        // create the SessionOptions data
-        var options = new SessionOptions
+        // basic singleton setup
+        if (Instance != null && Instance != this)
         {
-            MaxPlayers = maxPlayers, // set max player
-            IsLocked = false, // not locked so new players can join
-            IsPrivate = false, // public so that it can be found
-            PlayerProperties = playerProperties // include local player's data
-        }.WithRelayNetwork(); // use Unity Relay for networking
-            
-        // Create the actual multiplayer session
-        activeSession = await MultiplayerService.Instance.CreateSessionAsync(options);
-            
-        // register local player (host) to player tracking
-        RegisterLocalPlayer();
-            
-        Debug.Log($"Created session with Id {activeSession.Id}, max players: {maxPlayers}, Code: {activeSession.Code}");
-        OnSessionCreated?.Invoke(activeSession.Code); // tell listeners that session was created
-            
-        // Begin network communication as session starts
-        if (autoStartNetcode)
-        {
-            await StartNetcodeHost(); // Initialize as network host
-        }
-            
-        return true; 
-    }
-    catch (Exception e)
-    {
-        Debug.LogException(e);
-        return false;
-    }
-}
-private async Task StartNetcodeHost()
-{
-    try
-    {
-        if (NetworkManager.Singleton == null)
-        {
-            Debug.LogError("[SessionManager] NetworkManager not found");
+            Destroy(gameObject); // if another instance already exists, destroy this one
             return;
         }
-        // Start as host
-        NetworkManager.Singleton.StartHost();
-        Debug.Log("[SessionManager] Started Netcode as Host");
-    }
-    catch (Exception e)
-    {
-        Debug.LogError($"[SessionManager] Failed to start Netcode host: {e.Message}");
-        OnError?.Invoke($"Failed to start host: {e.Message}");
-    }
-}
 
-public async void LeaveSession()
-{
-    if (activeSession == null) return;
-        
-    try
-    {
-        // Stop Netcode
-        if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.Shutdown();
-        }
-            
-        // Leave session
-        await activeSession.LeaveAsync();
-            
-        // Leave lobby
-        if (currentLobby != null)
-        {
-            await LobbyService.Instance.RemovePlayerAsync(currentLobby.Id, LocalPlayerId);
-            currentLobby = null;
-        }
-            
-        Debug.Log("[SessionManager] Left session successfully");
-        OnSessionLeft?.Invoke();
-    }
-    catch (Exception e)
-    {
-        Debug.LogWarning($"[SessionManager] Error leaving session: {e.Message}");
-    }
-    finally
-    {
-        // Clean up
-        activeSession = null;
-        currentLobby = null;
-        allPlayers.Clear();
-        playerReadyStatus.Clear();
-    }
-}
-#endregion
+        Instance = this;              // set the static reference to this
+        DontDestroyOnLoad(gameObject); // keep this alive across scenes
 
-#region Lobby 
-public async Task<bool> CreateLobby(int maxPlayers, string lobbyName)
-{
-    try
-    {
-        var createLobbyOptions =
-            new CreateLobbyOptions // param class in the Lobby namespace, where I can create my custom params
-            {
-                IsPrivate = false, // public and shows up in query results
-                Player = await GetLocalLobbyPlayer(),
-                Data = new Dictionary<string, DataObject>
-                {
-                    { "GameMode", new DataObject(DataObject.VisibilityOptions.Public, "Pong") } // game data
-                }
-            };
-        currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, createLobbyOptions); // create the lobby with all the information
-        lobbyHeartbeatTimer = 0f;
-        Debug.Log($"Created lobby: {lobbyName}");
-        return true;
+        await InitializeUnityServices(); // boot up Unity services (auth, relay, etc.)
     }
-    catch (Exception e)
-    {
-        Debug.LogException(e);
-        return false;
-    }
-}
-private async Task<Player> GetLocalLobbyPlayer() // Player: information about the player creating the lobby (also part of lobby namespace)
-{
-    string playerName = await GetPlayerName(); 
-    return new Player
-    {
-        Data = new Dictionary<string, PlayerDataObject>
-        {
-            { playerNameKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) },
-            { readyKey, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, "false") }
-        }
-    };
-}
 
-// no need for configure transport
-private async Task<bool> JoinLobbyByCode(string sessionCode)
-{
-    try
-    {
-        var queryResponse = await LobbyService.Instance.QueryLobbiesAsync(); // stores queries lobbies so players can find the one for their session
-        foreach (var lobby in queryResponse.Results)
-        {
-            if (lobby.Data.ContainsKey("SessionCode") && lobby.Data["SessionCode"].Value == sessionCode) // if code matches
-            {
-                var player = GetLocalLobbyPlayer();
-                // hmmmmm....
-                // currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, new JoinLobbyByIdOptions { Player = player});
-                return true;
-            }
-        }
-        Debug.LogWarning("Could not find lobby for session code");
-        return false;
-    }
-    catch (Exception e)
-    {
-        Debug.LogException(e);
-        return false;
-    }
-}
-private async Task SendLobbyHeartbeat()
-{
-    try
-    {
-        await LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
-    }
-    catch (Exception e)
-    {
-        Debug.LogWarning($"[SessionManager] Lobby heartbeat failed: {e.Message}");
-    }
-}
-private void Update()
-{
-    // handles heartbeat to keep lobby alive
-    if (currentLobby != null && IsHost) // only host send heartbeats
-    {
-        lobbyHeartbeatTimer += Time.deltaTime; 
-        if (lobbyHeartbeatTimer >= LOBBY_HEARTBEAT_INTERVAL)
-        {
-            lobbyHeartbeatTimer = 0f;
-            SendLobbyHeartbeat();
-        }
-    }
-}
-#endregion
-
-#region Player Management
-private void RegisterLocalPlayer()
-{
-    if (activeSession?.CurrentPlayer != null)
-    {
-        var localPlayer = activeSession.CurrentPlayer;
-        //var playerInfo = CreatePlayerInfoFromSessionPlayer(localPlayer);
-        //RegisterPlayer(localPlayer.Id, playerInfo);
-    }
-}
-    
-public void RegisterPlayer(string playerId, PlayerInfo playerInfo)
-{
-    if (!allPlayers.ContainsKey(playerId))
-    {
-        allPlayers[playerId] = playerInfo;
-        playerReadyStatus[playerId] = false;
-        OnPlayerJoined?.Invoke(playerInfo);
-        Debug.Log($"[SessionManager] Player {playerInfo.playerId} joined"); // maybe need to refactor to PlayerInfo.player name
-    }
-}
-#endregion
-
-#region Helper Methods
-private async Task<Dictionary<string, PlayerProperty>> GetLocalPlayerProperties()
-    {
-        string playerName = await GetPlayerName();
-        return new Dictionary<string, PlayerProperty>
-        {
-            { playerNameKey, new PlayerProperty(playerName, VisibilityPropertyOptions.Public) },
-            { readyKey, new PlayerProperty("false", VisibilityPropertyOptions.Public) }
-        };
-    }
-    
-    private async Task<string> GetPlayerName()
+    private async Task InitializeUnityServices()
     {
         try
         {
-            return await AuthenticationService.Instance.GetPlayerNameAsync() ?? $"Player_{LocalPlayerId?.Substring(0, 4)}";
-        }
-        catch
-        {
-            return $"Player_{LocalPlayerId?.Substring(0, 4) ?? "Unknown"}";
-        }
-    }
-    
-    public async void KickPlayer(string playerId)
-    {
-        if (!IsHost || activeSession == null) return;
-        
-        try
-        {
-            await activeSession.AsHost().RemovePlayerAsync(playerId);
-            Debug.Log($"Kicked player {playerId}");
+            await UnityServices.InitializeAsync(); // starts up Unity’s whole backend service framework
+            await AuthenticationService.Instance.SignInAnonymouslyAsync(); // logs the player in anonymously
+
+            Debug.Log("Signed in as: " + AuthenticationService.Instance.PlayerId);
         }
         catch (Exception e)
         {
-            Debug.LogError($"Failed to kick player: {e.Message}");
-            OnError?.Invoke($"Failed to kick player: {e.Message}");
+            Debug.LogError("Failed to initialize Unity services: " + e);
+            OnError?.Invoke("Service init error: " + e.Message);
         }
     }
-    
-    public List<PlayerInfo> GetConnectedPlayers()
+
+    public async Task CreateLobbyAsync(string lobbyName, int maxPlayers)
     {
-        return new List<PlayerInfo>(allPlayers.Values);
-    }
-    
-    public PlayerInfo GetPlayerInfo(string playerId)
-    {
-        return allPlayers.TryGetValue(playerId, out var info) ? info : null;
-    }
-    
-    public bool IsPlayerReady(string playerId)
-    {
-        return playerReadyStatus.TryGetValue(playerId, out var ready) ? ready : false;
-    }
-    private void OnDestroy()
-    {
-        if (Instance == this)
+        try
         {
-           LeaveSession();
+            // create a relay allocation (host reserves a spot for players to connect through Unity Relay)
+            relayAllocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1); 
+            // -1 as host doesn't count in player connection slots
+
+            string joinCode = await RelayService.Instance.GetJoinCodeAsync(relayAllocation.AllocationId); 
+            // this join code will be given to other players so they can connect to this relay allocation
+
+            // now build metadata for the lobby — this is where we embed the join code so players can access it
+            var lobbyData = new Dictionary<string, DataObject>
+            {
+                {
+                    "JoinCode", 
+                    new DataObject(
+                        DataObject.VisibilityOptions.Member, // only players in the lobby can see this key
+                        joinCode                             // the actual relay join code for this lobby
+                    )
+                }
+            };
+
+            // set up the host player and pass in the metadata
+            var createOptions = new CreateLobbyOptions
+            {
+                IsPrivate = false,                               // false = public lobby, will show up in lobby queries
+                Player = new Player(id: AuthenticationService.Instance.PlayerId), // identify host player in lobby
+                Data = lobbyData                                 // attach the relay join code as part of lobby data
+            };
+
+            // actually create the lobby
+            currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, createOptions);
+
+            Debug.Log("Lobby created. Code: " + currentLobby.LobbyCode);
+
+            // start the host via Netcode, using the relay allocation we just made
+            StartHostWithRelay(relayAllocation);
+
+            OnLobbyCreated?.Invoke(); // notify anything listening (e.g., SessionUIManager)
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error creating lobby: " + e);
+            OnError?.Invoke("Lobby creation failed: " + e.Message);
         }
     }
-    
-    #endregion
-    
 
+    public async Task JoinLobbyByCodeAsync(string code)
+    {
+        try
+        {
+            // build options for the join request, pass in this player
+            var joinOptions = new JoinLobbyByCodeOptions
+            {
+                Player = new Player(id: AuthenticationService.Instance.PlayerId)
+            };
 
-    // public async Task StartSessionAsHost(int maxPlayer)
-    // {
-    //     var playerProperties = await GetLocalPlayerProperties();
-    //     var options = new SessionOptions
-    //     {
-    //         MaxPlayers = MaxPlayers,
-    //         IsLocked = false,
-    //         IsPrivate = false,
-    //         PlayerProperties = playerProperties
-    //     }.WithRelayNetwork();
-    //     activeSession = await MultiplayerService.Instance.CreateSessionAsync(options);
-    //     Debug.Log($"Created session with Id {activeSession.Id}, max players: {maxPlayer}, Code: {activeSession.Code}");
-    // }
-    //
-    // public async Task JoinSessionByCode(string sessionCode)
-    // {
-    //     activeSession = await MultiplayerService.Instance.JoinSessionByCodeAsync(sessionCode);
-    //     Debug.Log($"Joined session: {activeSession.Id}");
-    // }
-    //
-    // public async Task<List<ISessionInfo>> GetAvailableSessions()
-    // {
-    //     var results = await MultiplayerService.Instance.QuerySessionsAsync(new QuerySessionsOptions());
-    //     return new List<ISessionInfo>(results.Sessions);
-    // }
-    //
-    // public async void LeaveSession()
-    // {
-    //     if (activeSession == null) return;
-    //
-    //     try
-    //     {
-    //         await activeSession.LeaveAsync();
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         Debug.LogWarning("Error leaving session: " + e.Message);
-    //     }
-    //     finally
-    //     {
-    //         activeSession = null;
-    //         allPlayers.Clear();
-    //     }
-    // }
-    //
-    // public async void KickPlayer(string playerId)
-    // {
-    //     if (!IsHost || activeSession == null) return;
-    //
-    //     await activeSession.AsHost().RemovePlayerAsync(playerId);
-    // }
-    //
-    // ISession ActiveSession
-    // {
-    //     get => (ISession)activeSession;
-    //     set
-    //     {
-    //         activeSession = value;
-    //         Debug.Log(activeSession);
-    //     }
-    // }
-    //
-    // public async void SetPlayerReady(bool isReady) // HAS ISSUES
-    // {
-    //     if (activeSession == null) return;
-    //     var updates = new Dictionary<string, PlayerProperty>
-    //     {
-    //         { readyKey, new PlayerProperty(isReady.ToString(), VisibilityPropertyOptions.Member)}
-    //     };
-    //     //await activeSession.UpdatePlayersAsync(updates);
-    //     CheckAllPlayersReady();
-    // }
-    //
-    // private async Task<Dictionary<string, PlayerProperty>> GetLocalPlayerProperties()
-    // {
-    //     string playerName = await AuthenticationService.Instance.GetPlayerNameAsync();
-    //     return new Dictionary<string, PlayerProperty>
-    //     {
-    //         {playerNameKey, new PlayerProperty(playerName, VisibilityPropertyOptions.Public)},
-    //         {readyKey, new PlayerProperty("false", VisibilityPropertyOptions.Public)}
-    //     };
-    // }
-    //
-    // private void CheckAllPlayersReady()
-    // {
-    //     if (activeSession == null) return;
-    //     int readyCount = 0;
-    //     foreach (var player in activeSession.Players)
-    //     {
-    //         if (player.Properties.TryGetValue(readyKey, out var value))
-    //         {
-    //             if(value.Value == "true") readyCount++;
-    //         }
-    //
-    //         if (readyCount == activeSession.Players.Count)
-    //         {
-    //             Debug.Log("All Players are ready");
-    //             OnAllPlayersReady?.Invoke();
-    //         }
-    //     }
-    // }
-    //
-    // public void RegisterPlayer(string playerId, PlayerInfo playerInfo)
-    // {
-    //     if (!allPlayers.ContainsKey(playerId))
-    //     {
-    //         allPlayers[playerId] = playerInfo;
-    //         OnPlayerJoined?.Invoke(playerInfo);
-    //     }
-    // }
-    //
-    // public void UnregisterPlayer(string playerId)
-    // {
-    //     if (allPlayers.ContainsKey(playerId))
-    //     {
-    //         OnPlayerLeft?.Invoke(allPlayers[playerId]);
-    //         allPlayers.Remove(playerId);
-    //     }
-    // }
+            // try joining the lobby with the code
+            currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code, joinOptions);
+
+            string joinCode = currentLobby.Data["JoinCode"].Value; 
+            // grab the relay join code embedded in the lobby data
+
+            // use relay join code to join the relay server
+            var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+
+            // start the client using the relay data
+            StartClientWithRelay(joinAllocation);
+
+            OnLobbyJoined?.Invoke(); // notify UI or anything else listening
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error joining lobby: " + e);
+            OnError?.Invoke("Failed to join lobby: " + e.Message);
+        }
+    }
+
+    private void StartHostWithRelay(Allocation allocation)
+    {
+        // grab Unity Transport (which lets Netcode communicate via Relay)
+        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        var endpoint = allocation.RelayServer.IpV4; // IP of the relay server
+
+        // plug relay allocation data into UnityTransport for the host
+        transport.SetHostRelayData(
+            endpoint,
+            (ushort)allocation.RelayServer.Port,     // port for relay server
+            allocation.AllocationIdBytes,            // allocation ID as byte[]
+            allocation.Key,                          // encryption key for this session
+            allocation.ConnectionData                // connection info for this host
+        );
+
+        NetworkManager.Singleton.StartHost(); // now we start the actual Netcode session
+        Debug.Log("Started Netcode Host with Relay");
+    }
+
+    private void StartClientWithRelay(JoinAllocation joinAllocation)
+    {
+        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+
+        // plug relay join info into UnityTransport for this client
+        transport.SetClientRelayData(
+            joinAllocation.RelayServer.IpV4,
+            (ushort)joinAllocation.RelayServer.Port,
+            joinAllocation.AllocationIdBytes,
+            joinAllocation.Key,
+            joinAllocation.ConnectionData,      // connection info for this client
+            joinAllocation.HostConnectionData   // connection info to the host
+        );
+
+        NetworkManager.Singleton.StartClient(); // start netcode client
+        Debug.Log("Started Netcode Client with Relay");
+    }
+
+    public async void LeaveLobbyAsync()
+    {
+        try
+        {
+            if (currentLobby != null)
+            {
+                await LobbyService.Instance.RemovePlayerAsync(currentLobby.Id, AuthenticationService.Instance.PlayerId);
+                // removes this player from the lobby
+
+                Debug.Log("Left lobby");
+                currentLobby = null;
+                OnLobbyLeft?.Invoke(); // notify UI
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error leaving lobby: " + e);
+            OnError?.Invoke("Leave lobby failed: " + e.Message);
+        }
+    }
+
+    private void Update()
+    {
+        // host send a heartbeat to keep it alive
+        if (currentLobby != null && IsLobbyHost)
+        {
+            lobbyHeartbeatTimer += Time.deltaTime;
+            if (lobbyHeartbeatTimer >= LobbyHeartbeatInterval)
+            {
+                lobbyHeartbeatTimer = 0f;
+                SendHeartbeatPing();
+            }
+        }
+    }
+
+    private async void SendHeartbeatPing()
+    {
+        try
+        {
+            await LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
+            // tells Unity servers the heart still beating (prevents lobby from timing out)
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Lobby heartbeat failed: " + e.Message);
+        }
+    }
+
+    // gets the current lobby code for UI display
+    public string GetLobbyCode() => currentLobby?.LobbyCode;
+
+    // gets the number of players currently in the lobby
+    public int GetPlayerCount() => currentLobby?.Players?.Count ?? 0;
 }
+

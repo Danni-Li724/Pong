@@ -50,3 +50,38 @@ public class PlayerInfo
         }
     }
 }
+// Updated PlayerInfo class to work with both systems
+// public class PlayerInfo
+// {
+//     public string playerId;
+//     public string playerName;
+//     public bool isReady;
+//     public bool isConnected;
+//     public ulong clientId; // For Netcode compatibility
+//     public Sprite paddleSprite;
+//     
+//     // Constructor for session-based player info
+//     public PlayerInfo(string id, string name)
+//     {
+//         playerId = id;
+//         playerName = name;
+//         isReady = false;
+//         isConnected = true;
+//     }
+//     
+//     // Constructor for Netcode compatibility (from your existing code)
+//     public PlayerInfo(int gamePlayerId, ulong networkClientId, Transform spawnTransform)
+//     {
+//         playerId = gamePlayerId.ToString();
+//         clientId = networkClientId;
+//         isConnected = true;
+//         isReady = false;
+//     }
+//     
+//     // Default constructor
+//     public PlayerInfo()
+//     {
+//         isReady = false;
+//         isConnected = true;
+//     }
+// }

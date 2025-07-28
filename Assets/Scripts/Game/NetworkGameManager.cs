@@ -389,7 +389,7 @@ public class NetworkGameManager : NetworkBehaviour
         if (!IsServer) return;
         StartGame();
     }
-    private void StartGame()
+    public void StartGame()
     {
         if (gameStarted) return;
         gameStarted = true;

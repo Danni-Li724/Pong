@@ -45,8 +45,7 @@ public class PaddleController : NetworkBehaviour
         paddleLayer = LayerMask.NameToLayer("Paddle");
         Debug.Log("Paddle Layer: " + paddleLayer);
         goalLayer = LayerMask.NameToLayer("Goal");
-        Debug.Log("Goal Layer: " + goalLayer); 
-        
+        Debug.Log("Goal Layer: " + goalLayer);
     }
     
     public override void OnNetworkSpawn()
@@ -117,7 +116,6 @@ public class PaddleController : NetworkBehaviour
         NetworkGameManager manager = FindObjectOfType<NetworkGameManager>();
         manager.MarkPlayerReady(OwnerClientId);
     }
-
     // This is called by the game manager to spawn buttons to represent players who aren't themselves.
     // These buttons will be used later as one of the boon effects.
     public void SpawnPlayerSelectionUI()
@@ -130,7 +128,6 @@ public class PaddleController : NetworkBehaviour
         PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
         uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
     }
-    
     private void Update()
     {
         if (!IsOwner) return;
@@ -187,7 +184,6 @@ public class PaddleController : NetworkBehaviour
         currentTiltAngle = Mathf.Lerp(currentTiltAngle, targetAngle, Time.deltaTime * tiltSpeed);
         networkTiltAngle.Value = currentTiltAngle;
     }
-    
     public void ActivateTilt(float duration)
     {
         if (!IsOwner) return;
@@ -196,17 +192,16 @@ public class PaddleController : NetworkBehaviour
         tiltDuration = duration;
         tiltTimer = duration;
         networkTiltActive.Value = true;
-        Physics.IgnoreLayerCollision(paddleLayer, goalLayer, true);
+        Physics2D.IgnoreLayerCollision(paddleLayer, goalLayer, true);
         Debug.Log($"[PaddleController] Paddle tilt activated for {duration} seconds");
     }
-    
     public void DeactivateTilt()
     {
         if (!IsOwner) return;
         
         tiltActive = false;
         networkTiltActive.Value = false;
-        Physics.IgnoreLayerCollision(paddleLayer, goalLayer, false);
+        Physics2D.IgnoreLayerCollision(paddleLayer, goalLayer, false);
         Debug.Log("[PaddleController] Paddle tilt deactivated");
     }
     
@@ -226,12 +221,10 @@ public class PaddleController : NetworkBehaviour
     {
         // Apply the tilt rotation in original paddle orientation
         Quaternion baseTiltRotation = Quaternion.Euler(0f, 0f, angle);
-        
         if (inSpaceshipMode)
         {
             return;
         }
-        
         if (IsHorizontal)
         {
             // combine the horizontal rotation with tilt if it's horizontal paddle
@@ -252,9 +245,7 @@ public class PaddleController : NetworkBehaviour
     {
         return tiltTimer;
     }
-
     #endregion
-    
     #region SPACESHIP MODE
     /// <summary>
     /// Below are functions for Spaceship controls, firing bullets
@@ -264,7 +255,6 @@ public class PaddleController : NetworkBehaviour
     /// <param name="bulletPrefab"></param>
     /// <param name="bulletSpeed"></param>
     /// <param name="fireCooldown"></param>
-    
     public void SetSpaceshipMode(bool active, Sprite rocketSprite, GameObject bulletPrefab, float bulletSpeed, float fireCooldown)
     {
         inSpaceshipMode = active;
