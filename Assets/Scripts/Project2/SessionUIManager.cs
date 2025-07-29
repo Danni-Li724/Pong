@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -76,6 +79,7 @@ public class SessionUIManager : MonoBehaviour
         leaveLobbyButton.onClick.AddListener(() => PongSessionManager.Instance.LeaveLobbyAsync());
         closeErrorButton.onClick.AddListener(HideError);
         readyButton.onClick.AddListener(ToggleReadyStatus);
+        refreshSessionButton.onClick.AddListener(RefreshLobbyList);
     }
 
     void SubscribeToSessionEvents()
@@ -184,20 +188,71 @@ public class SessionUIManager : MonoBehaviour
         //UpdateReadyDisplay();
     }
 
-    /*public async void RefreshLobbyList()
+    public async void RefreshLobbyList()
     {
         ShowLoading("Refreshing Lobby...");
-        // ClearSessionList();
-        var query = new QueryLobbiesOptions()
+        ClearSessionList();
+        try
         {
-            // query filters can filter lobbies based on what lobby have open slots, certain lobby names & regions etc
-            Filters = new List<QueryFilter>()
+            var query = new QueryLobbiesOptions()
             {
-                new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
-                // param notes: FieldOptions.AvailableSlots
+                // query filters can filter lobbies based on what lobby have open slots, certain lobby names & regions etc
+                Filters = new List<QueryFilter>()
+                {
+                    new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
+                    // param notes: FieldOptions.AvailableSlots: built in unity field, asking how many empty spots there are
+                    // there's also FieldOptions.name, .MaxPlayers, .IsLocked, .Id (lobby id) etc
+                    // "0": the value to be compared against. 0 means 
+                    // OpOptions: comparison operator, 'GT' = greater than (there's also: EQ, LT etc)
+                }
+            };
+            var result = await LobbyService.Instance.QueryLobbiesAsync(query);
+            foreach (var lobby in result.Results)
+            {
+                GameObject item = Instantiate(sessionListItemPrefab, sessionListContent);
+                var texts = item.GetComponentsInChildren<Text>();
+                texts[0].text = lobby.Name;
+                texts[1].text = $"Players: {lobby.Players.Count}/{lobby.MaxPlayers}";
+                var joinButton = item.GetComponentInChildren<Button>();
+                joinButton.onClick.AddListener(() => { JoinLobbyById(lobby.Id); });
             }
         }
-    }*/
+        catch (Exception ex)
+        {
+            DisplayError(ex.Message);
+        }
+    }
+
+    public async void JoinLobbyById(string lobbyId)
+    {
+        ShowLoading("Joining Lobby...");
+        try
+        {
+            var joinOptions = new JoinLobbyByIdOptions
+            {
+                Player = new Player(id: AuthenticationService.Instance.PlayerId)
+            };
+            var lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, joinOptions);
+
+            // now use join code to connect via relay & JoinByCode()
+            string joinCode = lobby.Data["JoinCode"].Value;
+            var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+            // start session
+            PongSessionManager.Instance.StartClientWithRelay(joinAllocation);
+            // set current lobby
+            PongSessionManager.Instance.currentLobby = lobby;
+        }
+        catch (Exception e)
+        {
+            DisplayError("Failed to join lobby" + e.Message);
+        }
+    }
+
+    void ClearSessionList()
+    {
+        foreach (Transform child in sessionListContent)
+            Destroy(child.gameObject);
+    }
 
     void TryTriggerStart()
     {

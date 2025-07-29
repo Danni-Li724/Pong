@@ -25,7 +25,7 @@ public class PongSessionManager : MonoBehaviour
     [Header("Session Settings")]
     public static PongSessionManager Instance { get; private set; } // singleton so any script can easily call PongSessionManager.Instance
 
-    private Lobby currentLobby;         // stores the currently joined or hosted lobby
+    public Lobby currentLobby;         // stores the currently joined or hosted lobby
     private Allocation relayAllocation; // stores host's relay server info (used to start netcode host)
 
     public string SessionCode => currentLobby?.LobbyCode; // safely returns the lobby code (used for players to join)
@@ -180,7 +180,7 @@ public class PongSessionManager : MonoBehaviour
         Debug.Log("Started Netcode Host with Relay");
     }
 
-    private void StartClientWithRelay(JoinAllocation joinAllocation)
+    public void StartClientWithRelay(JoinAllocation joinAllocation)
     {
         var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
 
