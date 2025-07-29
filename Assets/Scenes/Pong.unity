@@ -1290,12 +1290,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2014949833}
-  m_Father: {fileID: 2006570692}
+  m_Father: {fileID: 1200920211}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 326.09998, y: 211}
-  m_SizeDelta: {x: -616.99994, y: 20}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: -16.999939, y: 20}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &289960528
 MonoBehaviour:
@@ -2734,12 +2734,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 911993954}
-  m_Father: {fileID: 2006570692}
+  m_Father: {fileID: 1200920211}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -273.90002, y: -189}
-  m_SizeDelta: {x: 20, y: -417}
+  m_AnchoredPosition: {x: -0.000030517578, y: 0}
+  m_SizeDelta: {x: 20, y: -17}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &571541198
 MonoBehaviour:
@@ -4328,13 +4328,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1173223154}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
+      - m_Target: {fileID: 1173223159}
+        m_TargetAssemblyTypeName: SessionUIManager, Assembly-CSharp
+        m_MethodName: RefreshLobbyList
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -5002,12 +5002,12 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1916202734}
+  m_Father: {fileID: 1200920211}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 300}
+  m_SizeDelta: {x: -16.999939, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1017740075
 GameObject:
@@ -6456,7 +6456,12 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1916202734}
+  - {fileID: 1002774990}
+  - {fileID: 289960527}
+  - {fileID: 571541197}
+  - {fileID: 1575577645}
   m_Father: {fileID: 2006570692}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -8671,11 +8676,11 @@ RectTransform:
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2006570692}
+  m_Father: {fileID: 1200920211}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 24.100002, y: 120}
+  m_AnchoredPosition: {x: -2, y: 109}
   m_SizeDelta: {x: 67.7465, y: 15}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1575577646
@@ -9948,14 +9953,13 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1002774990}
-  m_Father: {fileID: 2006570692}
+  m_Children: []
+  m_Father: {fileID: 1200920211}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 326.09998, y: -189}
-  m_SizeDelta: {x: -616.99994, y: -417}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: -16.999939, y: -17}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1916202735
 MonoBehaviour:
@@ -10680,10 +10684,6 @@ RectTransform:
   - {fileID: 1457004671}
   - {fileID: 1111560601}
   - {fileID: 1200920211}
-  - {fileID: 1916202734}
-  - {fileID: 289960527}
-  - {fileID: 571541197}
-  - {fileID: 1575577645}
   m_Father: {fileID: 1173223158}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
