@@ -9,6 +9,7 @@ using UnityEngine.UI;
 /// </summary>
 public class SessionUIManager : MonoBehaviour
 {
+    public static SessionUIManager Instance { get; private set; }
     [FormerlySerializedAs("mainMenuPanel")] [Header("Game Panels")]
     public GameObject createLobbyPanel;
     public GameObject lobbyPanel;
@@ -38,6 +39,17 @@ public class SessionUIManager : MonoBehaviour
 
     private Dictionary<string, GameObject> activePlayerItems = new();
     private bool isLocalReady = false;
+    
+    private async void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject); 
+            return;
+        }
+        Instance = this; 
+        DontDestroyOnLoad(gameObject); 
+    }
 
     void Start()
     {
@@ -220,12 +232,13 @@ public class SessionUIManager : MonoBehaviour
         }
     }
 
-    void UpdateLobbyUI()
+    public void UpdateLobbyUI()
     {
         if (!PongSessionManager.Instance.IsInLobby) return;
 
         lobbyCodeText.text = $"Lobby Code: {PongSessionManager.Instance.GetLobbyCode()}";
         playerCountText.text = $"Players: {PongSessionManager.Instance.GetPlayerCount()}";
+        PopulatePlayerList();
     }
 
     #endregion

@@ -36,7 +36,7 @@ public class PongSessionManager : MonoBehaviour
      public string LocalPlayerId => AuthenticationService.Instance?.PlayerId;
 
 
-    public bool IsInLobby => currentLobby != null; // quick check if we're currently inside a lobby
+    public bool IsInLobby => currentLobby != null; // quick check if player's currently inside a lobby
 
     // these events help UI and other systems respond to lobby state changes
     public event Action OnLobbyCreated;
@@ -46,20 +46,20 @@ public class PongSessionManager : MonoBehaviour
 
     private float lobbyHeartbeatTimer;         // timer used to send periodic heartbeats
     private const float LobbyHeartbeatInterval = 15f; // how often host should ping to keep lobby alive
+    private float lobbyRefreshInterval = 2f; // used to refresh the lobby on host's side so that they are up to date with lobby
+    private float lobbyRefreshTimer = 0f;
 
     private async void Awake()
     {
-        // basic singleton setup
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject); // if another instance already exists, destroy this one
+            Destroy(gameObject); 
             return;
         }
+        Instance = this; 
+        DontDestroyOnLoad(gameObject); 
 
-        Instance = this;              // set the static reference to this
-        DontDestroyOnLoad(gameObject); // keep this alive across scenes
-
-        await InitializeUnityServices(); // boot up Unity services (auth, relay, etc.)
+        await InitializeUnityServices(); // boot up auth & relay sevices
     }
 
     private async Task InitializeUnityServices()
@@ -104,7 +104,7 @@ public class PongSessionManager : MonoBehaviour
             // set up the host player and pass in the metadata
             var createOptions = new CreateLobbyOptions
             {
-                IsPrivate = false,                               // false = public lobby, will show up in lobby queries
+                IsPrivate = false,                               // public lobby, will show up in lobby queries
                 Player = new Player(id: AuthenticationService.Instance.PlayerId), // identify host player in lobby
                 Data = lobbyData                                 // attach the relay join code as part of lobby data
             };
@@ -172,7 +172,7 @@ public class PongSessionManager : MonoBehaviour
             allocation.ConnectionData                // connection info for this host
         );
 
-        NetworkManager.Singleton.StartHost(); // now we start the actual Netcode session
+        NetworkManager.Singleton.StartHost(); // now the host start the actual Netcode session
         Debug.Log("Started Netcode Host with Relay");
     }
 
@@ -202,7 +202,6 @@ public class PongSessionManager : MonoBehaviour
             {
                 await LobbyService.Instance.RemovePlayerAsync(currentLobby.Id, AuthenticationService.Instance.PlayerId);
                 // removes this player from the lobby
-
                 Debug.Log("Left lobby");
                 currentLobby = null;
                 OnLobbyLeft?.Invoke(); // notify UI
@@ -226,6 +225,31 @@ public class PongSessionManager : MonoBehaviour
                 lobbyHeartbeatTimer = 0f;
                 SendHeartbeatPing();
             }
+        }
+
+        if (IsLobbyHost && currentLobby != null)
+        {
+            lobbyRefreshTimer += Time.deltaTime;
+            if (lobbyRefreshTimer >= lobbyRefreshInterval)
+            {
+                lobbyRefreshTimer = 0f;
+                RefreshLobbyUpdate();
+            }
+        }
+    }
+
+    // refresh the lobby (UI) for host when clients join
+    private async void RefreshLobbyUpdate()
+    {
+        try
+        {
+            var lobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+            currentLobby = lobby;
+            SessionUIManager.Instance?.UpdateLobbyUI();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("refresh lobby failed: " + e.Message);
         }
     }
 
