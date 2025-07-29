@@ -148,6 +148,7 @@ public class SessionUIManager : MonoBehaviour
 
     async void CreateLobbyClicked()
     {
+        // todo: send this to session list...?
         ShowLoading("Creating Lobby...");
         string lobbyName = string.IsNullOrWhiteSpace(lobbyNameInput.text) ? "Pong Lobby" : lobbyNameInput.text;
         int maxPlayers = maxPlayersDropdown.value + 2; // 0-indexed

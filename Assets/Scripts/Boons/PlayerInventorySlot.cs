@@ -56,7 +56,8 @@ public class PlayerInventorySlot : NetworkBehaviour
         }
         
         // update player ID text
-        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+        // var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+        var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
         if (playerIdText != null && playerInfo != null)
         {
             playerIdText.text = $"Player {playerInfo.playerId}";

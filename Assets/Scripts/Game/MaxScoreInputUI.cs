@@ -23,7 +23,7 @@ public class MaxScoreInputUI : MonoBehaviour
                 scoreManager.SetMaxScore(score);
             }
             gameObject.SetActive(false);
-            NetworkGameManager.Instance.StartBoonSelection(); 
+            GameManager.Instance.StartBoonSelection(); 
         }
     }
 }

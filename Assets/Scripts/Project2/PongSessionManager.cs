@@ -18,6 +18,10 @@ using Unity.Netcode.Transports.UTP; // for network communication
 
 public class PongSessionManager : MonoBehaviour
 {
+    
+    // todo: add warning msg if ping is bad
+    // todo: web build
+    // todo: pin & rtt?
     [Header("Session Settings")]
     public static PongSessionManager Instance { get; private set; } // singleton so any script can easily call PongSessionManager.Instance
 

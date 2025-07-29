@@ -5,26 +5,29 @@ using System.Collections;
 
 public class PlayerCountSelector : NetworkBehaviour
 {
-    [SerializeField] private Button twoPlayersButton;
-    [SerializeField] private Button threePlayersButton;
-    [SerializeField] private Button fourPlayersButton;
-    
-    private void Start()
+    [SerializeField] private Dropdown playerCountDropdown;
+    void Start()
     {
-        // button listeners to send info to game manager
-        if (twoPlayersButton != null)
-            twoPlayersButton.onClick.AddListener(() => SelectPlayerCount(2));
-        
-        if (threePlayersButton != null)
-            threePlayersButton.onClick.AddListener(() => SelectPlayerCount(3));
-        
-        if (fourPlayersButton != null)
-            fourPlayersButton.onClick.AddListener(() => SelectPlayerCount(4));
+        if (playerCountDropdown != null)
+        {
+            // remove old listeners
+            playerCountDropdown.onValueChanged.RemoveAllListeners();
+            // new listener for dropdown
+            playerCountDropdown.onValueChanged.AddListener(OnDropdownValueChanged);
+        }
     }
-    
+
+    // called when the dropdown is changed
+    private void OnDropdownValueChanged(int dropdownIndex)
+    {
+        // index 0: 2 players, 1: 3 players, 2: 4 players, etc.
+        int playerCount = dropdownIndex + 2; // the fist is 2 players
+        SelectPlayerCount(playerCount);
+    }
+
     public void SelectPlayerCount(int count)
     {
-        var gameManager = NetworkGameManager.Instance;
+        var gameManager = GameManager.Instance;
         if (gameManager != null)
         {
             gameManager.OnPlayerCountSelected(count);

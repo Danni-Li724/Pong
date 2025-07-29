@@ -31,13 +31,13 @@ public class GameManager : NetworkBehaviour
     private GameObject spawnedBall;
 
     [Header("Game UIs")] 
-    [SerializeField] private GameObject playerCountSelectionPanel;
     [SerializeField] private GameObject maxScorePanel;
     [SerializeField] private GameObject startGamePanel;
     [SerializeField] private Text playerCountText;
     [SerializeField] private GameObject gameEndPanel;
     [SerializeField] private Text winnerText;
     [SerializeField] private Button restartButton;
+    [SerializeField] private GameObject lobbyPanel;
 
     #region INITIALIZING
     private void Awake()
@@ -63,7 +63,7 @@ public class GameManager : NetworkBehaviour
             SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1); // always spawn host paddle
             playerCount = 1;
             connectedPlayersCount.Value = 1;
-            ShowPlayerSelectionForHost();
+            //ShowPlayerSelectionForHost();
             SetupGameEndUI();
         }
 
@@ -162,14 +162,14 @@ public class GameManager : NetworkBehaviour
     }
 
     // still used for in-game player limit UI (lobby player selection is handled in SerssionManager)
-    private void ShowPlayerSelectionForHost()
+    /*private void ShowPlayerSelectionForHost()
     {
         if (IsHost && playerCountSelectionPanel != null)
         {
             playerCountSelectionPanel.SetActive(true);
             UpdatePlayerCountDisplay();
         }
-    }
+    }*/
 
     private void OnConnectedPlayersCountChanged(int previousValue, int newValue)
     {
@@ -188,16 +188,16 @@ public class GameManager : NetworkBehaviour
     {
         if (!IsHost) return;
         SetMaxPlayersServerRpc(count);
-        HidePlayerCountSelectionPanel();
+        //HidePlayerCountSelectionPanel();
     }
 
-    private void HidePlayerCountSelectionPanel()
+    /*private void HidePlayerCountSelectionPanel()
     {
         if (playerCountSelectionPanel != null)
         {
             playerCountSelectionPanel.SetActive(false);
         }
-    }
+    }*/
 
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
     public void SetMaxPlayersServerRpc(int playerCount)
@@ -316,6 +316,8 @@ public class GameManager : NetworkBehaviour
     // delegates boons and sprite syncing, still an in-game concern
     public void StartBoonSelection()
     {
+        HideLobbyClientRpc();
+        if (!IsServer) return;
         foreach (var kvp in allPlayers)
         {
             if (kvp.Value.isConnected)
@@ -323,9 +325,13 @@ public class GameManager : NetworkBehaviour
                 SyncPlayerSprite(kvp.Key);
             }
         }
-
-        if (!IsServer) return;
         BoonManager.Instance.StartBoonSelection();
+    }
+
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void HideLobbyClientRpc()
+    {
+        lobbyPanel.SetActive(false);
     }
 
     public void OnAllBoonsSelected()
@@ -737,7 +743,7 @@ public class GameManager : NetworkBehaviour
         }
 
         // re-show host selection UI and reset visual effects
-        ShowPlayerSelectionForHost();
+        // ShowPlayerSelectionForHost();
         if (startGamePanel != null)
             startGamePanel.SetActive(false);
 

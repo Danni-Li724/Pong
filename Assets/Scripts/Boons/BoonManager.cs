@@ -69,7 +69,8 @@ public class BoonManager : NetworkBehaviour
         if (!IsServer) return;
         
         // Set the list of expected players once
-        expectedPlayerIds = NetworkGameManager.Instance.GetAllPlayers()
+        //expectedPlayerIds = NetworkGameManager.Instance.GetAllPlayers()
+        expectedPlayerIds = GameManager.Instance.GetAllPlayers()
             .Where(p => p.isConnected)
             .Select(p => p.clientId)
             .ToList();
@@ -194,7 +195,8 @@ public class BoonManager : NetworkBehaviour
         foreach (var kvp in playerInventories)
         {
             ulong clientId = kvp.Key;
-            var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+            //var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+            var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
             
             if (playerInfo != null)
             {
@@ -289,7 +291,8 @@ public class BoonManager : NetworkBehaviour
             Debug.Log("All players have selected boons!");
             boonSelectionActive = false;
             ClearRemainingButtonsClientRpc();
-            var gameManager = NetworkGameManager.Instance;
+            //var gameManager = NetworkGameManager.Instance;
+            var gameManager = GameManager.Instance;
             if (gameManager != null)
             {
                 gameManager.OnAllBoonsSelected();
@@ -362,7 +365,8 @@ public class BoonManager : NetworkBehaviour
             SyncAllInventoriesToClients();
         }
 
-        var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+        //var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
+        var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
         if (playerInfo != null)
         {
             ApplyClientSideEffectClientRpc(boonType, clientId, playerInfo.playerId);
@@ -533,12 +537,14 @@ private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
         // {
         //     paddle.EnableSpaceshipMode(duration);
         // }
-        NetworkGameManager.Instance.StartSpaceshipMode();
+        // NetworkGameManager.Instance.StartSpaceshipMode();
+        GameManager.Instance.StartSpaceshipMode();
     }
     
     private void SpawnDoubleBall(float duration)
     {
-        var gameManager = FindObjectOfType<NetworkGameManager>();
+        // var gameManager = FindObjectOfType<NetworkGameManager>();
+        var gameManager = FindObjectOfType<GameManager>();
         if (gameManager != null)
         {
             gameManager.SpawnAdditionalBall(duration);
