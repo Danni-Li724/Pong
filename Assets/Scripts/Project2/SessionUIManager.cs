@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 /// <summary>
 /// Handles all UI for multiplayer session setup using Unity Lobby + Relay.
-/// Interfaces with PongSessionManager for logic.
+/// Interfaces with PongSessionManager for logic
 /// </summary>
 public class SessionUIManager : MonoBehaviour
 {
-    [Header("Game Panels")]
-    public GameObject mainMenuPanel;
+    [FormerlySerializedAs("mainMenuPanel")] [Header("Game Panels")]
+    public GameObject createLobbyPanel;
     public GameObject lobbyPanel;
     public GameObject loadingPanel;
     public GameObject errorPanel;
@@ -81,14 +82,21 @@ public class SessionUIManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
-        mainMenuPanel?.SetActive(true);
+        createLobbyPanel?.SetActive(true);
         lobbyPanel?.SetActive(false);
         loadingPanel?.SetActive(false);
     }
-
-    void ShowLobbyPanel()
+    
+    public void ShowCreateSessionPanel()
     {
-        mainMenuPanel?.SetActive(false);
+        createLobbyPanel?.SetActive(false);
+        loadingPanel?.SetActive(false);
+        UpdateLobbyUI();
+    }
+
+    public void ShowLobbyPanel()
+    {
+        createLobbyPanel?.SetActive(false);
         lobbyPanel?.SetActive(true);
         loadingPanel?.SetActive(false);
         UpdateLobbyUI();
@@ -96,7 +104,7 @@ public class SessionUIManager : MonoBehaviour
 
     void ShowLoading(string message = "Loading...")
     {
-        mainMenuPanel?.SetActive(false);
+        createLobbyPanel?.SetActive(false);
         lobbyPanel?.SetActive(false);
         loadingPanel?.SetActive(true);
     }
@@ -191,14 +199,10 @@ public class SessionUIManager : MonoBehaviour
     void PopulatePlayerList()
     {
         ClearPlayerList();
-
         if (!PongSessionManager.Instance.IsInLobby) return;
-
         string code = PongSessionManager.Instance.GetLobbyCode();
         lobbyCodeText.text = $"Lobby Code: {code}";
-
         int players = PongSessionManager.Instance.GetPlayerCount();
-
         for (int i = 0; i < players; i++)
         {
             GameObject item = Instantiate(playerListItemPrefab, playerListParent);

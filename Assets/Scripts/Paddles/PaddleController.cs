@@ -113,7 +113,7 @@ public class PaddleController : NetworkBehaviour
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
     void NotifyReadyServerRpc()
     {
-        NetworkGameManager manager = FindObjectOfType<NetworkGameManager>();
+        GameManager manager = FindObjectOfType<GameManager>();
         manager.MarkPlayerReady(OwnerClientId);
     }
     // This is called by the game manager to spawn buttons to represent players who aren't themselves.
@@ -123,7 +123,7 @@ public class PaddleController : NetworkBehaviour
         Debug.Log($"[PaddleController] Attempting to SpawnPlayerSelectionUI (IsOwner: {IsOwner})"); // had to debug this system a lot...
         if (!IsOwner) return;
         // grabs list of other connected players to show in UI
-        List<PlayerInfo> otherPlayers = NetworkGameManager.Instance.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
+        List<PlayerInfo> otherPlayers = GameManager.Instance.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
         GameObject ui = Instantiate(playerSelectionUIPrefab); 
         PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
         uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
