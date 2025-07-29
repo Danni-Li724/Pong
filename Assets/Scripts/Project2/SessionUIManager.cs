@@ -5,12 +5,15 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Handles all UI for multiplayer session setup using Unity Lobby + Relay.
-/// Interfaces with PongSessionManager for logic
+/// Interfaces with PongSessionManager for sessiona and lobby acreation & sign-ins,
+/// also linked to GameManager for setting player count and ready status.
 /// </summary>
 public class SessionUIManager : MonoBehaviour
 {
     public static SessionUIManager Instance { get; private set; }
-    [FormerlySerializedAs("mainMenuPanel")] [Header("Game Panels")]
+    private SessionBridge sessionBridge;
+
+    [Header("Game Panels")]
     public GameObject createLobbyPanel;
     public GameObject lobbyPanel;
     public GameObject loadingPanel;
@@ -53,6 +56,7 @@ public class SessionUIManager : MonoBehaviour
 
     void Start()
     {
+        sessionBridge = FindObjectOfType<SessionBridge>();
         SetupUIEvents();
         SubscribeToSessionEvents();
         ShowMainMenu();
@@ -76,6 +80,8 @@ public class SessionUIManager : MonoBehaviour
         session.OnLobbyJoined += HandleLobbyJoined;
         session.OnLobbyLeft += HandleLobbyLeft;
         session.OnError += DisplayError;
+        sessionBridge = FindObjectOfType<SessionBridge>();
+        sessionBridge.OnReadyStatesChanged += PopulatePlayerList;
     }
 
     void OnDestroy()
@@ -86,6 +92,9 @@ public class SessionUIManager : MonoBehaviour
         session.OnLobbyJoined -= HandleLobbyJoined;
         session.OnLobbyLeft -= HandleLobbyLeft;
         session.OnError -= DisplayError;
+        
+        if (sessionBridge != null)
+            sessionBridge.OnReadyStatesChanged -= PopulatePlayerList;
     }
 
     #endregion
@@ -160,13 +169,13 @@ public class SessionUIManager : MonoBehaviour
     void ToggleReadyStatus()
     {
         isLocalReady = !isLocalReady;
-        // Todo: implement sync logic via SessionManager
         readyButton.GetComponentInChildren<Text>().text = isLocalReady ? "Unready" : "Ready";
-
-        if (isLocalReady)
-        {
-            TryTriggerStart();
-        }
+        sessionBridge.SetLocalPlayerReady(isLocalReady);
+        // if (isLocalReady)
+        // {
+        //     TryTriggerStart();
+        // }
+        //UpdateReadyDisplay();
     }
 
     void TryTriggerStart()
@@ -214,14 +223,22 @@ public class SessionUIManager : MonoBehaviour
         if (!PongSessionManager.Instance.IsInLobby) return;
         string code = PongSessionManager.Instance.GetLobbyCode();
         lobbyCodeText.text = $"Lobby Code: {code}";
-        int players = PongSessionManager.Instance.GetPlayerCount();
-        for (int i = 0; i < players; i++)
+
+        var readyStates = sessionBridge.GetReadyStates();
+        var lobby = PongSessionManager.Instance.GetCurrentLobby();
+        if (lobby == null) return;
+
+        for (int i = 0; i < lobby.Players.Count; i++)
         {
+            var player = lobby.Players[i];
             GameObject item = Instantiate(playerListItemPrefab, playerListParent);
-            item.GetComponentInChildren<Text>().text = $"Player {i + 1}";
+
+            string displayName = $"Player {i + 1}";
+            bool isReady = readyStates.TryGetValue(player.Id, out var r) && r;
+            item.GetComponentInChildren<Text>().text = displayName + (isReady ? " (Ready)" : " (Not Ready)");
         }
 
-        playerCountText.text = $"Players: {players}";
+        playerCountText.text = $"Players: {lobby.Players.Count}";
     }
 
     void ClearPlayerList()

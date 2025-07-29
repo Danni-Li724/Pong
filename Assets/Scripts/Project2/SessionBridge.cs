@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Unity.Services.Lobbies.Models;
 
 /// <summary>
@@ -10,6 +12,7 @@ public class SessionBridge : MonoBehaviour
 {
     private Dictionary<string, bool> playerReadyStatus = new(); // track who's ready
     private bool gameStarted = false;
+    public event Action OnReadyStatesChanged;
 
     private void Start()
     {
@@ -59,6 +62,7 @@ public class SessionBridge : MonoBehaviour
         if (playerReadyStatus.ContainsKey(playerId))
         {
             playerReadyStatus[playerId] = isReady;
+            OnReadyStatesChanged?.Invoke(); // notify UI
             CheckAllReady();
         }
     }
