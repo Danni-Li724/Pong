@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -34,7 +35,9 @@ public class SessionUIManager : MonoBehaviour
     public Button joinByCodeButton;
     public Transform sessionListContent;
     public GameObject sessionListItemPrefab;
-    public Button refreshSessionButton;
+    public Button refreshLobbyListButton;
+    public float refreshCoolDown = 5f;
+    private bool canRefresh = true;
 
     [Header("Lobby UI")]
     public Text lobbyCodeText;
@@ -79,7 +82,7 @@ public class SessionUIManager : MonoBehaviour
         leaveLobbyButton.onClick.AddListener(() => PongSessionManager.Instance.LeaveLobbyAsync());
         closeErrorButton.onClick.AddListener(HideError);
         readyButton.onClick.AddListener(ToggleReadyStatus);
-        refreshSessionButton.onClick.AddListener(RefreshLobbyList);
+        refreshLobbyListButton.onClick.AddListener(RefreshLobbyList);
     }
 
     void SubscribeToSessionEvents()
@@ -190,6 +193,9 @@ public class SessionUIManager : MonoBehaviour
 
     public async void RefreshLobbyList()
     {
+        if (!canRefresh) return;
+        canRefresh = false;
+        refreshLobbyListButton.interactable = false;
         ShowLoading("Refreshing Lobby...");
         ClearSessionList();
         try
@@ -221,11 +227,18 @@ public class SessionUIManager : MonoBehaviour
         {
             DisplayError(ex.Message);
         }
+        loadingPanel.SetActive(false);
+        createLobbyPanel?.SetActive(true);
+        await Task.Delay((int)(refreshCoolDown * 1000));
+        canRefresh = true;
+        refreshLobbyListButton.interactable = true;
     }
 
     public async void JoinLobbyById(string lobbyId)
     {
         ShowLoading("Joining Lobby...");
+        loadingPanel.SetActive(false);
+        lobbyPanel?.SetActive(true);
         try
         {
             var joinOptions = new JoinLobbyByIdOptions
@@ -299,7 +312,6 @@ public class SessionUIManager : MonoBehaviour
         if (!PongSessionManager.Instance.IsInLobby) return;
         string code = PongSessionManager.Instance.GetLobbyCode();
         lobbyCodeText.text = $"Lobby Code: {code}";
-
         var readyStates = sessionBridge.GetReadyStates();
         var lobby = PongSessionManager.Instance.GetCurrentLobby();
         if (lobby == null) return;
@@ -310,7 +322,12 @@ public class SessionUIManager : MonoBehaviour
             GameObject item = Instantiate(playerListItemPrefab, playerListParent);
 
             string displayName = $"Player {i + 1}";
-            bool isReady = readyStates.TryGetValue(player.Id, out var r) && r;
+            // bool isReady = readyStates.TryGetValue(player.Id, out var r) && r;
+            bool isReady = false;
+            if (player.Data != null && player.Data.TryGetValue("Ready", out var readyData))
+            {
+                bool.TryParse(readyData.Value, out isReady);
+            }
             item.GetComponentInChildren<Text>().text = displayName + (isReady ? " (Ready)" : " (Not Ready)");
         }
 

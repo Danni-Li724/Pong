@@ -50,7 +50,7 @@ public class PongSessionManager : MonoBehaviour
 
     private float lobbyHeartbeatTimer;         // timer used to send periodic heartbeats
     private const float LobbyHeartbeatInterval = 15f; // how often host should ping to keep lobby alive
-    private float lobbyRefreshInterval = 2f; // used to refresh the lobby on host's side so that they are up to date with lobby
+    private float lobbyRefreshInterval = 8f; // used to refresh the lobby on host's side so that they are up to date with lobby
     private float lobbyRefreshTimer = 0f;
 
     private async void Awake()
@@ -231,7 +231,7 @@ public class PongSessionManager : MonoBehaviour
             }
         }
 
-        if (IsLobbyHost && currentLobby != null)
+        if (currentLobby != null)
         {
             lobbyRefreshTimer += Time.deltaTime;
             if (lobbyRefreshTimer >= lobbyRefreshInterval)

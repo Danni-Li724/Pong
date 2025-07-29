@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Services.Lobbies;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Unity.Services.Lobbies.Models;
@@ -51,20 +52,51 @@ public class SessionBridge : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Called when local player presses ready/unready.
-    /// </summary>
-    public void SetLocalPlayerReady(bool isReady)
-    {
-        var playerId = PongSessionManager.Instance?.LocalPlayerId;
-        if (string.IsNullOrEmpty(playerId)) return;
+    // /// <summary>
+    // /// Called when local player presses ready/unready. 
+    // /// THIS ONLY HAPPENS LOCALLY THO
+    // /// </summary>
+    // public void SetLocalPlayerReady(bool isReady)
+    // {
+    //     var playerId = PongSessionManager.Instance?.LocalPlayerId;
+    //     if (string.IsNullOrEmpty(playerId)) return;
+    //
+    //     if (playerReadyStatus.ContainsKey(playerId))
+    //     {
+    //         playerReadyStatus[playerId] = isReady;
+    //         OnReadyStatesChanged?.Invoke(); // notify UI
+    //         CheckAllReady();
+    //     }
+    // }
 
-        if (playerReadyStatus.ContainsKey(playerId))
+    /// <summary>
+    /// Now using Lobby.Services to update and proadcast ready states
+    /// </summary>
+    /// <param name="isReady"></param>
+    public async void SetLocalPlayerReady(bool isReady)
+    {
+        var lobby = PongSessionManager.Instance?.GetCurrentLobby();
+        if (lobby == null) return;
+        var playerId = PongSessionManager.Instance.LocalPlayerId;
+        var data = new Dictionary<string, PlayerDataObject>
         {
-            playerReadyStatus[playerId] = isReady;
-            OnReadyStatesChanged?.Invoke(); // notify UI
-            CheckAllReady();
+            // write ready states to player data in the lobby
+            { "Ready", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, isReady.ToString()) }
+        };
+        var options = new UpdatePlayerOptions
+        {
+            // assigns the dictionary to the UpdatePlayerOptions object
+            Data = data,
+        };
+        try
+        {
+            await LobbyService.Instance.UpdatePlayerAsync(lobby.Id, playerId, options);
         }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Failed to update ready state: " + e.Message);
+        }
+        
     }
 
     /// <summary>
