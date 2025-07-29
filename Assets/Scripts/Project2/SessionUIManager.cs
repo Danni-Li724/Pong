@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -27,6 +29,9 @@ public class SessionUIManager : MonoBehaviour
     [Header("Join Lobby UI")]
     public InputField joinCodeInput;
     public Button joinByCodeButton;
+    public Transform sessionListContent;
+    public GameObject sessionListItemPrefab;
+    public Button refreshSessionButton;
 
     [Header("Lobby UI")]
     public Text lobbyCodeText;
@@ -178,6 +183,21 @@ public class SessionUIManager : MonoBehaviour
         // }
         //UpdateReadyDisplay();
     }
+
+    /*public async void RefreshLobbyList()
+    {
+        ShowLoading("Refreshing Lobby...");
+        // ClearSessionList();
+        var query = new QueryLobbiesOptions()
+        {
+            // query filters can filter lobbies based on what lobby have open slots, certain lobby names & regions etc
+            Filters = new List<QueryFilter>()
+            {
+                new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
+                // param notes: FieldOptions.AvailableSlots
+            }
+        }
+    }*/
 
     void TryTriggerStart()
     {
