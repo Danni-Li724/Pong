@@ -33,7 +33,7 @@ public class SessionUIManager : MonoBehaviour
     [Header("Join Lobby UI")]
     public InputField joinCodeInput;
     public Button joinByCodeButton;
-    public Transform sessionListContent;
+    public RectTransform sessionListContent;
     public GameObject sessionListItemPrefab;
     public Button refreshLobbyListButton;
     public float refreshCoolDown = 5f;

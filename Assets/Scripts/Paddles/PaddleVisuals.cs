@@ -64,4 +64,9 @@ public class PaddleVisuals : NetworkBehaviour
         }
     }
 
+    public void SetRotation(float angle)
+    {
+        transform.localRotation = Quaternion.Euler(0, 0, angle);
+    }
+
 }

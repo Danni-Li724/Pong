@@ -84,6 +84,12 @@ MonoBehaviour:
   bottomLimit: -36
   leftLimit: -60
   rightLimit: 60
+  spaceshipBounds:
+    serializedVersion: 2
+    x: -60
+    y: -36
+    width: 120
+    height: 72
 --- !u!114 &-2406434400426874364
 MonoBehaviour:
   m_ObjectHideFlags: 0

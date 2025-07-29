@@ -35,6 +35,7 @@ public class PaddleController : NetworkBehaviour
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> networkTiltActive = new NetworkVariable<bool>(false,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> networkRotationAngle = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int paddleLayer;
     private int goalLayer;
     
@@ -54,6 +55,7 @@ public class PaddleController : NetworkBehaviour
         
         networkTiltAngle.OnValueChanged += OnTiltAngleChanged;
         networkTiltActive.OnValueChanged += OnTiltActiveChanged;
+        networkTiltAngle.OnValueChanged += OnSpaceshipRotationChanged;
         
         // when server updated the ID, sync it and initializes input
         playerIdVar.OnValueChanged += (_, newId) =>
@@ -82,6 +84,7 @@ public class PaddleController : NetworkBehaviour
         {
             networkTiltAngle.OnValueChanged -= OnTiltAngleChanged;
             networkTiltActive.OnValueChanged -= OnTiltActiveChanged;
+            networkTiltAngle.OnValueChanged -= OnSpaceshipRotationChanged;
         }
         base.OnNetworkDespawn();
     }
@@ -261,7 +264,7 @@ public class PaddleController : NetworkBehaviour
         this.bulletPrefab = bulletPrefab;
         this.bulletSpeed = bulletSpeed;
         this.fireCooldown = fireCooldown;
-
+        GetComponent<PaddleMovement>().EnableSpaceshipBounds(active);
         if (active)
         {
             paddleVisuals.SetSpaceshipSprite(rocketSprite);
@@ -296,6 +299,15 @@ public class PaddleController : NetworkBehaviour
 
             if (IsOwner)
                 GetComponent<PaddleInputHandler>().DisableSpaceshipControls();
+        }
+    }
+
+    // To fix unsynced rotation issue with paddle visuals in spaceship mode
+    private void OnSpaceshipRotationChanged(float previousValue, float newValue)
+    {
+        if (inSpaceshipMode && paddleVisuals != null)
+        {
+            paddleVisuals.SetRotation(newValue);
         }
     }
     
@@ -335,7 +347,11 @@ public class PaddleController : NetworkBehaviour
     public void UpdateSpaceshipRotation(Vector2 input)
     {
         if (!inSpaceshipMode || paddleVisuals == null) return;
-        paddleVisuals.RotateInDirection(input);
+        //paddleVisuals.RotateInDirection(input);
+        float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
+        paddleVisuals.SetRotation(angle);
+        if(IsOwner)
+            networkRotationAngle.Value = angle;
     }
     
     // Called by GameManager's server-side operations to put a player into spaceship mode

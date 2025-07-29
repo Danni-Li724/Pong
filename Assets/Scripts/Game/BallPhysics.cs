@@ -78,7 +78,9 @@ public class BallPhysics : NetworkBehaviour
             int goalOwnerId = goal.GetGoalForPlayerId();
 
             // get goal owner client ID from player ID
-            var goalOwnerInfo = NetworkGameManager.Instance.GetAllPlayers()
+            // var goalOwnerInfo = NetworkGameManager.Instance.GetAllPlayers()
+            //     .FirstOrDefault(p => p.playerId == goalOwnerId);
+            var goalOwnerInfo = GameManager.Instance.GetAllPlayers()
                 .FirstOrDefault(p => p.playerId == goalOwnerId);
             bool goalOwnerExists = goalOwnerInfo != null;
             // FIXED: only score if: 1. last player to touch ball is valid

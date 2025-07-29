@@ -47,12 +47,10 @@ public class PongSessionManager : MonoBehaviour
     public event Action OnLobbyJoined;
     public event Action OnLobbyLeft;
     public event Action<string> OnError;
-
     private float lobbyHeartbeatTimer;         // timer used to send periodic heartbeats
     private const float LobbyHeartbeatInterval = 15f; // how often host should ping to keep lobby alive
-    private float lobbyRefreshInterval = 8f; // used to refresh the lobby on host's side so that they are up to date with lobby
+    private float lobbyRefreshInterval = 2f; // used to refresh the lobby on host's side so that they are up to date with lobby
     private float lobbyRefreshTimer = 0f;
-
     private async void Awake()
     {
         if (Instance != null && Instance != this)
@@ -62,10 +60,8 @@ public class PongSessionManager : MonoBehaviour
         }
         Instance = this; 
         DontDestroyOnLoad(gameObject); 
-
         await InitializeUnityServices(); // boot up auth & relay sevices
     }
-
     private async Task InitializeUnityServices()
     {
         try
@@ -89,10 +85,8 @@ public class PongSessionManager : MonoBehaviour
             // create a relay allocation (host reserves a spot for players to connect through Unity Relay)
             relayAllocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1); 
             // -1 as host doesn't count in player connection slots
-
             string joinCode = await RelayService.Instance.GetJoinCodeAsync(relayAllocation.AllocationId); 
             // this join code will be given to other players so they can connect to this relay allocation
-
             // now build metadata for the lobby — this is where we embed the join code so players can access it
             var lobbyData = new Dictionary<string, DataObject>
             {
@@ -104,7 +98,6 @@ public class PongSessionManager : MonoBehaviour
                     )
                 }
             };
-
             // set up the host player and pass in the metadata
             var createOptions = new CreateLobbyOptions
             {
@@ -117,10 +110,8 @@ public class PongSessionManager : MonoBehaviour
             currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, createOptions);
 
             Debug.Log("Lobby created. Code: " + currentLobby.LobbyCode);
-
             // start the host via Netcode, using the relay allocation we just made
             StartHostWithRelay(relayAllocation);
-
             OnLobbyCreated?.Invoke(); // notify anything listening (e.g., SessionUIManager)
         }
         catch (Exception e)
