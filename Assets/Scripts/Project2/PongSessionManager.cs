@@ -78,7 +78,7 @@ public class PongSessionManager : MonoBehaviour
         }
     }
 
-    public async Task CreateLobbyAsync(string lobbyName, int maxPlayers)
+    public async Task CreateLobbyAsync(string lobbyName, int maxPlayers, string playerName)
     {
         try
         {
@@ -98,11 +98,19 @@ public class PongSessionManager : MonoBehaviour
                     )
                 }
             };
+
+            var playerData = new Dictionary<string, PlayerDataObject>
+            {
+                { "DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) }
+            };
             // set up the host player and pass in the metadata
             var createOptions = new CreateLobbyOptions
             {
                 IsPrivate = false,                               // public lobby, will show up in lobby queries
-                Player = new Player(id: AuthenticationService.Instance.PlayerId), // identify host player in lobby
+                Player = new Player(
+                    id: AuthenticationService.Instance.PlayerId,
+                    data: playerData // pass in playerData here!
+                ), // identify host player in lobby
                 Data = lobbyData                                 // attach the relay join code as part of lobby data
             };
 
@@ -121,28 +129,27 @@ public class PongSessionManager : MonoBehaviour
         }
     }
 
-    public async Task JoinLobbyByCodeAsync(string code)
+    public async Task JoinLobbyByCodeAsync(string code, string playerName)
     {
         try
         {
+            var playerData = new Dictionary<string, PlayerDataObject>
+            {
+                { "DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) }
+            };
             // build options for the join request, pass in this player
             var joinOptions = new JoinLobbyByCodeOptions
             {
                 Player = new Player(id: AuthenticationService.Instance.PlayerId)
             };
-
             // try joining the lobby with the code
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code, joinOptions);
-
             string joinCode = currentLobby.Data["JoinCode"].Value; 
             // grab the relay join code embedded in the lobby data
-
             // use relay join code to join the relay server
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
-
             // start the client using the relay data
             StartClientWithRelay(joinAllocation);
-
             OnLobbyJoined?.Invoke(); // notify UI or anything else listening
         }
         catch (Exception e)
@@ -151,7 +158,6 @@ public class PongSessionManager : MonoBehaviour
             OnError?.Invoke("Failed to join lobby: " + e.Message);
         }
     }
-
     private void StartHostWithRelay(Allocation allocation)
     {
         // grab Unity Transport (which lets Netcode communicate via Relay)
@@ -250,14 +256,21 @@ public class PongSessionManager : MonoBehaviour
 
     private async void SendHeartbeatPing()
     {
+        if (currentLobby == null)
+        {
+            Debug.LogWarning("Cannot refresh lobby - currentLobby is null");
+            return;
+        }
         try
         {
             await LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
             // tells Unity servers the heart still beating (prevents lobby from timing out)
+            SessionUIManager.Instance?.UpdateLobbyUI();
         }
         catch (Exception e)
         {
             Debug.LogWarning("Lobby heartbeat failed: " + e.Message);
+            currentLobby = null;
         }
     }
 

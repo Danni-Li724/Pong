@@ -64,8 +64,8 @@ public class BallPhysics : NetworkBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        Debug.Log($"called on {(IsServer ? "server" : "client")}");
         if (!IsServer) return;
-
         if (collision.gameObject.TryGetComponent<PaddleController>(out var paddle))
         {
             lastPlayerId = paddle.GetPlayerId();
@@ -76,26 +76,43 @@ public class BallPhysics : NetworkBehaviour
         if (collision.gameObject.TryGetComponent<GoalController>(out var goal))
         {
             int goalOwnerId = goal.GetGoalForPlayerId();
+            if (goalOwnerId == -1)
+            {
+                Debug.Log($"[Server] Ball hit unassigned goal {goal.gameObject.name}");
+            }
 
-            // get goal owner client ID from player ID
-            // var goalOwnerInfo = NetworkGameManager.Instance.GetAllPlayers()
-            //     .FirstOrDefault(p => p.playerId == goalOwnerId);
-            var goalOwnerInfo = GameManager.Instance.GetAllPlayers()
-                .FirstOrDefault(p => p.playerId == goalOwnerId);
+            var goalOwnerInfo = GameManager.Instance.GetAllPlayers().FirstOrDefault(p => p.playerId == goalOwnerId);
             bool goalOwnerExists = goalOwnerInfo != null;
-            // FIXED: only score if: 1. last player to touch ball is valid
-            //2. goal owner exists and is connected
-            //3. last player don't score on their own goal
             if (lastPlayerId != -1 && goalOwnerExists && lastPlayerId != goalOwnerId)
             {
                 OnPlayerScored?.Invoke(lastPlayerId);
             }
             else
             {
-                Debug.Log($"Own goal or no last hitter detected.");
+                Debug.Log($"[Server] own goal or no last hitter");
             }
 
             return;
+
+            // int goalOwnerId = goal.GetGoalForPlayerId();
+            // // get goal owner client ID from player ID
+            // // var goalOwnerInfo = NetworkGameManager.Instance.GetAllPlayers()
+            // //     .FirstOrDefault(p => p.playerId == goalOwnerId);
+            // var goalOwnerInfo = GameManager.Instance.GetAllPlayers()
+            //     .FirstOrDefault(p => p.playerId == goalOwnerId);
+            // bool goalOwnerExists = goalOwnerInfo != null;
+            // // FIXED: only score if: 1. last player to touch ball is valid
+            // //2. goal owner exists and is connected
+            // //3. last player don't score on their own goal
+            // if (lastPlayerId != -1 && goalOwnerExists && lastPlayerId != goalOwnerId)
+            // {
+            //     OnPlayerScored?.Invoke(lastPlayerId);
+            // }
+            // else
+            // {
+            //     Debug.Log($"Own goal or no last hitter detected.");
+            // }
+            // return;
         }
     }
     

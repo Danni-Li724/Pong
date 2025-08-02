@@ -1,17 +1,29 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class GoalController : MonoBehaviour
+public class GoalController : NetworkBehaviour
 {
-    [SerializeField]
-    private int goalForPlayerId;
-
-    public int GetGoalForPlayerId()
+    public NetworkVariable<int> playerId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private int cachedId = 999999;
+    void Update()
     {
-        return goalForPlayerId;
+        if (playerId.Value != cachedId)
+        {
+            cachedId = playerId.Value;
+            Debug.Log($"{gameObject.name} on {(IsServer ? "server" : "client")} has playerId {playerId.Value}");
+        }
     }
-    
     public void SetGoalForPlayerId(int id)
     {
-        goalForPlayerId = id;
+        if (IsServer)
+        {
+            playerId.Value = id;
+            Debug.Log($"[SERVER] SetGoalForPlayerId: Goal {gameObject.name} set to playerId {id}");
+        }
+    }
+    public int GetGoalForPlayerId()
+    {
+        Debug.Log($"[CLIENT] GetGoalForPlayerId: Goal {gameObject.name} returning playerId {playerId.Value}");
+        return playerId.Value;
     }
 }

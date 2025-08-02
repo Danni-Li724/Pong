@@ -16,7 +16,7 @@ public class PlayerInfo
     public Sprite paddleSprite;
     public Sprite rocketSprite;
     
-    public PlayerInfo(int playerId, ulong client, Transform spawn)
+    public PlayerInfo(int playerId, ulong client, Transform spawn, string playerName)
     {
         this.playerId = playerId;
         this.playerName = playerName;
@@ -27,9 +27,7 @@ public class PlayerInfo
          // storing names
         this.paddleSpriteName = $"Player{playerId}Paddle";
         this.rocketSpriteName = $"Player{playerId}Rocket";
-        
         LoadSprites();
-        
         if (paddleSprite == null || rocketSprite == null)
         {
             Debug.LogWarning($"Missing sprite for Player {playerId}");

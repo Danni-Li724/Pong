@@ -389,9 +389,7 @@ public class BoonManager : NetworkBehaviour
         }
         // NOT applying gameplay logic here like CycleMusic/SpawnBall to avoid doubling up
     }
-    
     #region BOON EFFECTS // below are functions for each boon effects. 
-    
     // Updated this method to use the boon user's client ID for correct nomination assignment
 private void PrepareNomination(ulong boonUserId, int boonPlayerId) 
 {
@@ -402,14 +400,12 @@ private void PrepareNomination(ulong boonUserId, int boonPlayerId)
         Debug.Log("Not boon owner, skipping nomination UI");
         return;
     }
-    
     int slotIndex = boonPlayerId - 1;
     if (slotIndex < 0 || slotIndex >= playerInventorySlots.Length)
     {
         Debug.LogError($"Invalid slot index: {slotIndex}");
         return;
     }
-    
     var slot = playerInventorySlots[slotIndex];
     var nominationParent = slot.Find("Nomination");
     if (nominationParent == null)
@@ -464,20 +460,17 @@ private void TryNominatePlayerForScoreThief(ulong targetClientId, int targetPlay
     ulong localId = NetworkManager.Singleton.LocalClientId;
     ScoreThiefNominationServerRpc(localId, targetClientId, targetPlayerId);
 }
-
 // Updated ServerRpc to accept player ID directly (more reliable than looking it up)
 [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
 private void ScoreThiefNominationServerRpc(ulong thiefClientId, ulong victimClientId, int victimPlayerId)
 {
     Debug.Log($"Score Thief: Player {thiefClientId} is stealing from player {victimPlayerId} (client {victimClientId})");
-    
     ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
     if (scoreManager == null)
     {
         Debug.LogError("ScoreManager not found!");
         return;
     }
-    
     var canDeduct = scoreManager.TryDeductPointsByPlayerId(victimPlayerId, 3);
     if (canDeduct)
     {
@@ -489,7 +482,6 @@ private void ScoreThiefNominationServerRpc(ulong thiefClientId, ulong victimClie
             boons.Remove(BoonType.ScoreThief);
             SyncAllInventoriesToClients();
         }
-        
         // Notify all clients about the score theft
         NotifyScoreTheftClientRpc(thiefClientId, victimClientId, victimPlayerId);
     }
@@ -529,7 +521,6 @@ private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
             audioManager.CycleMusicServerRpc();
         }
     }
-    
     private void EnableSpaceshipMode(float duration)
     {
         // var paddles = FindObjectsOfType<PaddleController>();
@@ -540,7 +531,6 @@ private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
         // NetworkGameManager.Instance.StartSpaceshipMode();
         GameManager.Instance.StartSpaceshipMode();
     }
-    
     private void SpawnDoubleBall(float duration)
     {
         // var gameManager = FindObjectOfType<NetworkGameManager>();
@@ -550,7 +540,6 @@ private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
             gameManager.SpawnAdditionalBall(duration);
         }
     }
-    
     private void EnablePaddleTilt(ulong clientId, float duration)
     {
         if (!IsServer) return;
@@ -560,7 +549,6 @@ private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
         // enable tilt for the specific player's paddle
         EnablePaddleTiltClientRpc(clientId, duration);
     }
-    
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void EnablePaddleTiltClientRpc(ulong targetClientId, float duration)
     {
@@ -579,7 +567,6 @@ private void NotifyScoreTheftFailedClientRpc(ulong thiefClientId)
             }
         }
     }
-    
     private void ModifyBallSpeed(float multiplier, float duration)
     {
         var balls = FindObjectsOfType<BallPhysics>();

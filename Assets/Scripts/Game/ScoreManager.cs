@@ -113,7 +113,6 @@ public class ScoreManager : NetworkBehaviour
         VisualEventsManager.Instance?.UpdateScoreUIClientRpc(0, 0, 0, 0);
     }
 
-
     public int GetScore(ulong clientId)
     {
         return clientId switch
@@ -158,31 +157,6 @@ public class ScoreManager : NetworkBehaviour
 
         return true;
     }
-    // public bool TryDeductPoints(ulong clientId, int amount)
-    // {
-    //     ref NetworkVariable<int> targetScore = ref player1Score;
-    //
-    //     switch (clientId)
-    //     {
-    //         case 0: targetScore = ref player1Score; break;
-    //         case 1: targetScore = ref player2Score; break;
-    //         case 2: targetScore = ref player3Score; break;
-    //         case 3: targetScore = ref player4Score; break;
-    //         default: return false;
-    //     }
-    //
-    //     if (targetScore.Value < amount)
-    //         return false;
-    //
-    //     targetScore.Value -= amount;
-    //
-    //     VisualEventsManager.Instance?.UpdateScoreUIClientRpc(
-    //         player1Score.Value, player2Score.Value, player3Score.Value, player4Score.Value
-    //     );
-    //
-    //     return true;
-    // }
-    
     // Called when bullet hits a paddle in spaceship mode on the server side
     public void HandleBulletHit(int playerId)
     {

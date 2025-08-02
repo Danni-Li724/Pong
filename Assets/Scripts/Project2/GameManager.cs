@@ -23,6 +23,8 @@ public class GameManager : NetworkBehaviour
 
     [Header("Script Refs")] 
     [SerializeField] private ScoreManager scoreManager;
+
+    private string playerName = "Player";
     public static GameManager Instance { get; private set; }
 
     [Header("Level Objects")] public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
@@ -52,7 +54,6 @@ public class GameManager : NetworkBehaviour
             Destroy(gameObject);
         }
     }
-
     public override void OnNetworkSpawn()
     {
         // session/lobby is handled outside, but this still hooks up for in-game connection events
@@ -66,7 +67,6 @@ public class GameManager : NetworkBehaviour
             //ShowPlayerSelectionForHost();
             SetupGameEndUI();
         }
-
         connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
     }
 
@@ -86,7 +86,7 @@ public class GameManager : NetworkBehaviour
         playerCount++;
         connectedPlayersCount.Value = playerCount;
         SpawnPlayerPaddle(clientId, playerCount);
-        AssignGoals();
+        //AssignGoals();
         SyncPlayerSprite(clientId);
         SyncAllPlayersToClient(clientId);
 
@@ -129,7 +129,7 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
+        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform, playerName);
         playerInfo.isConnected = true;
         allPlayers[clientId] = playerInfo;
 
@@ -219,7 +219,7 @@ public class GameManager : NetworkBehaviour
             button.EnableButton();
         }
     }
-
+    
     [Rpc(SendTo.ClientsAndHost)]
     private void DisableReadyUpButtonClientRpc()
     {
@@ -229,12 +229,15 @@ public class GameManager : NetworkBehaviour
             button.DisableButton();
         }
     }
-
     private void AssignGoals()
     {
         GoalController[] allGoals = FindObjectsOfType<GoalController>();
-        Transform[] activeSpawns =
-            GetAllPlayers().Select(p => GetSpawnTransform(p.playerId)).Where(t => t != null).ToArray();
+        // Transform[] activeSpawns =
+        //     GetAllPlayers().Select(p => GetSpawnTransform(p.playerId)).Where(t => t != null).ToArray();
+        var activePlayers = GetAllPlayers();
+        Transform[] activeSpawns = activePlayers.Select(p => GetSpawnTransform(p.playerId)).Where(t => t != null).ToArray();
+        // tracking which player IDs for clients to know which goals to score form
+        HashSet<int> assignedPlayerIds = new HashSet<int>();
         for (int i = 0; i < allGoals.Length; i++)
         {
             GoalController closestGoal = null;
@@ -250,15 +253,28 @@ public class GameManager : NetworkBehaviour
                     matchedPlayerId = playerId;
                 }
             }
-
             if (closestGoal != null)
             {
                 closestGoal.SetGoalForPlayerId(matchedPlayerId);
+                assignedPlayerIds.Add(matchedPlayerId);
                 Debug.Log($"Assigned goal at {closestGoal.transform.position} to player {matchedPlayerId}");
             }
         }
+        foreach (var goal in allGoals)
+        {
+            // reset this goal's playerId if it's not one of the assigned
+            if (!assignedPlayerIds.Contains(goal.GetGoalForPlayerId()))
+            {
+                // set all unused goals to -1
+                goal.SetGoalForPlayerId(-1);
+                Debug.Log($"Unassigned goal at {goal.transform.position} (playerId = -1)");
+            }
+        }
+        foreach (var goal in allGoals)
+        {
+            Debug.Log($"GOAL {goal.gameObject.name} assigned to playerId {goal.GetGoalForPlayerId()}");
+        }
     }
-
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void TriggerPlayerSelectionUIClientRpc()
     {

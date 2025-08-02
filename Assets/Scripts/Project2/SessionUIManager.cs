@@ -46,6 +46,9 @@ public class SessionUIManager : MonoBehaviour
     public GameObject playerListItemPrefab;
     public Button readyButton;
     public Button leaveLobbyButton;
+    
+    public InputField playerNameInput;
+    public Button changeNameButton;
 
     [Header("Error Notice UI")]
     public Text errorMessageText;
@@ -71,6 +74,9 @@ public class SessionUIManager : MonoBehaviour
         SetupUIEvents();
         SubscribeToSessionEvents();
         ShowMainMenu();
+        
+        if(changeNameButton != null)
+            changeNameButton.onClick.AddListener(OnPlayerNameChanged);
     }
 
     #region UI Setup and Events
@@ -164,9 +170,36 @@ public class SessionUIManager : MonoBehaviour
         ShowLoading("Creating Lobby...");
         string lobbyName = string.IsNullOrWhiteSpace(lobbyNameInput.text) ? "Pong Lobby" : lobbyNameInput.text;
         int maxPlayers = maxPlayersDropdown.value + 2; // 0-indexed
-        await PongSessionManager.Instance.CreateLobbyAsync(lobbyName, maxPlayers);
+        string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Pong Player" : playerNameInput.text;
+        await PongSessionManager.Instance.CreateLobbyAsync(lobbyName, maxPlayers, playerName);
     }
 
+    public async void OnPlayerNameChanged()
+    {
+        if (PongSessionManager.Instance.IsInLobby) return;
+        string newName = playerNameInput.text.Trim();
+        if(string.IsNullOrEmpty(newName)) return;
+        try
+        {
+            var playerData = new Dictionary<string, PlayerDataObject>
+            {
+                { "DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, newName) }
+            };
+            var options = new UpdatePlayerOptions
+            {
+                Data = playerData
+            };
+            var lobby = PongSessionManager.Instance.currentLobby;
+            string playerId = PongSessionManager.Instance.LocalPlayerId;
+            await LobbyService.Instance.UpdatePlayerAsync(lobby.Id, playerId, options);
+            playerNameInput.text = newName;
+            UpdateLobbyUI();
+        }
+        catch(Exception e)
+        {
+            DisplayError("Failed to update name: " + e.Message);
+        }
+    }
     async void JoinLobbyByCodeClicked()
     {
         string code = joinCodeInput.text.Trim();
@@ -176,7 +209,10 @@ public class SessionUIManager : MonoBehaviour
             return;
         }
         ShowLoading("Joining Lobby...");
-        await PongSessionManager.Instance.JoinLobbyByCodeAsync(code);
+        
+        // grab player's name
+        string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Player" : playerNameInput.text;
+        await PongSessionManager.Instance.JoinLobbyByCodeAsync(code, playerName);
     }
 
     void ToggleReadyStatus()
@@ -241,10 +277,22 @@ public class SessionUIManager : MonoBehaviour
         lobbyPanel?.SetActive(true);
         try
         {
+            // get player name from input field
+            string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Player" : playerNameInput.text;
+        
+            var playerData = new Dictionary<string, PlayerDataObject>
+            {
+                { "DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) }
+            };
+        
             var joinOptions = new JoinLobbyByIdOptions
             {
-                Player = new Player(id: AuthenticationService.Instance.PlayerId)
+                Player = new Player(
+                    id: AuthenticationService.Instance.PlayerId,
+                    data: playerData  // Add playerData (name)
+                )
             };
+        
             var lobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, joinOptions);
 
             // now use join code to connect via relay & JoinByCode()
@@ -266,19 +314,7 @@ public class SessionUIManager : MonoBehaviour
         foreach (Transform child in sessionListContent)
             Destroy(child.gameObject);
     }
-
-    void TryTriggerStart()
-    {
-        if (!PongSessionManager.Instance.IsLobbyHost) return;
-
-        int playerCount = PongSessionManager.Instance.GetPlayerCount();
-        // Todo: check everyone's ready state
-        if (playerCount >= 2)
-        {
-            Debug.Log("Host sees all players ready. Starting game.");
-            NetworkGameManager.Instance?.StartGame(); 
-        }
-    }
+    
 
     #endregion
 
@@ -315,13 +351,14 @@ public class SessionUIManager : MonoBehaviour
         var readyStates = sessionBridge.GetReadyStates();
         var lobby = PongSessionManager.Instance.GetCurrentLobby();
         if (lobby == null) return;
-
         for (int i = 0; i < lobby.Players.Count; i++)
         {
             var player = lobby.Players[i];
             GameObject item = Instantiate(playerListItemPrefab, playerListParent);
 
             string displayName = $"Player {i + 1}";
+            if (player.Data != null && player.Data.TryGetValue("DisplayName", out var nameData))
+                displayName = nameData.Value;
             // bool isReady = readyStates.TryGetValue(player.Id, out var r) && r;
             bool isReady = false;
             if (player.Data != null && player.Data.TryGetValue("Ready", out var readyData))
@@ -330,7 +367,6 @@ public class SessionUIManager : MonoBehaviour
             }
             item.GetComponentInChildren<Text>().text = displayName + (isReady ? " (Ready)" : " (Not Ready)");
         }
-
         playerCountText.text = $"Players: {lobby.Players.Count}";
     }
 
@@ -349,6 +385,16 @@ public class SessionUIManager : MonoBehaviour
         lobbyCodeText.text = $"Lobby Code: {PongSessionManager.Instance.GetLobbyCode()}";
         playerCountText.text = $"Players: {PongSessionManager.Instance.GetPlayerCount()}";
         PopulatePlayerList();
+        
+        // reflecting local player name input if they are in lobby
+        if (PongSessionManager.Instance.currentLobby != null)
+        {
+            var localPlayer = PongSessionManager.Instance.currentLobby.Players.Find(p => p.Id == PongSessionManager.Instance.LocalPlayerId);
+            if (localPlayer != null && localPlayer.Data != null && localPlayer.Data.TryGetValue("DisplayName", out var nameData))
+            {
+                playerNameInput.text = nameData.Value;
+            }
+        }
     }
 
     #endregion

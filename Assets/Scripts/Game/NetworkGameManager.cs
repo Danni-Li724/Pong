@@ -34,6 +34,7 @@ public class NetworkGameManager : NetworkBehaviour
     [Header("Script Refs")]
     [SerializeField] private ScoreManager scoreManager;
     public static NetworkGameManager Instance { get; private set; }
+    private string playerName;
     
     [Header("Level Objects")]
    public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
@@ -50,6 +51,7 @@ public class NetworkGameManager : NetworkBehaviour
     [SerializeField] private Text gameEndText;
     [SerializeField] private Text winnerText;
     [SerializeField] private Button restartButton;
+    
 
     #region INITIALIZING
 
@@ -159,7 +161,7 @@ public class NetworkGameManager : NetworkBehaviour
             return;
         }
         // Create player info
-        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform);
+        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform, playerName);
         playerInfo.isConnected = true;
         allPlayers[clientId] = playerInfo;
         // * I abandoned the spawnPos rotation spawning during later debugging
@@ -283,7 +285,6 @@ public class NetworkGameManager : NetworkBehaviour
                     matchedPlayerId = playerId;
                 }
             }
-
             if (closestGoal != null)
             {
                 closestGoal.SetGoalForPlayerId(matchedPlayerId);
