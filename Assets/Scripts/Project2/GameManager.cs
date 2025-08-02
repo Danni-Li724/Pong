@@ -66,10 +66,11 @@ public class GameManager : NetworkBehaviour
             NetworkManager.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
             // now spawns players with their own custom names :D
+            string hostPlayerName = GetPlayerNameFromLobby();
             if (!playerNames.ContainsKey(NetworkManager.Singleton.LocalClientId))
-                playerNames[NetworkManager.Singleton.LocalClientId] = PlayerSessionInfo.PlayerName;
+                playerNames[NetworkManager.Singleton.LocalClientId] = hostPlayerName;
 
-            SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1, PlayerSessionInfo.PlayerName);
+            SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1, hostPlayerName);
             playerCount = 1;
             connectedPlayersCount.Value = 1;
             //ShowPlayerSelectionForHost();
@@ -79,6 +80,21 @@ public class GameManager : NetworkBehaviour
             if (IsHost) StartCoroutine(DelayedDistributePlayerNames());
         }
         connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
+    }
+    
+    private string GetPlayerNameFromLobby()
+    {
+        if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
+        {
+            var lobby = PongSessionManager.Instance.GetCurrentLobby();
+            var localPlayer = lobby?.Players?.Find(p => p.Id == PongSessionManager.Instance.LocalPlayerId);
+            if (localPlayer?.Data != null && localPlayer.Data.TryGetValue("DisplayName", out var nameData))
+            {
+                return nameData.Value;
+            }
+        }
+        // fallback
+        return !string.IsNullOrEmpty(PlayerSessionInfo.PlayerName) ? PlayerSessionInfo.PlayerName : "Player";
     }
     
     // distribute player names to clients after delay (make sure everyone is connected)
@@ -98,8 +114,53 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void ReceivePlayerNamesClientRpc(ulong[] clientIds, FixedString128Bytes[] names)
     {
+        // update the playerNames dictionary
         for (int i = 0; i < clientIds.Length; i++)
+        {
             playerNames[clientIds[i]] = names[i].ToString();
+        }
+
+        // also update all PlayerInfo.displayName for spawned players
+        foreach (var kvp in allPlayers)
+        {
+            ulong clientId = kvp.Key;
+            if (playerNames.TryGetValue(clientId, out var newName))
+            {
+                kvp.Value.displayName = newName;
+            }
+        }
+
+        // force refresh inventory UI
+        var slots = GameObject.FindObjectsOfType<PlayerInventorySlot>();
+        foreach (var slot in slots)
+        {
+            // this forces slots to fetch the latest name for their player
+            slot.UpdateDisplayName();
+        }
+    }
+    
+    private string GetClientNameFromLobby(ulong clientId)
+    {
+        if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
+        {
+            var lobby = PongSessionManager.Instance.GetCurrentLobby();
+            if (lobby?.Players != null)
+            {
+                // It was hard trying to find the player by matching some identifier
+                // Since I don't have a direct clientId-to-lobby player mapping,
+                // I am now using the join order as a fallback
+                var players = lobby.Players.ToList();
+                if (playerCount <= players.Count)
+                {
+                    var player = players[playerCount - 1]; // Use join order
+                    if (player.Data != null && player.Data.TryGetValue("DisplayName", out var nameData))
+                    {
+                        return nameData.Value;
+                    }
+                }
+            }
+        }
+        return $"Player {playerCount}";
     }
 
     // called when a new client is assigned to the in-game scene
@@ -118,7 +179,10 @@ public class GameManager : NetworkBehaviour
         playerCount++;
         connectedPlayersCount.Value = playerCount;
         // try get name from distributed dictionary, or fall back to generic name
-        string displayName = playerNames.ContainsKey(clientId) ? playerNames[clientId] : $"Player {playerCount}";
+        string displayName = GetClientNameFromLobby(clientId);
+        if (!playerNames.ContainsKey(clientId))
+            playerNames[clientId] = displayName;
+            
         SpawnPlayerPaddle(clientId, playerCount, displayName);
         AssignGoals();
         SyncPlayerSprite(clientId);

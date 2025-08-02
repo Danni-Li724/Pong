@@ -58,11 +58,14 @@ public class PlayerInventorySlot : NetworkBehaviour
         // update player ID text
         // var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
         // now show the synced display name rather than generic
-        var playerInfo = GameManager.Instance != null ? GameManager.Instance.GetPlayerInfo(clientId) : null;
+        //var playerInfo = GameManager.Instance != null ? GameManager.Instance.GetPlayerInfo(clientId) : null;
         if (playerIdText != null)
         {
-            playerIdText.text = playerInfo != null ? playerInfo.displayName : $"Player {playerId}";
+            var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
+            if (playerInfo != null)
+                playerIdText.text = playerInfo.displayName;
         }
+
         Debug.Log($"Set boon {boon.effectName} for client {clientId} in inventory slot");
     }
     
@@ -107,20 +110,26 @@ public class PlayerInventorySlot : NetworkBehaviour
             BoonManager.Instance.UseBoon(ownerClientId, boon.type);
         }
     }
+    
+    public void UpdateDisplayName()
+    {
+        if (playerIdText != null)
+        {
+            var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
+            if (playerInfo != null)
+                playerIdText.text = playerInfo.displayName;
+            else
+                playerIdText.text = $"Player {playerId}";
+        }
+    }
+
     public bool TryAssign(ulong targetClientId, int newPlayerId)
     {
         if (clientId == 0 || clientId == targetClientId)
         {
             clientId = targetClientId;
             playerId = newPlayerId;
-
-            // changed: always show the current synced displayName now
-            var playerInfo = GameManager.Instance != null ? GameManager.Instance.GetPlayerInfo(clientId) : null;
-            if (playerIdText != null)
-            {
-                playerIdText.text = playerInfo != null ? playerInfo.displayName : $"Player {playerId}";
-            }
-
+            UpdateDisplayName();
             return true;
         }
         return false;

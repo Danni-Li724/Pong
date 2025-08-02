@@ -16,10 +16,10 @@ public class PlayerInfo
     public Sprite paddleSprite;
     public Sprite rocketSprite;
     
-    public PlayerInfo(int playerId, ulong client, Transform spawn, string playerName)
+    public PlayerInfo(int playerId, ulong client, Transform spawn, string displayName)
     {
         this.playerId = playerId;
-        this.clientId = clientId;
+        this.clientId = client;
         this.spawnPos = spawn;
         this.isReady = false;
         this.isConnected = true;
