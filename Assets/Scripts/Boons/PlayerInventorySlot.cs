@@ -57,12 +57,12 @@ public class PlayerInventorySlot : NetworkBehaviour
         
         // update player ID text
         // var playerInfo = NetworkGameManager.Instance.GetPlayerInfo(clientId);
-        var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
-        if (playerIdText != null && playerInfo != null)
+        // now show the synced display name rather than generic
+        var playerInfo = GameManager.Instance != null ? GameManager.Instance.GetPlayerInfo(clientId) : null;
+        if (playerIdText != null)
         {
-            playerIdText.text = $"Player {playerInfo.playerId}";
+            playerIdText.text = playerInfo != null ? playerInfo.displayName : $"Player {playerId}";
         }
-        
         Debug.Log($"Set boon {boon.effectName} for client {clientId} in inventory slot");
     }
     
@@ -109,15 +109,20 @@ public class PlayerInventorySlot : NetworkBehaviour
     }
     public bool TryAssign(ulong targetClientId, int newPlayerId)
     {
-        // Assign to empty slot or override if matching clientId
         if (clientId == 0 || clientId == targetClientId)
         {
             clientId = targetClientId;
             playerId = newPlayerId;
-            playerIdText.text = $"Player {playerId}";
+
+            // changed: always show the current synced displayName now
+            var playerInfo = GameManager.Instance != null ? GameManager.Instance.GetPlayerInfo(clientId) : null;
+            if (playerIdText != null)
+            {
+                playerIdText.text = playerInfo != null ? playerInfo.displayName : $"Player {playerId}";
+            }
+
             return true;
         }
         return false;
     }
-
 }

@@ -3,10 +3,10 @@ using UnityEngine;
 public class PlayerInfo
 {
     public int playerId;
-    public string playerName;
     public ulong clientId;
     public bool isConnected;
     public Transform spawnPos;
+    public string displayName;
     public bool isReady;
     
     // strings for network sync
@@ -19,11 +19,11 @@ public class PlayerInfo
     public PlayerInfo(int playerId, ulong client, Transform spawn, string playerName)
     {
         this.playerId = playerId;
-        this.playerName = playerName;
         this.clientId = clientId;
         this.spawnPos = spawn;
         this.isReady = false;
         this.isConnected = true;
+        this.displayName = displayName;
          // storing names
         this.paddleSpriteName = $"Player{playerId}Paddle";
         this.rocketSpriteName = $"Player{playerId}Rocket";

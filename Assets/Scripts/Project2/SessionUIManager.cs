@@ -24,6 +24,12 @@ public class SessionUIManager : MonoBehaviour
     public GameObject lobbyPanel;
     public GameObject loadingPanel;
     public GameObject errorPanel;
+    
+    [Header("Name Entry UI")] 
+    public GameObject playerNamePanel; 
+    public InputField playerNameInput;
+    public Button saveNameButton;
+    private string savedPlayerName = ""; // local player's name before session
 
     [Header("Create Lobby UI")]
     public InputField lobbyNameInput;
@@ -46,9 +52,6 @@ public class SessionUIManager : MonoBehaviour
     public GameObject playerListItemPrefab;
     public Button readyButton;
     public Button leaveLobbyButton;
-    
-    public InputField playerNameInput;
-    public Button changeNameButton;
 
     [Header("Error Notice UI")]
     public Text errorMessageText;
@@ -75,8 +78,8 @@ public class SessionUIManager : MonoBehaviour
         SubscribeToSessionEvents();
         ShowMainMenu();
         
-        if(changeNameButton != null)
-            changeNameButton.onClick.AddListener(OnPlayerNameChanged);
+        if(saveNameButton != null)
+            saveNameButton.onClick.AddListener(SavePlayerName);
     }
 
     #region UI Setup and Events
@@ -121,9 +124,11 @@ public class SessionUIManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
-        createLobbyPanel?.SetActive(true);
-        lobbyPanel?.SetActive(false);
-        loadingPanel?.SetActive(false);
+        playerNamePanel.SetActive(true);
+        createLobbyPanel.SetActive(false);
+        lobbyPanel.SetActive(false);
+        loadingPanel.SetActive(false);
+        errorPanel.SetActive(false);
     }
     
     public void ShowCreateSessionPanel()
@@ -166,40 +171,53 @@ public class SessionUIManager : MonoBehaviour
 
     async void CreateLobbyClicked()
     {
-        // todo: send this to session list...?
         ShowLoading("Creating Lobby...");
         string lobbyName = string.IsNullOrWhiteSpace(lobbyNameInput.text) ? "Pong Lobby" : lobbyNameInput.text;
         int maxPlayers = maxPlayersDropdown.value + 2; // 0-indexed
-        string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Pong Player" : playerNameInput.text;
+        string playerName = string.IsNullOrWhiteSpace(savedPlayerName) ? "Pong Player" : savedPlayerName;
         await PongSessionManager.Instance.CreateLobbyAsync(lobbyName, maxPlayers, playerName);
     }
-
-    public async void OnPlayerNameChanged()
+    
+    private void SavePlayerName()
     {
-        if (PongSessionManager.Instance.IsInLobby) return;
-        string newName = playerNameInput.text.Trim();
-        if(string.IsNullOrEmpty(newName)) return;
-        try
+        string enteredName = playerNameInput.text.Trim();
+        if (string.IsNullOrEmpty(enteredName))
         {
-            var playerData = new Dictionary<string, PlayerDataObject>
-            {
-                { "DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, newName) }
-            };
-            var options = new UpdatePlayerOptions
-            {
-                Data = playerData
-            };
-            var lobby = PongSessionManager.Instance.currentLobby;
-            string playerId = PongSessionManager.Instance.LocalPlayerId;
-            await LobbyService.Instance.UpdatePlayerAsync(lobby.Id, playerId, options);
-            playerNameInput.text = newName;
-            UpdateLobbyUI();
+            DisplayError("Please enter your name!");
+            return;
         }
-        catch(Exception e)
-        {
-            DisplayError("Failed to update name: " + e.Message);
-        }
+        savedPlayerName = enteredName; // store the name for session use
+        playerNamePanel.SetActive(false);
+        createLobbyPanel.SetActive(true);
     }
+
+
+    // public async void OnPlayerNameChanged()
+    // {
+    //     if (PongSessionManager.Instance.IsInLobby) return;
+    //     string newName = playerNameInput.text.Trim();
+    //     if(string.IsNullOrEmpty(newName)) return;
+    //     try
+    //     {
+    //         var playerData = new Dictionary<string, PlayerDataObject>
+    //         {
+    //             { "DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, newName) }
+    //         };
+    //         var options = new UpdatePlayerOptions
+    //         {
+    //             Data = playerData
+    //         };
+    //         var lobby = PongSessionManager.Instance.currentLobby;
+    //         string playerId = PongSessionManager.Instance.LocalPlayerId;
+    //         await LobbyService.Instance.UpdatePlayerAsync(lobby.Id, playerId, options);
+    //         playerNameInput.text = newName;
+    //         UpdateLobbyUI();
+    //     }
+    //     catch(Exception e)
+    //     {
+    //         DisplayError("Failed to update name: " + e.Message);
+    //     }
+    // }
     async void JoinLobbyByCodeClicked()
     {
         string code = joinCodeInput.text.Trim();
@@ -209,9 +227,8 @@ public class SessionUIManager : MonoBehaviour
             return;
         }
         ShowLoading("Joining Lobby...");
-        
         // grab player's name
-        string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Player" : playerNameInput.text;
+        string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Player" : savedPlayerName;
         await PongSessionManager.Instance.JoinLobbyByCodeAsync(code, playerName);
     }
 
@@ -278,7 +295,7 @@ public class SessionUIManager : MonoBehaviour
         try
         {
             // get player name from input field
-            string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Player" : playerNameInput.text;
+            string playerName = string.IsNullOrWhiteSpace(playerNameInput.text) ? "Player" : savedPlayerName;
         
             var playerData = new Dictionary<string, PlayerDataObject>
             {
@@ -289,7 +306,7 @@ public class SessionUIManager : MonoBehaviour
             {
                 Player = new Player(
                     id: AuthenticationService.Instance.PlayerId,
-                    data: playerData  // Add playerData (name)
+                    data: playerData
                 )
             };
         

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Collections;
 using UnityEngine.UI;
 
 
@@ -20,6 +21,9 @@ public class GameManager : NetworkBehaviour
     private bool gameStarted = false;
     private int playerCount = 0; // only counts players in-game, not lobby
     private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
+    
+    // Added in Project 2: This dict keeps track of names for all clientIds (from the lobby)
+    private Dictionary<ulong, string> playerNames = new Dictionary<ulong, string>();
 
     [Header("Script Refs")] 
     [SerializeField] private ScoreManager scoreManager;
@@ -61,13 +65,41 @@ public class GameManager : NetworkBehaviour
         {
             NetworkManager.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
-            SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1); // always spawn host paddle
+            // now spawns players with their own custom names :D
+            if (!playerNames.ContainsKey(NetworkManager.Singleton.LocalClientId))
+                playerNames[NetworkManager.Singleton.LocalClientId] = PlayerSessionInfo.PlayerName;
+
+            SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1, PlayerSessionInfo.PlayerName);
             playerCount = 1;
             connectedPlayersCount.Value = 1;
             //ShowPlayerSelectionForHost();
             SetupGameEndUI();
+            
+            // *Only after all clients join will the host distributes the name mapping
+            if (IsHost) StartCoroutine(DelayedDistributePlayerNames());
         }
         connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
+    }
+    
+    // distribute player names to clients after delay (make sure everyone is connected)
+    private IEnumerator DelayedDistributePlayerNames()
+    {
+        yield return new WaitForSeconds(0.5f);
+        var ids = playerNames.Keys.ToArray();
+        var namesArray = playerNames.Values.Select(n => new FixedString128Bytes(n)).ToArray();
+        ReceivePlayerNamesClientRpc(ids, namesArray);
+    }
+    
+    /// <summary>
+    /// Apparently Rpcs can't serialize string arrays out of the box, 
+    /// </summary>
+    /// <param name="clientIds"></param>
+    /// <param name="names"></param>
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void ReceivePlayerNamesClientRpc(ulong[] clientIds, FixedString128Bytes[] names)
+    {
+        for (int i = 0; i < clientIds.Length; i++)
+            playerNames[clientIds[i]] = names[i].ToString();
     }
 
     // called when a new client is assigned to the in-game scene
@@ -85,8 +117,10 @@ public class GameManager : NetworkBehaviour
 
         playerCount++;
         connectedPlayersCount.Value = playerCount;
-        SpawnPlayerPaddle(clientId, playerCount);
-        //AssignGoals();
+        // try get name from distributed dictionary, or fall back to generic name
+        string displayName = playerNames.ContainsKey(clientId) ? playerNames[clientId] : $"Player {playerCount}";
+        SpawnPlayerPaddle(clientId, playerCount, displayName);
+        AssignGoals();
         SyncPlayerSprite(clientId);
         SyncAllPlayersToClient(clientId);
 
@@ -113,6 +147,10 @@ public class GameManager : NetworkBehaviour
                 DisableReadyUpButtonClientRpc();
             }
         }
+        
+        // remove name from name dictionary here
+        if (playerNames.ContainsKey(clientId))
+            playerNames.Remove(clientId);
     }
 
     #endregion
@@ -120,7 +158,7 @@ public class GameManager : NetworkBehaviour
     #region START GAME
 
     // spawns paddle and creates PlayerInfo for a joining player
-    void SpawnPlayerPaddle(ulong clientId, int playerId)
+    void SpawnPlayerPaddle(ulong clientId, int playerId, string displayName)
     {
         Transform spawnTransform = GetSpawnTransform(playerId);
         if (spawnTransform == null)
@@ -129,7 +167,7 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform, playerName);
+        PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform, displayName);
         playerInfo.isConnected = true;
         allPlayers[clientId] = playerInfo;
 
@@ -728,7 +766,10 @@ public class GameManager : NetworkBehaviour
         ulong hostClientId = NetworkManager.Singleton.LocalClientId;
         if (!allPlayers.ContainsKey(hostClientId))
         {
-            SpawnPlayerPaddle(hostClientId, 1);
+            if (!playerNames.ContainsKey(NetworkManager.Singleton.LocalClientId))
+                playerNames[NetworkManager.Singleton.LocalClientId] = PlayerSessionInfo.PlayerName;
+
+            SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1, PlayerSessionInfo.PlayerName);
             playerCount = 1;
             connectedPlayersCount.Value = 1;
         }

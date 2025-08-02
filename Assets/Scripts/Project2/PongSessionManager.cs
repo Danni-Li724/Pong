@@ -140,7 +140,9 @@ public class PongSessionManager : MonoBehaviour
             // build options for the join request, pass in this player
             var joinOptions = new JoinLobbyByCodeOptions
             {
-                Player = new Player(id: AuthenticationService.Instance.PlayerId)
+                Player = new Player(
+                    id: AuthenticationService.Instance.PlayerId,
+                    data: playerData)
             };
             // try joining the lobby with the code
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code, joinOptions);
