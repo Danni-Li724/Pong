@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: SpaceshipMode
   m_EditorClassIdentifier: 
   effectName: Spaceship Mode
-  description: Starts a 30 seconds spaceship game!
+  description: Hit someone and swap your score with theirs!
   icon: {fileID: 21300000, guid: f19e3ead512540e46a46a507bae810e2, type: 3}
-  duration: 30
+  duration: 40
   type: 0
   isReusable: 0

@@ -170,6 +170,7 @@ public class SessionUIManager : MonoBehaviour
     {
         errorPanel.SetActive(false);
         errorMessageText.text = "";
+        ShowMainMenu();
     }
 
     #endregion

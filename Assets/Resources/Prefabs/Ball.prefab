@@ -101,10 +101,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 148cf3e90b8e107438abccd53b131e5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   player1Color: {r: 1, g: 0.4292453, b: 0.4292453, a: 1}
   player2Color: {r: 0.43867922, g: 0.43867922, b: 1, a: 1}
   player3Color: {r: 0.4009434, g: 1, b: 0.4009434, a: 1}
   player4Color: {r: 1, g: 0.9479634, b: 0.3443396, a: 1}
+  ballPhysics: {fileID: 2360451248079199338}
+  interpolationTime: 0.1
 --- !u!96 &6908952575589866651
 TrailRenderer:
   serializedVersion: 3
@@ -424,3 +427,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   speed: 120
+  stateSendInterval: 0.05
