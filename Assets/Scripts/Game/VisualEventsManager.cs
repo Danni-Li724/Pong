@@ -88,7 +88,9 @@ public class VisualEventsManager : NetworkBehaviour
         visualEffects?.HandleColorChange(playerId);
     }
     
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    // doesn't need to be reliable. Changed
+    // [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Unreliable)]
     private void TriggerBallColorChangeClientRpc(int playerId)
     {
         ballVisuals?.HandleColorChange(playerId);

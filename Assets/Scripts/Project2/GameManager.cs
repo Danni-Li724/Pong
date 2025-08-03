@@ -340,7 +340,7 @@ public class GameManager : NetworkBehaviour
     // }
     // #endregion
     
-     #region CUSTOM PLAYER NAMES - SIMPLIFIED VERSION
+     #region CUSTOM PLAYER NAMES: OPTIMIZED VERSION
 
     [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
     private void SendPlayerNameToServerRpc(string playerName, RpcParams rpcParams = default)
