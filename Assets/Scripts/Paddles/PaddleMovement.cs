@@ -17,9 +17,9 @@ public class PaddleMovement : NetworkBehaviour
     [SerializeField] private Rect spaceshipBounds = new Rect(0f, 0f, 0f, 0f);
     private bool spaceshipModeBounds = false;
     // spaceship mode physics
-    public float spaceshipThrust = 10f;
-    public float spaceshipTorque = 150f;
-    public float maxVelocity = 8f;
+    public float spaceshipThrust = 1000f;
+    public float spaceshipTorque = 2500f;
+    public float maxVelocity = 50f;
 
     private void Awake()
     {
@@ -43,25 +43,80 @@ public class PaddleMovement : NetworkBehaviour
     }
     void FixedUpdate()
     {
+        // if (!IsServer) return;
+        // Vector2 desiredVelocity = moveInput.normalized * moveSpeed;
+        // rb.linearVelocity = desiredVelocity;
+        // Vector3 pos = rb.position;
+        // if (spaceshipModeBounds)
+        // {
+        //     pos.x = Mathf.Clamp(pos.x, spaceshipBounds.xMin, spaceshipBounds.xMax);
+        //     pos.y = Mathf.Clamp(pos.y, spaceshipBounds.yMin, spaceshipBounds.yMax);
+        // }
+        // else
+        // {
+        //     if(controller.IsHorizontal)
+        //         pos.x = Mathf.Clamp(pos.x, leftLimit, rightLimit);
+        //     else
+        //         pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
+        // }
+        // // Apply tilt or spaceship rotation always based on networked value:
+        // float tiltAngle = controller.IsHorizontal ? 90f + controller.networkTiltAngle.Value : controller.networkTiltAngle.Value;
+        // rb.MoveRotation(tiltAngle);
+        
+        /// New Aesteroid Physics:
         if (!IsServer) return;
+
+        if (controller.isInSpaceshipMode())
+        {
+            // Spaceship Mode now apply thrust and torque
+            // spaceshipInput.y = forward/backward thrust (W/S or up/down)
+            // spaceshipInput.x = left/right steering (A/D or left/right)
+            // only apply thrust in the direction the paddle is facing (its current rotation)
+            
+            // Clamp input to avoid small undetectable inputs
+            float thrustInput = Mathf.Abs(spaceshipInput.y) < 0.1f ? 0 : Mathf.Sign(spaceshipInput.y);
+            float turnInput = Mathf.Abs(spaceshipInput.x) < 0.1f ? 0 : Mathf.Sign(spaceshipInput.x);
+            // thrust
+            float thrust = spaceshipInput.y;
+            Vector2 force = transform.up * (thrust * spaceshipThrust);
+            rb.AddForce(force);
+            // clamp velocity to max
+            if (rb.linearVelocity.magnitude > maxVelocity)
+                rb.linearVelocity = rb.linearVelocity.normalized * maxVelocity;
+            // Torque
+            float turn = -spaceshipInput.x; // Negative for "A=left", "D=right"
+            rb.AddTorque(turn * spaceshipTorque);
+            // Clamp position in bounds
+            Vector2 pos = rb.position;
+            if (spaceshipModeBounds)
+            {
+                pos.x = Mathf.Clamp(pos.x, spaceshipBounds.xMin, spaceshipBounds.xMax);
+                pos.y = Mathf.Clamp(pos.y, spaceshipBounds.yMin, spaceshipBounds.yMax);
+                rb.position = pos;
+            }
+            return;
+        }
+        
+        // Normal Pong Movement:
         Vector2 desiredVelocity = moveInput.normalized * moveSpeed;
         rb.linearVelocity = desiredVelocity;
-        Vector3 pos = rb.position;
+        Vector2 pongPos = rb.position;
         if (spaceshipModeBounds)
         {
-            pos.x = Mathf.Clamp(pos.x, spaceshipBounds.xMin, spaceshipBounds.xMax);
-            pos.y = Mathf.Clamp(pos.y, spaceshipBounds.yMin, spaceshipBounds.yMax);
+            pongPos.x = Mathf.Clamp(pongPos.x, spaceshipBounds.xMin, spaceshipBounds.xMax);
+            pongPos.y = Mathf.Clamp(pongPos.y, spaceshipBounds.yMin, spaceshipBounds.yMax);
         }
         else
         {
             if(controller.IsHorizontal)
-                pos.x = Mathf.Clamp(pos.x, leftLimit, rightLimit);
+                pongPos.x = Mathf.Clamp(pongPos.x, leftLimit, rightLimit);
             else
-                pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
+                pongPos.y = Mathf.Clamp(pongPos.y, bottomLimit, topLimit);
         }
-        // Apply tilt or spaceship rotation always based on networked value:
+        rb.position = pongPos;
+
+        // Apply paddle tilt rotation (no longer spaceship rotation)
         float tiltAngle = controller.IsHorizontal ? 90f + controller.networkTiltAngle.Value : controller.networkTiltAngle.Value;
         rb.MoveRotation(tiltAngle);
-
     }
 }

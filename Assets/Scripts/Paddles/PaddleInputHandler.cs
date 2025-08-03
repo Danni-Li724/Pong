@@ -78,12 +78,12 @@ public class PaddleInputHandler : NetworkBehaviour
         {
             SendSpaceshipInput_ServerRpc(0, 0);
         };
-        spaceshipInput.Spaceship.Fire.performed += _ =>
-        {
-            Vector2 mouse = Mouse.current.position.ReadValue();
-            Vector2 worldPos = Camera.main.ScreenToWorldPoint(mouse);
-            GetComponent<PaddleController>().TryFire(worldPos);
-        };
+        // spaceshipInput.Spaceship.Fire.performed += _ =>
+        // {
+        //     Vector2 mouse = Mouse.current.position.ReadValue();
+        //     Vector2 worldPos = Camera.main.ScreenToWorldPoint(mouse);
+        //     GetComponent<PaddleController>().TryFire(worldPos);
+        // };
         spaceshipInput.Enable();
     }
     

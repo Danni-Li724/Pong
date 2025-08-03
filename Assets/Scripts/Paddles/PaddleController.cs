@@ -22,11 +22,11 @@ public class PaddleController : NetworkBehaviour
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
-    [SerializeField] GameObject bulletPrefab;
-    private float bulletSpeed;
-    private float fireCooldown;
     private float lastFireTime;
     public bool isInSpaceshipMode() => inSpaceshipMode;
+    [Header("Collision Settings")]
+    [SerializeField] private float collisionCooldown = 3f;
+    private float lastCollisionTime = 0f;
     
     [Header("Paddle Tilt Settings")]
     [SerializeField] private float maxTiltAngle = 45f;
@@ -40,7 +40,8 @@ public class PaddleController : NetworkBehaviour
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> networkTiltActive = new NetworkVariable<bool>(false,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    public NetworkVariable<float> networkRotationAngle = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    // no longer needed
+    // public NetworkVariable<float> networkRotationAngle = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int paddleLayer;
     private int goalLayer;
     
@@ -73,7 +74,7 @@ public class PaddleController : NetworkBehaviour
         
         networkTiltAngle.OnValueChanged += OnTiltAngleChanged;
         networkTiltActive.OnValueChanged += OnTiltActiveChanged;
-        networkTiltAngle.OnValueChanged += OnSpaceshipRotationChanged;
+        //networkTiltAngle.OnValueChanged += OnSpaceshipRotationChanged;
         
         // when server updated the ID, sync it and initializes input
         playerIdVar.OnValueChanged += (_, newId) =>
@@ -102,7 +103,7 @@ public class PaddleController : NetworkBehaviour
         {
             networkTiltAngle.OnValueChanged -= OnTiltAngleChanged;
             networkTiltActive.OnValueChanged -= OnTiltActiveChanged;
-            networkTiltAngle.OnValueChanged -= OnSpaceshipRotationChanged;
+            //networkTiltAngle.OnValueChanged -= OnSpaceshipRotationChanged;
         }
         base.OnNetworkDespawn();
     }
@@ -241,7 +242,6 @@ public class PaddleController : NetworkBehaviour
     }
     
      #region PADDLE TILT METHODS
-    
     private void HandleTiltInput()
     {
         float targetAngle = 0f;
@@ -311,16 +311,8 @@ public class PaddleController : NetworkBehaviour
         }
     }
     
-    public bool IsTiltActive()
-    {
-        return networkTiltActive.Value;
-    }
-    
-    public float GetRemainingTiltTime()
-    {
-        return tiltTimer;
-    }
     #endregion
+    
     #region SPACESHIP MODE
     /// <summary>
     /// Below are functions for Spaceship controls, firing bullets
@@ -333,9 +325,6 @@ public class PaddleController : NetworkBehaviour
     public void SetSpaceshipMode(bool active, Sprite rocketSprite, GameObject bulletPrefab, float bulletSpeed, float fireCooldown)
     {
         inSpaceshipMode = active;
-        this.bulletPrefab = bulletPrefab;
-        this.bulletSpeed = bulletSpeed;
-        this.fireCooldown = fireCooldown;
         GetComponent<PaddleMovement>().EnableSpaceshipBounds(active);
         if (active)
         {
@@ -374,14 +363,15 @@ public class PaddleController : NetworkBehaviour
         }
     }
 
-    // To fix unsynced rotation issue with paddle visuals in spaceship mode
-    private void OnSpaceshipRotationChanged(float previousValue, float newValue)
-    {
-        if (inSpaceshipMode && paddleVisuals != null)
-        {
-            paddleVisuals.SetRotation(newValue);
-        }
-    }
+    // To fix unsynced rotation issue with paddle visuals in spaceship mode.
+    // Now optimised and no longher in use
+    // private void OnSpaceshipRotationChanged(float previousValue, float newValue)
+    // {
+    //     if (inSpaceshipMode && paddleVisuals != null)
+    //     {
+    //         paddleVisuals.SetRotation(newValue);
+    //     }
+    // }
     
     // Client-Rpc - Server tells clients to switch sprite and start rocket behaviour.
     // This is called by the GameManager on all clients when entering spaceship mode.
@@ -415,17 +405,22 @@ public class PaddleController : NetworkBehaviour
             SetSpaceshipMode(false, null, null, 0f, 0f);
         }
     }
-    
-    public void UpdateSpaceshipRotation(Vector2 input)
-    {
-        if (!inSpaceshipMode || paddleVisuals == null) return;
-
-        float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
-        if (IsOwner)
-            networkRotationAngle.Value = angle; // owner writes
-        // all clients (including owner) always apply local visual for immediate feedback
-        paddleVisuals.SetRotation(angle);
-    }
+    /// <summary>
+    /// Optimised, no longer needed
+    /// </summary>
+    /// <param name="bulletSpeed"></param>
+    /// <param name="fireCooldown"></param>
+    /// <param name="rocketSpriteName"></param>
+    // public void UpdateSpaceshipRotation(Vector2 input)
+    // {
+    //     if (!inSpaceshipMode || paddleVisuals == null) return;
+    //
+    //     float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
+    //     if (IsOwner)
+    //         networkRotationAngle.Value = angle; // owner writes
+    //     // all clients (including owner) always apply local visual for immediate feedback
+    //     paddleVisuals.SetRotation(angle);
+    // }
     
     // Called by GameManager's server-side operations to put a player into spaceship mode
     public void EnterSpaceshipMode(float bulletSpeed, float fireCooldown, string rocketSpriteName)
@@ -436,57 +431,93 @@ public class PaddleController : NetworkBehaviour
             SetSpaceshipModeRpc(true, rocketSpriteName, bulletSpeed, fireCooldown);
         }
     }
-    
+    /// <summary>
+    /// No longer fires bullet, replaced by more fun and efficient method :))
+    /// </summary>
+    /// <param name="direction"></param>
     // Called locally by owner to try shoot bullets
-    public void TryFire(Vector2 targetWorldPos)
-    {
-        if (!inSpaceshipMode || !IsOwner) return;
-        if (Time.time - lastFireTime < fireCooldown) return;
-        lastFireTime = Time.time;
-        Vector2 direction = (targetWorldPos - (Vector2)transform.position).normalized;
-        FireServerRpc(direction);
-    }
-    
+    // public void TryFire(Vector2 targetWorldPos)
+    // {
+    //     if (!inSpaceshipMode || !IsOwner) return;
+    //     if (Time.time - lastFireTime < fireCooldown) return;
+    //     lastFireTime = Time.time;
+    //     Vector2 direction = (targetWorldPos - (Vector2)transform.position).normalized;
+    //     FireServerRpc(direction);
+    // }
     // Spawns bullet on server side and syncs it to everyone (is called by client owner).
     // Server needs to own the bullet to ensure their visibility to all clients.
-    [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
-    private void FireServerRpc(Vector2 direction)
+    // [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
+    // private void FireServerRpc(Vector2 direction)
+    // {
+    //     float bulletSpawnOffset = 1.0f;
+    //     Vector2 spawnPos = (Vector2)transform.position + direction.normalized * bulletSpawnOffset;
+    //
+    //     GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
+    //
+    //     // assigns shooter to bullet before anything else
+    //     Bullet bulletScript = bullet.GetComponent<Bullet>();
+    //     if (bulletScript != null)
+    //     {
+    //         bulletScript.SetShooter(GetComponent<NetworkObject>());
+    //     }
+    //
+    //     // ignore collision with shooter
+    //     Collider2D playerCol = GetComponent<Collider2D>();
+    //     Collider2D bulletCol = bullet.GetComponent<Collider2D>();
+    //     if (playerCol != null && bulletCol != null)
+    //     {
+    //         Physics2D.IgnoreCollision(bulletCol, playerCol);
+    //     }
+    //
+    //     // velocity and rotation
+    //     Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
+    //     if (rb != null)
+    //     {
+    //         rb.linearVelocity = direction * bulletSpeed;
+    //
+    //         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+    //         bullet.transform.rotation = Quaternion.Euler(0, 0, angle);
+    //     }
+    //
+    //     // netSpawn
+    //     NetworkObject netObj = bullet.GetComponent<NetworkObject>();
+    //     if (netObj != null)
+    //     {
+    //         netObj.Spawn();
+    //     }
+    // }
+    
+    // swap scores if you hit another player in spaceship mode!
+    private void OnCollisionEnter2D(Collision2D col)
     {
-        float bulletSpawnOffset = 1.0f;
-        Vector2 spawnPos = (Vector2)transform.position + direction.normalized * bulletSpawnOffset;
+        if (!IsServer) return;
+        if (!inSpaceshipMode) return;
 
-        GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
+        var otherPaddle = col.gameObject.GetComponent<PaddleController>();
+        if (otherPaddle == null) return;
+        if (!otherPaddle.inSpaceshipMode) return;
 
-        // assigns shooter to bullet before anything else
-        Bullet bulletScript = bullet.GetComponent<Bullet>();
-        if (bulletScript != null)
+        int myId = this.PlayerId;
+        int otherId = otherPaddle.PlayerId;
+
+        // Only let the paddle with the LOWER ID handle the swap, which prevents both paddles from triggering the swap simultaneously
+        if (myId > otherId)
         {
-            bulletScript.SetShooter(GetComponent<NetworkObject>());
+            Debug.Log($"[PaddleController] Player {myId} ignoring collision with Player {otherId} (higher ID)");
+            return;
         }
 
-        // ignore collision with shooter
-        Collider2D playerCol = GetComponent<Collider2D>();
-        Collider2D bulletCol = bullet.GetComponent<Collider2D>();
-        if (playerCol != null && bulletCol != null)
+        Debug.Log($"[PaddleController] COLLIDE: Player {myId} with Player {otherId} (handling swap)");
+
+        ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+        if (scoreManager != null)
         {
-            Physics2D.IgnoreCollision(bulletCol, playerCol);
+            Debug.Log("[PaddleController] Swapping scores now...");
+            scoreManager.SwapScores(myId, otherId);
         }
-
-        // velocity and rotation
-        Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
-        if (rb != null)
+        else
         {
-            rb.linearVelocity = direction * bulletSpeed;
-
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            bullet.transform.rotation = Quaternion.Euler(0, 0, angle);
-        }
-
-        // netSpawn
-        NetworkObject netObj = bullet.GetComponent<NetworkObject>();
-        if (netObj != null)
-        {
-            netObj.Spawn();
+            Debug.LogError("ScoreManager not found!");
         }
     }
     #endregion

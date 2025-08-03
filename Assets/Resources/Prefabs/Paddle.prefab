@@ -90,6 +90,9 @@ MonoBehaviour:
     y: -36
     width: 120
     height: 72
+  spaceshipThrust: 100
+  spaceshipTorque: 600
+  maxVelocity: 50
 --- !u!114 &-2406434400426874364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -258,6 +261,8 @@ MonoBehaviour:
   bulletPrefab: {fileID: 1224990874399319024, guid: 9eea08a7bb7033a41b6c263f995149ea, type: 3}
   maxTiltAngle: 45
   tiltSpeed: 5
+  networkTiltAngle:
+    m_InternalValue: 0
 --- !u!61 &641901330694467435
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -412,7 +417,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 0
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 50478c0428d8a6a4ba650883481bee0d, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
