@@ -7,7 +7,6 @@ using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine.UI;
 
-
 public class GameManager : NetworkBehaviour
 {
     [Header("Game Settings")]

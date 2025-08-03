@@ -5,6 +5,7 @@ using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -171,6 +172,22 @@ public class SessionUIManager : MonoBehaviour
         errorPanel.SetActive(false);
         errorMessageText.text = "";
         ShowMainMenu();
+    }
+    public void QuitGame()
+    {
+        // tell GameManager to handle session leave logic (client or host aware)
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnLeaveGameButtonPressed();
+        }
+
+#if UNITY_EDITOR
+        // if local testingg
+        EditorApplication.isPlaying = false;
+#else
+        // Quit application if in build
+        Application.Quit();
+#endif
     }
 
     #endregion

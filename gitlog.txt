@@ -1,0 +1,140 @@
+0b151b5 - Kwazzi724, 2025-08-04 : last bit of documentation & cleaning up...
+0473923 - Kwazzi724, 2025-08-03 : ball interpolation...which is also jitter simulatorxD
+3d73094 - Kwazzi724, 2025-08-03 : score swap mechaniccc;3
+4d1fab5 - Kwazzi724, 2025-08-03 : spaceship force mode fix (to-be applied after profiler pics)
+da6901e - Kwazzi724, 2025-08-03 : leaving session
+7bdc49c - Kwazzi724, 2025-08-03 : tried around 6 approaches but no avail. moving on
+bbd5557 - Kwazzi724, 2025-08-03 : name carry-over works for host but not client
+0f49bb9 - Kwazzi724, 2025-08-02 : hmmm..
+0b8b391 - Kwazzi724, 2025-08-02 : custom player name in lobby! (need to expand to playerinfo, plus fix order)
+0d632be - Kwazzi724, 2025-07-29 : various fixes, rotation, lobby etc
+3116fa1 - Kwazzi724, 2025-07-29 : fixed player ready string update sync
+5cb8049 - Kwazzi724, 2025-07-29 : button
+3d844e8 - Kwazzi724, 2025-07-29 : lobbies now queries but not showing in scroll view
+189ad4e - Kwazzi724, 2025-07-29 : started on query
+dafe9a2 - Kwazzi724, 2025-07-29 : Lobby disable & some integration
+dcbe4e1 - Kwazzi724, 2025-07-29 : integrated ready status to new UI
+60b1c1b - Kwazzi724, 2025-07-29 : host lobby refresh fix
+4551b6f - Kwazzi724, 2025-07-29 : lobby working, needs some fix on server side + toggle ready
+d2aa63a - Kwazzi724, 2025-07-29 : reworked new game manager, restart logic needs fix
+ea19ad2 - Kwazzi724, 2025-07-28 : omg...constipated week-long progress finally compiled...x_x (session manager, loby, bridge, UI separation and various fixes.) needs to debug sprite sync + todos
+d06798b - Kwazzi724, 2025-07-22 : added simulator and stuff
+44ebf03 - Kwazzi724, 2025-07-22 : cleaned up session code with proper order, attempted lobby
+8b162ee - Kwazzi724, 2025-07-21 : tilt won't ignore collision somehow, needs alternative approach
+284c51f - Kwazzi724, 2025-07-21 : omg, i fixed scorethieffffff
+e90ceba - Kwazzi724, 2025-07-15 : started reworking my gamemanager with new multiplayer libraries
+bc23905 - Kwazzi724, 2025-07-15 : session and lobby code using multiplayer api
+3529df3 - Kwazzi724, 2025-07-14 : packages and widget
+f4096ea - Kwazzi724, 2025-07-13 : paddle tilting boon, needs to clean-up fix sync
+ff30c38 - Kwazzi724, 2025-07-10 : some small fixes
+1ab4b0e - Kwazzi724, 2025-07-10 : Player nomination working after strenuous effort......total player not synced to clients somehow
+e3c35d3 - Kwazzi724, 2025-07-10 : ball deceleration fixed...my poor bandwidth
+495aba9 - Kwazzi724, 2025-07-10 : configurable max score
+ad08945 - Kwazzi724, 2025-07-10 : Fixed goal and scoringgggg
+1accd77 - Kwazzi724, 2025-07-10 : imported sprites, finally fixed the various rb and bullet issue
+61e5036 - Kwazzi724, 2025-07-10 : null fix
+9df9901 - Kwazzi724, 2025-07-10 : fixed by manual offset...-_-
+3660535 - Kwazzi724, 2025-07-10 : no fix:(( maybe i redo this functionality
+1bb6012 - Kwazzi724, 2025-07-10 : fixed bunch things, now fixing paddle rotation
+3dde150 - Kwazzi724, 2025-07-09 : Added space visuals and song w lfs
+7fc7ca7 - Kwazzi724, 2025-07-09 : added more videos and music with lfs
+2cc7da3 - Kwazzi724, 2025-07-09 : fixed visual bugs:D
+a085254 - Kwazzi724, 2025-07-09 : visuals now live;)
+bc5861c - Kwazzi724, 2025-07-09 : Added correct song w lfs
+e604eb4 - Kwazzi724, 2025-07-09 : fixed various bugs with boons...moved applybooneffect() entirely to server and networking only the playback
+6133b82 - Kwazzi724, 2025-07-09 : render textures
+c74d08f - Kwazzi724, 2025-07-09 : Added more songs n vid w lfs
+d1f3e4e - Kwazzi724, 2025-07-09 : fixed spaceship sprite restore issssuueeee
+36a1a90 - Kwazzi724, 2025-07-09 : optimised paddle code
+e6b1490 - Kwazzi724, 2025-07-09 : filess
+8e71ab5 - Kwazzi724, 2025-07-09 : Added more music with lfs
+72d9379 - Kwazzi724, 2025-07-09 : other changes
+5ffa30a - Kwazzi724, 2025-07-09 : Add cityVibe.mp4 using Git LFS
+37f34a7 - Kwazzi724, 2025-07-09 : Add video file with Git LFS
+50739e4 - Kwazzi724, 2025-07-09 : EASILY FIXED BUG THAT PLAGUED ME BEFORE SUBMISSION i am dumb
+b8fbae1 - Kwazzi724, 2025-07-07 : Post-submission push, added cool custom layout group, still fixing bug o_o...
+3186b4a - Kwazzi724, 2025-07-07 : commit log
+85faa66 - Kwazzi724, 2025-07-07 : lastttt fixessss
+534e139 - Kwazzi724, 2025-07-07 : eventual fixes..
+7384383 - Kwazzi724, 2025-07-07 : final fixes
+4b04d4e - Kwazzi724, 2025-07-06 : Music -_-
+8fbabf9 - Kwazzi724, 2025-07-06 : Add Musik Of The Trees .wav with LFS tracking
+4d8e073 - Kwazzi724, 2025-07-06 : more comments
+211e4ef - Kwazzi724, 2025-07-06 : more comments
+7783919 - Kwazzi724, 2025-07-06 : redone comments...
+ca56b6f - Kwazzi724, 2025-07-06 : music changing effect:D
+bfedd75 - Kwazzi724, 2025-07-06 : I give up:)))))))
+e630c88 - Kwazzi724, 2025-07-06 : paddle rotation fix, snapping UIs
+083d889 - Kwazzi724, 2025-07-06 : ball fix
+2dc4e6e - Kwazzi724, 2025-07-06 : win & end game logic
+00d467d - Kwazzi724, 2025-07-06 : more fix...so it's because testing locally clientId always = 0
+f8712c3 - Kwazzi724, 2025-07-06 : inventory fix
+38f4885 - Kwazzi724, 2025-07-05 : more sync fix
+6699b87 - Kwazzi724, 2025-07-05 : inventory visual synced x_x
+29cae9b - Kwazzi724, 2025-07-05 : fixed enum rpc and dumb players connected count isuue
+3a920cc - Kwazzi724, 2025-07-05 : bunch UIs, needs work, spaceship mode needs debugging
+f5767b5 - Kwazzi724, 2025-07-04 : needs to fix server side boon registration and weird selection order bug
+f863ca2 - Kwazzi724, 2025-07-04 : MASSIVE cleaning up of the boon system, made centralized boon manager
+d20ed65 - Kwazzi724, 2025-07-01 : omggg fixed
+c222839 - Kwazzi724, 2025-07-01 : fix
+43234b4 - Kwazzi724, 2025-07-01 : attempted fix (networkmanager line 329 not running)
+ebe2b3d - Kwazzi724, 2025-07-01 : particle reconfigure
+277be6c - Kwazzi724, 2025-07-01 : configure
+36fc376 - Kwazzi724, 2025-07-01 : visual toggle in space mode
+c71f60e - Kwazzi724, 2025-07-01 : confiures
+dafa582 - Kwazzi724, 2025-07-01 : bullet working properly, and ball despawn
+dc828d1 - Kwazzi724, 2025-07-01 : fixxx x_x
+356ba58 - Kwazzi724, 2025-07-01 : the most stressful and useless fix...x_x
+43c41a6 - Kwazzi724, 2025-07-01 : button fix
+a68ed8e - Kwazzi724, 2025-07-01 : input sync fix, need sprite index
+98b2057 - Kwazzi724, 2025-07-01 : so editor omits rpc ;0..
+42ea9df - Kwazzi724, 2025-07-01 : MY GOD fixed sprites now syncing (tears
+83ac45d - Kwazzi724, 2025-07-01 : refactoring playerinfo for sprite sync..
+fdaddb1 - Kwazzi724, 2025-06-30 : sprite syncing hell. issue might be when and how the sync happens
+d7ae33d - Kwazzi724, 2025-06-30 : custom sprite loading for players. needs networking. spaceship mode need fix
+4cf9c7a - Kwazzi724, 2025-06-30 : my first editor scipt :D
+a1a9115 - Kwazzi724, 2025-06-29 : end mode pos reset fix
+4705d19 - Kwazzi724, 2025-06-29 : test funcion & spacesip mode works. maybe need write editor. need make usable rocketSprite
+94bda33 - Kwazzi724, 2025-06-29 : bullet script and corresponding score updates
+bb9ae47 - Kwazzi724, 2025-06-29 : spaceship mode x_x.. input switching, mode initializing+timer, firing bullets (need bullet
+7fbf7dd - Kwazzi724, 2025-06-28 : button fix, need to fix controls again..
+6d1729e - Kwazzi724, 2025-06-25 : Player ready-up now finally fixed :D paddle script optimised and seperated
+6075ce2 - Kwazzi724, 2025-06-24 : player selection half working
+218fdce - Kwazzi724, 2025-06-24 : player count selection
+da34b0a - Kwazzi724, 2025-06-24 : half of lobby system
+49ec1fc - Kwazzi724, 2025-06-24 : player selection button generation (ui needs fix
+4d96dc7 - Kwazzi724, 2025-06-24 : color fix
+1fcd7ab - Kwazzi724, 2025-06-24 : omggg ball trail & events registration fixx
+670f685 - Kwazzi724, 2025-06-23 : fixed scores, added/changed ball visual effects
+a6f4101 - Kwazzi724, 2025-06-23 : goal system
+eb498e7 - Kwazzi724, 2025-06-20 : minor refactors
+f4e92b8 - Kwazzi724, 2025-06-17 : bootstrap manager
+20e4404 - Kwazzi724, 2025-06-17 : paddle refactor
+1b40e31 - Kwazzi724, 2025-06-17 : weekend progress - player nominaton, player selection UI, fixed multiple prefab
+ac2b725 - Kwazzi724, 2025-06-12 : null ref fix
+ba3d1ef - Kwazzi724, 2025-06-12 : fix..
+9b2ac26 - Kwazzi724, 2025-06-12 : ball logic seperation + added gradient feature (needs fix)
+06a44bd - Kwazzi724, 2025-06-12 : visual event manager set up, all base game visuals now successfully synced:D
+e3fdc58 - Kwazzi724, 2025-06-11 : background sync fix
+f54c421 - Kwazzi724, 2025-06-10 : ball refactor & clean up
+7a7bbbb - Kwazzi724, 2025-06-10 : inventory fix using connectedclients[clientid]
+7663b97 - Kwazzi724, 2025-06-10 : needs to change player inventory identification method
+39d5107 - Kwazzi724, 2025-06-10 : boon button UI fix, starting on audio selection system
+b91d622 - Kwazzi724, 2025-06-10 : boon selection system fix + inventory set up
+605e670 - Kwazzi724, 2025-06-08 : boon selection test set up, issue with null clicks
+eded5ac - Kwazzi724, 2025-06-03 : Boon system set up (+selection management)
+e1a248b - Kwazzi724, 2025-06-03 : scores fixed for al  players
+7465020 - Kwazzi724, 2025-06-02 : visuals synced, scores needs work
+a61dce2 - Kwazzi724, 2025-06-02 : all 4 players networkedddd
+06dbb47 - Kwazzi724, 2025-06-02 : score synced, adding player 3 and 4 paddles atm
+7fd614a - Kwazzi724, 2025-05-30 : UI fixes!
+5119420 - Kwazzi724, 2025-05-29 : paddle input synced/now works
+a57869d - Kwazzi724, 2025-05-29 : paddle needs other assignment method, ball sync fix
+30d2759 - Kwazzi724, 2025-05-29 : networked paddle and ball thank lord
+8acbdff - Kwazzi724, 2025-05-29 : cleaning up using events
+5d7ea74 - Kwazzi724, 2025-05-29 : now switching colors, added score system
+ad1a135 - Kwazzi724, 2025-05-29 : base game set up:D
+7d21c0f - Kwazzi724, 2025-05-28 : background effects + audio manager (temp)
+9a7892c - Kwazzi724, 2025-05-28 : asset import
+099e8b6 - Kwazzi724, 2025-05-28 : Project set up
+37eb944 - Danni-Li724, 2025-05-28 : Initial commit
