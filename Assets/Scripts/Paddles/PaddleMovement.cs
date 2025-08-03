@@ -6,14 +6,20 @@ using UnityEngine;
 public class PaddleMovement : NetworkBehaviour
 {
     private Vector2 moveInput;
+    private Vector2 spaceshipInput;
     public float moveSpeed;
     public float topLimit, bottomLimit, leftLimit, rightLimit;
 
     private PaddleController controller;
     private Rigidbody2D rb;
     
+    [Header("Spaceship Mode Things")]
     [SerializeField] private Rect spaceshipBounds = new Rect(0f, 0f, 0f, 0f);
     private bool spaceshipModeBounds = false;
+    // spaceship mode physics
+    public float spaceshipThrust = 10f;
+    public float spaceshipTorque = 150f;
+    public float maxVelocity = 8f;
 
     private void Awake()
     {
@@ -27,39 +33,14 @@ public class PaddleMovement : NetworkBehaviour
         moveInput = input;
     }
 
+    public void SetSpaceshipInput(Vector2 input)
+    {
+        spaceshipInput = input;
+    }
     public void EnableSpaceshipBounds(bool enable)
     {
         spaceshipModeBounds = enable;
     }
-
-    // private void FixedUpdate()
-    // {
-    //     if (!IsServer) return; // Only server moves paddles
-    //     // Calculate movement vector
-    //     Vector3 movement = new Vector3(moveInput.x, moveInput.y, 0).normalized * moveSpeed * Time.fixedDeltaTime;
-    //     // Clamp the position according to paddle orientation
-    //     Vector3 pos = transform.position;
-    //     if (controller == null || !controller.isInSpaceshipMode())
-    //     {
-    //         if (controller.IsHorizontal)
-    //             pos.x = Mathf.Clamp(pos.x, leftLimit, rightLimit);
-    //         else
-    //             pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
-    //
-    //         // Assign the clamped position back
-    //         transform.position = pos;
-    //     }
-    //     // manually setting spaceship bounds now that I am not using rb
-    //     if (controller.isInSpaceshipMode())
-    //     {
-    //         pos.x = Mathf.Clamp(pos.x, spaceshipBounds.xMin, spaceshipBounds.xMax);
-    //         pos.y = Mathf.Clamp(pos.y, spaceshipBounds.yMin, spaceshipBounds.yMax);
-    //     }
-    //     // Move using Translate now
-    //     transform.Translate(movement, Space.World);
-    //     if(rb) rb.linearVelocity = Vector2.zero;
-    // }
-
     void FixedUpdate()
     {
         if (!IsServer) return;
@@ -78,5 +59,9 @@ public class PaddleMovement : NetworkBehaviour
             else
                 pos.y = Mathf.Clamp(pos.y, bottomLimit, topLimit);
         }
+        // Apply tilt or spaceship rotation always based on networked value:
+        float tiltAngle = controller.IsHorizontal ? 90f + controller.networkTiltAngle.Value : controller.networkTiltAngle.Value;
+        rb.MoveRotation(tiltAngle);
+
     }
 }

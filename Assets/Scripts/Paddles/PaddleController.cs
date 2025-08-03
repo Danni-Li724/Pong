@@ -36,11 +36,11 @@ public class PaddleController : NetworkBehaviour
     private float tiltTimer = 0f;
     private float currentTiltAngle = 0f;
     // Network variables to sync tilt state across all clients
-    private NetworkVariable<float> networkTiltAngle = new NetworkVariable<float>(0f, 
+    public NetworkVariable<float> networkTiltAngle = new NetworkVariable<float>(0f, 
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> networkTiltActive = new NetworkVariable<bool>(false,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<float> networkRotationAngle = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<float> networkRotationAngle = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int paddleLayer;
     private int goalLayer;
     
@@ -213,38 +213,31 @@ public class PaddleController : NetworkBehaviour
     private void Update()
     {
         if (!IsOwner) return;
+
+        if (tiltActive && !inSpaceshipMode)
+        {
+            HandleTiltInput(); // Only the owner updates angle/network variable
+        }
+        if (!tiltActive && currentTiltAngle != 0f)
+        {
+            currentTiltAngle = Mathf.Lerp(currentTiltAngle, 0f, Time.deltaTime * tiltSpeed);
+            networkTiltAngle.Value = currentTiltAngle;
+            if (Mathf.Abs(currentTiltAngle) < 0.1f)
+            {
+                currentTiltAngle = 0f;
+                networkTiltAngle.Value = 0f;
+            }
+        }
         
-        // Handle tilt boon
         if (tiltActive)
         {
             tiltTimer -= Time.deltaTime;
             if (tiltTimer <= 0f)
             {
                 DeactivateTilt();
-                return;
-            }
-            
-            // Handle tilt input ONLY if not in spaceship mode, it only works for Pong mode
-            if (!inSpaceshipMode)
-            {
-                HandleTiltInput();
             }
         }
-        else
-        {
-            // Return to original position when not tilting
-            if (currentTiltAngle != 0f)
-            {
-                currentTiltAngle = Mathf.Lerp(currentTiltAngle, 0f, Time.deltaTime * tiltSpeed);
-                networkTiltAngle.Value = currentTiltAngle;
-                
-                if (Mathf.Abs(currentTiltAngle) < 0.1f)
-                {
-                    currentTiltAngle = 0f;
-                    networkTiltAngle.Value = 0f;
-                }
-            }
-        }
+
     }
     
      #region PADDLE TILT METHODS
@@ -426,11 +419,12 @@ public class PaddleController : NetworkBehaviour
     public void UpdateSpaceshipRotation(Vector2 input)
     {
         if (!inSpaceshipMode || paddleVisuals == null) return;
-        //paddleVisuals.RotateInDirection(input);
+
         float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
+        if (IsOwner)
+            networkRotationAngle.Value = angle; // owner writes
+        // all clients (including owner) always apply local visual for immediate feedback
         paddleVisuals.SetRotation(angle);
-        if(IsOwner)
-            networkRotationAngle.Value = angle;
     }
     
     // Called by GameManager's server-side operations to put a player into spaceship mode

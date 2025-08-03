@@ -449,12 +449,16 @@ public class GameManager : NetworkBehaviour
     private void DistributeAllKnownNames()
     {
         if (!IsServer) return;
-        
-        foreach (var kvp in playerNames)
+
+        // copy keys and values to avoid modification during enumeration, to fight the 'InvalidOperationException' error
+        var namePairs = playerNames.ToList();
+        foreach (var kvp in namePairs)
         {
-            SendSinglePlayerNameClientRpc(kvp.Key, kvp.Value);
             Debug.Log($"[GameManager] Redistributing name: {kvp.Key} = {kvp.Value}");
+            SendSinglePlayerNameClientRpc(kvp.Key, kvp.Value);
         }
+        //UpdateAllPlayerUI();
+        OnPlayerNamesUpdated?.Invoke();
     }
 
     // Helper method to get player name from various sources

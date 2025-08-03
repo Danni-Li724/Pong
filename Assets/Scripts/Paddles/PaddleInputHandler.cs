@@ -66,23 +66,17 @@ public class PaddleInputHandler : NetworkBehaviour
     #region Spaceship Input
     public void EnableSpaceshipControls()
     {
-        // disabling normal paddle input first
-        if (playerInput != null)
-        {
-            playerInput.Disable();
-        }
-        
+        if (playerInput != null) playerInput.Disable();
+
         spaceshipInput = new PlayerInput();
         spaceshipInput.Spaceship.Move.performed += ctx =>
         {
             Vector2 input = ctx.ReadValue<Vector2>();
-            MoveRequest_ServerRpc(input.x, input.y);
-            GetComponent<PaddleController>().UpdateSpaceshipRotation(input);
+            SendSpaceshipInput_ServerRpc(input.x, input.y);
         };
         spaceshipInput.Spaceship.Move.canceled += _ =>
         {
-            MoveRequest_ServerRpc(0, 0);
-            //GetComponent<PaddleController>().UpdateSpaceshipRotation(Vector2.zero);
+            SendSpaceshipInput_ServerRpc(0, 0);
         };
         spaceshipInput.Spaceship.Fire.performed += _ =>
         {
@@ -91,6 +85,12 @@ public class PaddleInputHandler : NetworkBehaviour
             GetComponent<PaddleController>().TryFire(worldPos);
         };
         spaceshipInput.Enable();
+    }
+    
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable)]
+    void SendSpaceshipInput_ServerRpc(float inputX, float inputY)
+    {
+        GetComponent<PaddleMovement>().SetSpaceshipInput(new Vector2(inputX, inputY));
     }
     
     public void DisableSpaceshipControls()

@@ -127,10 +127,9 @@ public class PlayerInventorySlot : NetworkBehaviour
     public void UpdateDisplayName()
     {
         if (playerIdText == null) return;
-        
-        string displayName = "";
-        
-        // try get name from GameManager first
+
+        string displayName = null;
+
         if (GameManager.Instance != null && clientId != 0)
         {
             var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
@@ -140,15 +139,15 @@ public class PlayerInventorySlot : NetworkBehaviour
                 Debug.Log($"[PlayerInventorySlot] Got name from PlayerInfo: {displayName} for client {clientId}");
             }
         }
-        
-        // fallback to generic name
-        if (string.IsNullOrEmpty(displayName))
+        if (!string.IsNullOrEmpty(displayName))
         {
-            displayName = playerId > 0 ? $"Player {playerId}" : "Unassigned";
-            Debug.Log($"[PlayerInventorySlot] Using fallback name: {displayName} for client {clientId}");
+            playerIdText.text = displayName;
         }
-        
-        playerIdText.text = displayName;
+        else
+        {
+            playerIdText.text = "Player"; 
+            Debug.Log($"[PlayerInventorySlot] No valid display name for client {clientId} (blank)");
+        }
     }
 
     public bool TryAssign(ulong targetClientId, int newPlayerId)
