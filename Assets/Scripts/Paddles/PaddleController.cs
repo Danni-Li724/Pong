@@ -1,19 +1,24 @@
 using System;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using Unity.Collections;
+
 /// <summary>
 /// Player identity and set up; also handles player specific UI spawning.
 /// Now handles spaceship mode switching and bullet firing. Ideally, these should be seperate scripts
 public class PaddleController : NetworkBehaviour
 {
-   [Header("Pong Settings")]
+   [Header("Player Settings")]
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>(); // synced player IDs
     public int PlayerId { get; private set; }
     public GameObject playerSelectionUIPrefab;
     public bool IsHorizontal => (PlayerId == 3 || PlayerId == 4);
     private PaddleVisuals paddleVisuals;
+    public NetworkVariable<FixedString64Bytes> lobbyPlayerIdVar = new NetworkVariable<FixedString64Bytes>();
+    public NetworkVariable<FixedString64Bytes> displayNameVar = new NetworkVariable<FixedString64Bytes>();
     
     [Header("Spaceship Mode Settings")]
     private bool inSpaceshipMode = false;
@@ -51,7 +56,20 @@ public class PaddleController : NetworkBehaviour
     
     public override void OnNetworkSpawn()
     {
-        if (!IsOwner) return; // only runs for local player
+        if (!IsOwner) return;
+    
+        // Get the player's name from the saved session data
+        string displayName = GetPlayerDisplayName();
+    
+        // Send name to server immediately when spawning
+        if (IsOwner)
+        {
+            string lobbyPlayerId = PongSessionManager.Instance?.LocalPlayerId ?? "unknown";
+            SubmitLobbyIdentityServerRpc(lobbyPlayerId, displayName);
+        
+            // ALSO send directly to GameManager for immediate name sync
+            StartCoroutine(SendNameWithDelay(displayName));
+        }
         
         networkTiltAngle.OnValueChanged += OnTiltAngleChanged;
         networkTiltActive.OnValueChanged += OnTiltActiveChanged;
@@ -103,7 +121,68 @@ public class PaddleController : NetworkBehaviour
             transform.localRotation = Quaternion.Euler(0, 0, 90);
         }
     }
+    
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
+    private void SubmitLobbyIdentityServerRpc(string lobbyPlayerId, string displayName, RpcParams rpcParams = default) 
+    {
+        lobbyPlayerIdVar.Value = lobbyPlayerId; 
+        displayNameVar.Value = displayName;     
 
+        // if (IsServer && GameManager.Instance != null) 
+        //     GameManager.Instance.RegisterLobbyIdentity(OwnerClientId, lobbyPlayerId, displayName); 
+    }
+    
+    // Helper method to get display name from multiple sources, because I am at my wit's end
+    private string GetPlayerDisplayName()
+    {
+        // Try SessionUIManager first (most up-to-date)
+        if (SessionUIManager.Instance != null && !string.IsNullOrEmpty(SessionUIManager.Instance.savedPlayerName))
+        {
+            return SessionUIManager.Instance.savedPlayerName;
+        }
+    
+        // Try from lobby data
+        if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
+        {
+            var lobby = PongSessionManager.Instance.GetCurrentLobby();
+            var localPlayer = lobby?.Players?.Find(p => p.Id == PongSessionManager.Instance.LocalPlayerId);
+            if (localPlayer?.Data != null && localPlayer.Data.TryGetValue("DisplayName", out var nameData))
+            {
+                return nameData.Value;
+            }
+        }
+    
+        // Try from PlayerSessionInfo
+        if (!string.IsNullOrEmpty(PlayerSessionInfo.PlayerName))
+        {
+            return PlayerSessionInfo.PlayerName;
+        }
+    
+        // Final fallback
+        return "Player";
+    }
+
+    // Send name with a small delay to ensure GameManager is ready
+    private IEnumerator SendNameWithDelay(string playerName)
+    {
+        yield return new WaitForSeconds(0.1f);
+    
+        // if (GameManager.Instance != null)
+        // {
+        //     SendNameDirectlyServerRpc(playerName);
+        // }
+    }
+
+    // [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
+    // private void SendNameDirectlyServerRpc(string playerName, RpcParams rpcParams = default)
+    // {
+    //     // forward this to GameManager
+    //     if (GameManager.Instance != null)
+    //     {
+    //         // this will trigger the name sync in GameManager
+    //         GameManager.Instance.ReceivePlayerNameFromPaddle(rpcParams.Receive.SenderClientId, playerName);
+    //     }
+    // }
     public void ReadyUp()
     {
         // called by client to notify server it's ready
@@ -128,8 +207,8 @@ public class PaddleController : NetworkBehaviour
         // grabs list of other connected players to show in UI
         List<PlayerInfo> otherPlayers = GameManager.Instance.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
         GameObject ui = Instantiate(playerSelectionUIPrefab); 
-        PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
-        uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
+        //PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
+        //uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
     }
     private void Update()
     {

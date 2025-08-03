@@ -28,6 +28,18 @@ public class PlayerInventorySlot : NetworkBehaviour
         }
     }
     
+    private void OnEnable()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnPlayerNamesUpdated += UpdateDisplayName;
+        UpdateDisplayName();
+    }
+    private void OnDisable()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnPlayerNamesUpdated -= UpdateDisplayName;
+    }
+    
     // called by BoonManager when syncing inventories (this syncs their visuals and descriptions)
     public void SetBoon(BoonEffect boon, ulong clientId)
     {
@@ -53,6 +65,7 @@ public class PlayerInventorySlot : NetworkBehaviour
             {
                 useButton.onClick.AddListener(OnUseButtonClicked); // add listener only for the owner
             }
+            UpdateDisplayName();
         }
         
         // update player ID text
@@ -113,25 +126,58 @@ public class PlayerInventorySlot : NetworkBehaviour
     
     public void UpdateDisplayName()
     {
-        if (playerIdText != null)
+        if (playerIdText == null) return;
+        
+        string displayName = "";
+        
+        // try get name from GameManager first
+        if (GameManager.Instance != null && clientId != 0)
         {
             var playerInfo = GameManager.Instance.GetPlayerInfo(clientId);
-            if (playerInfo != null)
-                playerIdText.text = playerInfo.displayName;
-            else
-                playerIdText.text = $"Player {playerId}";
+            if (playerInfo != null && !string.IsNullOrEmpty(playerInfo.displayName))
+            {
+                displayName = playerInfo.displayName;
+                Debug.Log($"[PlayerInventorySlot] Got name from PlayerInfo: {displayName} for client {clientId}");
+            }
         }
+        
+        // fallback to generic name
+        if (string.IsNullOrEmpty(displayName))
+        {
+            displayName = playerId > 0 ? $"Player {playerId}" : "Unassigned";
+            Debug.Log($"[PlayerInventorySlot] Using fallback name: {displayName} for client {clientId}");
+        }
+        
+        playerIdText.text = displayName;
     }
 
     public bool TryAssign(ulong targetClientId, int newPlayerId)
     {
+        bool wasAssigned = false;
+        
+        // assign if this slot is empty or matches the target
         if (clientId == 0 || clientId == targetClientId)
         {
             clientId = targetClientId;
             playerId = newPlayerId;
-            UpdateDisplayName();
-            return true;
+            wasAssigned = true;
+            Debug.Log($"[PlayerInventorySlot] Assigned slot: clientId={clientId}, playerId={playerId}");
         }
-        return false;
+        
+        // always try to update the display name after assignment
+        if (wasAssigned)
+        {
+            // Use a coroutine to update after a frame to ensure GameManager has the name
+            StartCoroutine(DelayedNameUpdate());
+        }
+        
+        return wasAssigned;
+    }
+    
+    private System.Collections.IEnumerator DelayedNameUpdate()
+    {
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame(); // EXTRA frame to be sure x_x
+        UpdateDisplayName();
     }
 }

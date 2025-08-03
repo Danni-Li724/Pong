@@ -29,7 +29,7 @@ public class SessionUIManager : MonoBehaviour
     public GameObject playerNamePanel; 
     public InputField playerNameInput;
     public Button saveNameButton;
-    private string savedPlayerName = ""; // local player's name before session
+    public string savedPlayerName = ""; // local player's name before session
 
     [Header("Create Lobby UI")]
     public InputField lobbyNameInput;
@@ -124,11 +124,18 @@ public class SessionUIManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
-        playerNamePanel.SetActive(true);
-        createLobbyPanel.SetActive(false);
+        bool hasName = HasValidPlayerName();
+    
+        playerNamePanel.SetActive(!hasName); // show name panel if no name saved
+        createLobbyPanel.SetActive(hasName);  // show lobby panel if name is saved
         lobbyPanel.SetActive(false);
         loadingPanel.SetActive(false);
         errorPanel.SetActive(false);
+        Debug.Log($"[SessionUIManager] ShowMainMenu - hasName: {hasName}, savedName: '{savedPlayerName}'");
+    }
+    public bool HasValidPlayerName()
+    {
+        return !string.IsNullOrEmpty(savedPlayerName);
     }
     
     public void ShowCreateSessionPanel()
@@ -171,6 +178,16 @@ public class SessionUIManager : MonoBehaviour
 
     async void CreateLobbyClicked()
     {
+        // make sure the name is saved
+        if (string.IsNullOrEmpty(savedPlayerName))
+        {
+            savedPlayerName = playerNameInput.text.Trim();
+            if (string.IsNullOrEmpty(savedPlayerName))
+            {
+                DisplayError("Please enter your name first!");
+                return;
+            }
+        }
         ShowLoading("Creating Lobby...");
         string lobbyName = string.IsNullOrWhiteSpace(lobbyNameInput.text) ? "Pong Lobby" : lobbyNameInput.text;
         int maxPlayers = maxPlayersDropdown.value + 2; // 0-indexed
@@ -178,7 +195,7 @@ public class SessionUIManager : MonoBehaviour
         await PongSessionManager.Instance.CreateLobbyAsync(lobbyName, maxPlayers, playerName);
     }
     
-    private void SavePlayerName()
+    public void SavePlayerName()
     {
         string enteredName = playerNameInput.text.Trim();
         if (string.IsNullOrEmpty(enteredName))
@@ -186,12 +203,18 @@ public class SessionUIManager : MonoBehaviour
             DisplayError("Please enter your name!");
             return;
         }
-        savedPlayerName = enteredName; // store the name for session use
+        savedPlayerName = enteredName;
+    
+        // also store in PlayerSessionInfo for backup
+        PlayerSessionInfo.PlayerName = enteredName;
+    
+        Debug.Log($"[SessionUIManager] Saved player name: {savedPlayerName}");
+    
         playerNamePanel.SetActive(false);
         createLobbyPanel.SetActive(true);
     }
-
-
+    // getter for other scripts to use
+    public string GetSavedPlayerName() => savedPlayerName;
     // public async void OnPlayerNameChanged()
     // {
     //     if (PongSessionManager.Instance.IsInLobby) return;
@@ -224,6 +247,13 @@ public class SessionUIManager : MonoBehaviour
         if (string.IsNullOrEmpty(code))
         {
             DisplayError("Please enter a join code.");
+            return;
+        }
+        // ensure there is a name saved
+        if (string.IsNullOrEmpty(savedPlayerName))
+        {
+            DisplayError("Please enter your name first!");
+            ShowMainMenu(); // Go back to name entry
             return;
         }
         ShowLoading("Joining Lobby...");
@@ -289,6 +319,13 @@ public class SessionUIManager : MonoBehaviour
 
     public async void JoinLobbyById(string lobbyId)
     {
+        // AGAIN, ensure there's a name saved
+        if (string.IsNullOrEmpty(savedPlayerName))
+        {
+            DisplayError("Please enter your name first!");
+            ShowMainMenu(); // Go back to name entry
+            return;
+        }
         ShowLoading("Joining Lobby...");
         loadingPanel.SetActive(false);
         lobbyPanel?.SetActive(true);
@@ -375,7 +412,12 @@ public class SessionUIManager : MonoBehaviour
 
             string displayName = $"Player {i + 1}";
             if (player.Data != null && player.Data.TryGetValue("DisplayName", out var nameData))
-                displayName = nameData.Value;
+            {
+                if (!string.IsNullOrWhiteSpace(nameData.Value))
+                    displayName = nameData.Value;
+                else
+                    Debug.LogWarning($"Player {i} has no display name, using fallback.");
+            }
             // bool isReady = readyStates.TryGetValue(player.Id, out var r) && r;
             bool isReady = false;
             if (player.Data != null && player.Data.TryGetValue("Ready", out var readyData))
@@ -383,6 +425,7 @@ public class SessionUIManager : MonoBehaviour
                 bool.TryParse(readyData.Value, out isReady);
             }
             item.GetComponentInChildren<Text>().text = displayName + (isReady ? " (Ready)" : " (Not Ready)");
+            Debug.Log($"[Lobby] Player {i} ({player.Id}) display: {displayName}, ready: {isReady}");
         }
         playerCountText.text = $"Players: {lobby.Players.Count}";
     }

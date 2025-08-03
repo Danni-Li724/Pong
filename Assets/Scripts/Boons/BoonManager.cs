@@ -383,9 +383,9 @@ public class BoonManager : NetworkBehaviour
         var boonEffect = availableBoons.Find(b => b.type == boonType);
         if (boonEffect == null) return;
 
-        if (boonEffect.type == BoonType.ScoreThief)
+        if (boonType == BoonType.ScoreThief && NetworkManager.Singleton.LocalClientId == boonUserId)
         {
-            PrepareNomination(boonUserId, boonPlayerId); // pass ID directly
+            PrepareNomination(boonUserId, boonPlayerId);
         }
         // NOT applying gameplay logic here like CycleMusic/SpawnBall to avoid doubling up
     }

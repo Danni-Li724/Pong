@@ -128,7 +128,6 @@ public class PongSessionManager : MonoBehaviour
             OnError?.Invoke("Lobby creation failed: " + e.Message);
         }
     }
-
     public async Task JoinLobbyByCodeAsync(string code, string playerName)
     {
         try

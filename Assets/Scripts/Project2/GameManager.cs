@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,14 +22,21 @@ public class GameManager : NetworkBehaviour
     private bool gameStarted = false;
     private int playerCount = 0; // only counts players in-game, not lobby
     private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
+    private int paddlesSpawned = 0; // tracking clients spawned for name syncing purposes
     
-    // Added in Project 2: This dict keeps track of names for all clientIds (from the lobby)
+    // Added in Project 2
+    [Header("Player Name Trackers")] 
+    private string playerName = "Player";
+    private Dictionary<ulong, string> clientIdToLobbyId = new();        // NEW
+    private Dictionary<string, string> lobbyIdToDisplayName = new();    // NEW
+    // Store names with both clientId and a simple counter for fallback
+    //private Dictionary<ulong, PlayerInfo> allPlayers = new Dictionary<ulong, PlayerInfo>();
+    
+   // This dict keeps track of names for all clientIds (from the lobby)
     private Dictionary<ulong, string> playerNames = new Dictionary<ulong, string>();
 
     [Header("Script Refs")] 
     [SerializeField] private ScoreManager scoreManager;
-
-    private string playerName = "Player";
     public static GameManager Instance { get; private set; }
 
     [Header("Level Objects")] public Transform leftSpawn, rightSpawn, topSpawn, bottomSpawn;
@@ -44,6 +52,8 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private Text winnerText;
     [SerializeField] private Button restartButton;
     [SerializeField] private GameObject lobbyPanel;
+    
+    public event Action OnPlayerNamesUpdated; // this syncs custom names on player-side (subscribed by PlayerInventory)
 
     #region INITIALIZING
     private void Awake()
@@ -61,114 +71,60 @@ public class GameManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         // session/lobby is handled outside, but this still hooks up for in-game connection events
+        // if (IsServer)
+        // {
+        //     NetworkManager.OnClientConnectedCallback += OnClientConnected;
+        //     NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+        //     paddlesSpawned = 0;
+        //
+        //     // Host stores their own name immediately
+        //     string hostPlayerName = GetPlayerNameFromLobby();
+        //     playerNames[NetworkManager.Singleton.LocalClientId] = hostPlayerName;
+        //
+        //     SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1, hostPlayerName);
+        //     playerCount = 1;
+        //     connectedPlayersCount.Value = 1;
+        //     SetupGameEndUI();
+        //     // // Start the delayed distribution coroutine
+        //     // StartCoroutine(DelayedNameDistribution());
+        // }
+        // else
+        // {
+        //     // clients send their name to the server when they spawn
+        //     string clientPlayerName = GetPlayerNameFromLobby();
+        //     Debug.Log($"[GameManager] Client sending name: {clientPlayerName}");
+        //     SendPlayerNameToServerRpc(clientPlayerName);
+        // }
+        // connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
         if (IsServer)
         {
             NetworkManager.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
-            // now spawns players with their own custom names :D
+            paddlesSpawned = 0;
+        
+            // Host gets their name and stores it immediately
             string hostPlayerName = GetPlayerNameFromLobby();
-            if (!playerNames.ContainsKey(NetworkManager.Singleton.LocalClientId))
-                playerNames[NetworkManager.Singleton.LocalClientId] = hostPlayerName;
-
+            playerNames[NetworkManager.Singleton.LocalClientId] = hostPlayerName;
+            Debug.Log($"[GameManager] HOST name stored: {hostPlayerName} for clientId: {NetworkManager.Singleton.LocalClientId}");
+        
             SpawnPlayerPaddle(NetworkManager.Singleton.LocalClientId, 1, hostPlayerName);
             playerCount = 1;
             connectedPlayersCount.Value = 1;
-            //ShowPlayerSelectionForHost();
             SetupGameEndUI();
-            
-            // *Only after all clients join will the host distributes the name mapping
-            if (IsHost) StartCoroutine(DelayedDistributePlayerNames());
         }
+    
+        // ALL clients (including host) should try to send their name after a delay
+        StartCoroutine(SendNameAfterDelay());
+    
         connectedPlayersCount.OnValueChanged += OnConnectedPlayersCountChanged;
     }
     
-    private string GetPlayerNameFromLobby()
-    {
-        if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
-        {
-            var lobby = PongSessionManager.Instance.GetCurrentLobby();
-            var localPlayer = lobby?.Players?.Find(p => p.Id == PongSessionManager.Instance.LocalPlayerId);
-            if (localPlayer?.Data != null && localPlayer.Data.TryGetValue("DisplayName", out var nameData))
-            {
-                return nameData.Value;
-            }
-        }
-        // fallback
-        return !string.IsNullOrEmpty(PlayerSessionInfo.PlayerName) ? PlayerSessionInfo.PlayerName : "Player";
-    }
-    
-    // distribute player names to clients after delay (make sure everyone is connected)
-    private IEnumerator DelayedDistributePlayerNames()
-    {
-        yield return new WaitForSeconds(0.5f);
-        var ids = playerNames.Keys.ToArray();
-        var namesArray = playerNames.Values.Select(n => new FixedString128Bytes(n)).ToArray();
-        ReceivePlayerNamesClientRpc(ids, namesArray);
-    }
-    
-    /// <summary>
-    /// Apparently Rpcs can't serialize string arrays out of the box, 
-    /// </summary>
-    /// <param name="clientIds"></param>
-    /// <param name="names"></param>
-    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
-    private void ReceivePlayerNamesClientRpc(ulong[] clientIds, FixedString128Bytes[] names)
-    {
-        // update the playerNames dictionary
-        for (int i = 0; i < clientIds.Length; i++)
-        {
-            playerNames[clientIds[i]] = names[i].ToString();
-        }
-
-        // also update all PlayerInfo.displayName for spawned players
-        foreach (var kvp in allPlayers)
-        {
-            ulong clientId = kvp.Key;
-            if (playerNames.TryGetValue(clientId, out var newName))
-            {
-                kvp.Value.displayName = newName;
-            }
-        }
-
-        // force refresh inventory UI
-        var slots = GameObject.FindObjectsOfType<PlayerInventorySlot>();
-        foreach (var slot in slots)
-        {
-            // this forces slots to fetch the latest name for their player
-            slot.UpdateDisplayName();
-        }
-    }
-    
-    private string GetClientNameFromLobby(ulong clientId)
-    {
-        if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
-        {
-            var lobby = PongSessionManager.Instance.GetCurrentLobby();
-            if (lobby?.Players != null)
-            {
-                // It was hard trying to find the player by matching some identifier
-                // Since I don't have a direct clientId-to-lobby player mapping,
-                // I am now using the join order as a fallback
-                var players = lobby.Players.ToList();
-                if (playerCount <= players.Count)
-                {
-                    var player = players[playerCount - 1]; // Use join order
-                    if (player.Data != null && player.Data.TryGetValue("DisplayName", out var nameData))
-                    {
-                        return nameData.Value;
-                    }
-                }
-            }
-        }
-        return $"Player {playerCount}";
-    }
-
     // called when a new client is assigned to the in-game scene
     void OnClientConnected(ulong clientId)
     {
         if (!IsServer) return;
         Debug.Log($"Client connected with ID: {clientId}");
-        if (clientId == NetworkManager.Singleton.LocalClientId) return; // host already spawned
+        if (clientId == NetworkManager.Singleton.LocalClientId) return;
 
         if (playerCount >= maxPlayers.Value)
         {
@@ -178,12 +134,11 @@ public class GameManager : NetworkBehaviour
 
         playerCount++;
         connectedPlayersCount.Value = playerCount;
-        // try get name from distributed dictionary, or fall back to generic name
-        string displayName = GetClientNameFromLobby(clientId);
-        if (!playerNames.ContainsKey(clientId))
-            playerNames[clientId] = displayName;
-            
-        SpawnPlayerPaddle(clientId, playerCount, displayName);
+    
+        // Use a temporary name for now - the real name will come via RPC
+        string tempName = $"Player {playerCount}";
+        SpawnPlayerPaddle(clientId, playerCount, tempName);
+    
         AssignGoals();
         SyncPlayerSprite(clientId);
         SyncAllPlayersToClient(clientId);
@@ -192,32 +147,375 @@ public class GameManager : NetworkBehaviour
         {
             allPlayersJoined = true;
             EnableReadyUpButtonClientRpc();
+            // // Give a bit more time for names to sync, then distribute
+            // StartCoroutine(DelayedNameDistribution());
         }
+        DistributeAllKnownNames();
     }
 
     void OnClientDisconnected(ulong clientId)
     {
         if (!IsServer) return;
-        if (allPlayers.ContainsKey(clientId))
-        {
-            allPlayers[clientId].isConnected = false;
-            playerCount--;
-            connectedPlayersCount.Value = playerCount;
-            allPlayersJoined = false;
-            Debug.Log($"Player {allPlayers[clientId].playerId} disconnected");
+        Debug.Log($"[GameManager] *** CLIENT CONNECTED *** ID: {clientId}");
+        if (clientId == NetworkManager.Singleton.LocalClientId) return;
 
-            if (playerCount < maxPlayers.Value)
+        if (playerCount >= maxPlayers.Value)
+        {
+            Debug.LogWarning("Player count exceeds max player count");
+            return;
+        }
+
+        playerCount++;
+        connectedPlayersCount.Value = playerCount;
+    
+        // Wait for the client to send their name before spawning paddle
+        StartCoroutine(WaitForClientNameThenSpawn(clientId, playerCount));
+
+        if (playerCount == maxPlayers.Value)
+        {
+            allPlayersJoined = true;
+            EnableReadyUpButtonClientRpc();
+        }
+    }
+    
+    #endregion
+    
+    // #region CUSTOM PLAYER NAMES
+    // [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
+    // private void SendPlayerNameToServerRpc(string playerName, RpcParams rpcParams = default)
+    // {
+    //     ulong clientId = rpcParams.Receive.SenderClientId;
+    //     Debug.Log($"[GameManager] Received name from client {clientId}: {playerName}");
+    //
+    //     // store the name immediately
+    //     if (!playerNames.ContainsKey(clientId))
+    //     {
+    //         playerNames[clientId] = playerName;
+    //     
+    //         // update PlayerInfo
+    //         if (allPlayers.ContainsKey(clientId))
+    //         {
+    //             allPlayers[clientId].displayName = playerName;
+    //         }
+    //     
+    //         // IMMEDIATELY distribute this specific player's name to all clients
+    //         var ids = new ulong[] { clientId };
+    //         var names = new FixedString128Bytes[] { new FixedString128Bytes(playerName) };
+    //         ReceivePlayerNamesClientRpc(ids, names);
+    //     
+    //         Debug.Log($"[GameManager] Distributed name for client {clientId}: {playerName}");
+    //     }
+    // }
+    //
+    // // called by PaddleController to register names
+    // public void ReceivePlayerNameFromPaddle(ulong clientId, string playerName)
+    // {
+    //     if (!IsServer) return;
+    //
+    //     Debug.Log($"[GameManager] Received name from paddle {clientId}: {playerName}");
+    //
+    //     if (!playerNames.ContainsKey(clientId))
+    //     {
+    //         playerNames[clientId] = playerName;
+    //     
+    //         if (allPlayers.ContainsKey(clientId))
+    //         {
+    //             allPlayers[clientId].displayName = playerName;
+    //         }
+    //     
+    //         // Immediately distribute to all clients
+    //         var ids = new ulong[] { clientId };
+    //         var names = new FixedString128Bytes[] { new FixedString128Bytes(playerName) };
+    //         ReceivePlayerNamesClientRpc(ids, names);
+    //     }
+    // }
+    // private string GetPlayerNameFromLobby()
+    // {
+    //     if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
+    //     {
+    //         var lobby = PongSessionManager.Instance.GetCurrentLobby();
+    //         var localPlayer = lobby?.Players?.Find(p => p.Id == PongSessionManager.Instance.LocalPlayerId);
+    //         if (localPlayer?.Data != null && localPlayer.Data.TryGetValue("DisplayName", out var nameData))
+    //         {
+    //             return nameData.Value;
+    //         }
+    //     }
+    //     // fallback
+    //     return !string.IsNullOrEmpty(PlayerSessionInfo.PlayerName) ? PlayerSessionInfo.PlayerName : "Player";
+    // }
+    //
+    // public void RegisterLobbyIdentity(ulong clientId, string lobbyPlayerId, string displayName) 
+    // {
+    //     clientIdToLobbyId[clientId] = lobbyPlayerId; 
+    //     lobbyIdToDisplayName[lobbyPlayerId] = displayName;
+    //
+    //     Debug.Log($"[NameSync] Registered: clientId={clientId}, lobbyId={lobbyPlayerId}, displayName={displayName}"); // NEW
+    //
+    //     // check if all players have registered
+    //     if (clientIdToLobbyId.Count == maxPlayers.Value) 
+    //     {
+    //         SendAllPlayerNamesToClients(); 
+    //     }
+    // }
+    // private void SendAllPlayerNamesToClients() 
+    // {
+    //     var clientIds = clientIdToLobbyId.Keys.ToArray(); 
+    //     var names = clientIds
+    //         .Select(cid => new FixedString128Bytes(lobbyIdToDisplayName[clientIdToLobbyId[cid]]))
+    //         .ToArray();
+    //
+    //     Debug.Log("[NameSync] Sending player names to all clients: " +
+    //               string.Join(", ", clientIds.Select((cid, idx) => $"[{cid}]={names[idx]}"))); 
+    //
+    //     ReceivePlayerNamesClientRpc(clientIds, names);
+    // }
+    //
+    // // distribute player names to clients after delay (make sure everyone is connected)
+    // private IEnumerator DelayedNameDistribution()
+    // {
+    //     yield return new WaitForSeconds(1f); // Give time for all clients to send their names
+    //     DistributeAllKnownNames();
+    // }
+    //
+    // // distribute what players have when they have it
+    // private void DistributeAllKnownNames()
+    // {
+    //     if (!IsServer) return;
+    //
+    //     var clientIds = new List<ulong>();
+    //     var names = new List<FixedString128Bytes>();
+    //
+    //     foreach (var kvp in playerNames)
+    //     {
+    //         clientIds.Add(kvp.Key);
+    //         names.Add(new FixedString128Bytes(kvp.Value));
+    //         Debug.Log($"[GameManager] Adding to distribution: {kvp.Key} = {kvp.Value}");
+    //     }
+    //
+    //     if (clientIds.Count > 0)
+    //     {
+    //         ReceivePlayerNamesClientRpc(clientIds.ToArray(), names.ToArray());
+    //     }
+    // }
+    //
+    // /// <summary>
+    // /// Apparently Rpcs can't serialize string arrays out of the box, 
+    // /// </summary>
+    // /// <param name="clientIds"></param>
+    // /// <param name="names"></param>
+    // [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    // private void ReceivePlayerNamesClientRpc(ulong[] clientIds, FixedString128Bytes[] names)
+    // {
+    //     for (int i = 0; i < clientIds.Length; i++)
+    //     {
+    //         string nameStr = names[i].ToString();
+    //         playerNames[clientIds[i]] = nameStr;
+    //     
+    //         if (allPlayers.ContainsKey(clientIds[i]))
+    //         {
+    //             allPlayers[clientIds[i]].displayName = nameStr;
+    //         }
+    //     
+    //         Debug.Log($"[NameSync] Client received: {clientIds[i]} = {nameStr}");
+    //     }
+    //
+    //     // Force update all UI elements
+    //     UpdateAllPlayerUI();
+    //     OnPlayerNamesUpdated?.Invoke();
+    // }
+    //
+    // private void UpdateAllPlayerUI()
+    // {
+    //     // update inventory slots
+    //     foreach (var slot in FindObjectsOfType<PlayerInventorySlot>())
+    //     {
+    //         slot.UpdateDisplayName();
+    //     }
+    //
+    //     // update session UI
+    //     if (SessionUIManager.Instance != null)
+    //     {
+    //         SessionUIManager.Instance.UpdateLobbyUI();
+    //     }
+    // }
+    // #endregion
+    
+     #region CUSTOM PLAYER NAMES - SIMPLIFIED VERSION
+
+    [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable)]
+    private void SendPlayerNameToServerRpc(string playerName, RpcParams rpcParams = default)
+    {
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        Debug.Log($"[GameManager] *** SERVER RECEIVED NAME *** from client {clientId}: '{playerName}'");
+    
+        // only update if we don't already have a better name
+        bool shouldUpdate = true;
+        if (playerNames.ContainsKey(clientId))
+        {
+            string existingName = playerNames[clientId];
+            // don't overwrite a good name with "Player"
+            if (!string.IsNullOrEmpty(existingName) && existingName != "Player" && playerName == "Player")
             {
-                DisableReadyUpButtonClientRpc();
+                shouldUpdate = false;
+                Debug.Log($"[GameManager] Keeping existing name '{existingName}' instead of generic '{playerName}'");
             }
         }
+        if (shouldUpdate)
+        {
+            playerNames[clientId] = playerName;
         
-        // remove name from name dictionary here
-        if (playerNames.ContainsKey(clientId))
-            playerNames.Remove(clientId);
+            // update PlayerInfo if it exists
+            if (allPlayers.ContainsKey(clientId))
+            {
+                allPlayers[clientId].displayName = playerName;
+                Debug.Log($"[GameManager] Updated PlayerInfo for client {clientId} with name: '{playerName}'");
+            }
+        
+            // immediately send this name to all clients
+            SendSinglePlayerNameClientRpc(clientId, playerName);
+        }
+    }
+    private IEnumerator SendNameAfterDelay()
+    {
+        // Wait for network to be fully established
+        yield return new WaitForSeconds(0.5f);
+    
+        // Try multiple times to get the name
+        string playerName = "";
+        for (int attempts = 0; attempts < 5; attempts++)
+        {
+            playerName = GetPlayerNameFromLobby();
+            if (!string.IsNullOrEmpty(playerName) && playerName != "Player")
+            {
+                break; // Got a real name
+            }
+            yield return new WaitForSeconds(0.2f);
+        }
+    
+        Debug.Log($"[GameManager] Client sending name after delay: '{playerName}' for clientId: {NetworkManager.Singleton.LocalClientId}");
+    
+        // Send the name to server (even if we're the host, for consistency)
+        if (NetworkManager.Singleton.IsConnectedClient)
+        {
+            SendPlayerNameToServerRpc(playerName);
+        }
+    }
+    
+    private IEnumerator WaitForClientNameThenSpawn(ulong clientId, int playerId)
+    {
+        string playerName = $"Player {playerId}"; // fallback
+    
+        // Wait up to 3 seconds for the client to send their name
+        float waitTime = 0f;
+        while (waitTime < 3f)
+        {
+            if (playerNames.ContainsKey(clientId))
+            {
+                playerName = playerNames[clientId];
+                Debug.Log($"[GameManager] Got name for client {clientId}: '{playerName}'");
+                break;
+            }
+            yield return new WaitForSeconds(0.1f);
+            waitTime += 0.1f;
+        }
+    
+        Debug.Log($"[GameManager] Spawning paddle for client {clientId} with name: '{playerName}'");
+        SpawnPlayerPaddle(clientId, playerId, playerName);
+        AssignGoals();
+        SyncPlayerSprite(clientId);
+        // Send all known names to the new client
+        DistributeAllKnownNames();
+    }
+
+    // Send a single player's name to all clients
+    [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+    private void SendSinglePlayerNameClientRpc(ulong clientId, string playerName)
+    {
+        Debug.Log($"[GameManager] Received name update: Client {clientId} = {playerName}");
+        
+        playerNames[clientId] = playerName;
+        
+        if (allPlayers.ContainsKey(clientId))
+        {
+            allPlayers[clientId].displayName = playerName;
+        }
+        
+        // Force update all UI immediately
+        UpdateAllPlayerUI();
+        OnPlayerNamesUpdated?.Invoke();
+    }
+
+    // Send all known names to all clients
+    private void DistributeAllKnownNames()
+    {
+        if (!IsServer) return;
+        
+        foreach (var kvp in playerNames)
+        {
+            SendSinglePlayerNameClientRpc(kvp.Key, kvp.Value);
+            Debug.Log($"[GameManager] Redistributing name: {kvp.Key} = {kvp.Value}");
+        }
+    }
+
+    // Helper method to get player name from various sources
+    private string GetPlayerNameFromLobby()
+    {
+        // first try SessionUIManager
+        if (SessionUIManager.Instance != null && !string.IsNullOrEmpty(SessionUIManager.Instance.savedPlayerName))
+        {
+            Debug.Log($"[GameManager] Got name from SessionUIManager: '{SessionUIManager.Instance.savedPlayerName}'");
+            return SessionUIManager.Instance.savedPlayerName;
+        }
+    
+        // then try lobby data
+        if (PongSessionManager.Instance != null && PongSessionManager.Instance.IsInLobby)
+        {
+            var lobby = PongSessionManager.Instance.GetCurrentLobby();
+            if (lobby != null)
+            {
+                var localPlayer = lobby.Players?.Find(p => p.Id == PongSessionManager.Instance.LocalPlayerId);
+                if (localPlayer?.Data != null && localPlayer.Data.TryGetValue("DisplayName", out var nameData))
+                {
+                    Debug.Log($"[GameManager] Got name from lobby: '{nameData.Value}'");
+                    return nameData.Value;
+                }
+            }
+        }
+    
+        // try input field directly as last resort
+        if (SessionUIManager.Instance != null && !string.IsNullOrEmpty(SessionUIManager.Instance.playerNameInput.text))
+        {
+            string inputName = SessionUIManager.Instance.playerNameInput.text.Trim();
+            Debug.Log($"[GameManager] Got name from input field: '{inputName}'");
+            return inputName;
+        }
+    
+        // Fallback
+        Debug.Log("[GameManager] Using fallback name: 'Player'");
+        return "Player";
+    }
+
+    // Update all player-related UI elements
+    private void UpdateAllPlayerUI()
+    {
+        // Update inventory slots
+        var inventorySlots = FindObjectsOfType<PlayerInventorySlot>();
+        foreach (var slot in inventorySlots)
+        {
+            slot.UpdateDisplayName();
+        }
+        
+        // Update session UI
+        if (SessionUIManager.Instance != null)
+        {
+            SessionUIManager.Instance.UpdateLobbyUI();
+        }
+        
+        Debug.Log($"[GameManager] Updated {inventorySlots.Length} inventory slots");
     }
 
     #endregion
+    
 
     #region START GAME
 
@@ -234,11 +532,14 @@ public class GameManager : NetworkBehaviour
         PlayerInfo playerInfo = new PlayerInfo(playerId, clientId, spawnTransform, displayName);
         playerInfo.isConnected = true;
         allPlayers[clientId] = playerInfo;
-
+        // making sure player names is stored
+        if (!playerNames.ContainsKey(clientId))
+        {
+            playerNames[clientId] = displayName;
+        }
         GameObject paddle = Instantiate(playerPaddlePrefab, spawnTransform.position, Quaternion.identity);
         NetworkObject networkObject = paddle.GetComponent<NetworkObject>();
         networkObject.SpawnAsPlayerObject(clientId);
-
         PaddleController paddleController = paddle.GetComponent<PaddleController>();
         if (paddleController != null)
         {
@@ -249,18 +550,41 @@ public class GameManager : NetworkBehaviour
                 visuals.SetPaddleSpriteAsDefault(playerInfo.paddleSprite);
             }
         }
-
+        UpdateClientPlayerUIClientRpc(clientId, playerId);
+        if (IsServer)
+        {
+            // paddlesSpawned++;
+            // if (paddlesSpawned >= maxPlayers.Value) // all paddles spawned
+            // {
+            //     // NOW send out name mappings
+            //     Debug.Log("[GameManager] All paddles spawned. Distributing names.");
+            //     StartCoroutine(DelayedNameDistribution());
+            // }
+            SendSinglePlayerNameClientRpc(clientId, displayName);
+        }
         UpdateClientPlayerUIClientRpc(clientId, playerId);
     }
-
     [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
     private void UpdateClientPlayerUIClientRpc(ulong clientId, int playerId)
     {
         var allSlots = FindObjectsOfType<PlayerInventorySlot>();
         foreach (var slot in allSlots)
         {
-            if (slot.TryAssign(clientId, playerId)) break;
+            if (slot.TryAssign(clientId, playerId)) 
+            {
+                Debug.Log($"[GameManager] Assigned UI slot for client {clientId}, player {playerId}");
+                break;
+            }
         }
+        
+        // Force update display names after assignment
+        StartCoroutine(UpdateUIAfterDelay());
+    }
+    
+    private IEnumerator UpdateUIAfterDelay()
+    {
+        yield return new WaitForEndOfFrame();
+        UpdateAllPlayerUI();
     }
 
     // still used for in-game player limit UI (lobby player selection is handled in SerssionManager)
