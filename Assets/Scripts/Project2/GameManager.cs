@@ -1202,4 +1202,60 @@ public class GameManager : NetworkBehaviour
             restartButton.onClick.AddListener(OnRestartButtonPressed);
     }
     #endregion
+    
+    #region LEAVE GAME
+    public void OnLeaveGameButtonPressed()
+    {
+        // Only run if in a networked session
+        if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost)
+        {
+            Debug.Log("Not in a session, cannot leave.");
+            return;
+        }
+
+        if (IsHost)
+        {
+            Debug.Log("[GameManager] Host leaving: ending session for all.");
+            EndSessionForAll();
+        }
+        else
+        {
+            Debug.Log("[GameManager] Client leaving: disconnecting from session.");
+            LeaveSessionAsClient();
+        }
+    }
+
+    /// <summary>
+    /// Leave game methods for CLIENTS
+    /// </summary>
+    public void LeaveSessionAsClient()
+    {
+        NetworkManager.Singleton.Shutdown();
+        PongSessionManager.Instance?.LeaveLobbyAsync();
+        LoadMainMenuScene();
+    }
+
+/// <summary>
+/// Leave game methods for HOST
+/// </summary>
+    public void EndSessionForAll()
+    {
+        ShowHostEndedSessionClientRpc();
+        NetworkManager.Singleton.Shutdown();
+        PongSessionManager.Instance?.LeaveLobbyAsync();
+        LoadMainMenuScene();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowHostEndedSessionClientRpc()
+    {
+        // todo: show a message...?
+        LoadMainMenuScene();
+    }
+    private void LoadMainMenuScene()
+    {
+        SessionUIManager.Instance.ShowMainMenu();
+    }
+
+    #endregion
 }
