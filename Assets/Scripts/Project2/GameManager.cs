@@ -713,7 +713,7 @@ public class GameManager : NetworkBehaviour
         {
             if (paddle.IsOwner)
             {
-                paddle.SpawnPlayerSelectionUI();
+                // paddle.SpawnPlayerSelectionUI();
             }
         }
     }

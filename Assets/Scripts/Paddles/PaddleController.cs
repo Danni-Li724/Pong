@@ -14,7 +14,7 @@ public class PaddleController : NetworkBehaviour
    [Header("Player Settings")]
     private NetworkVariable<int> playerIdVar = new NetworkVariable<int>(); // synced player IDs
     public int PlayerId { get; private set; }
-    public GameObject playerSelectionUIPrefab;
+    // public GameObject playerSelectionUIPrefab;
     public bool IsHorizontal => (PlayerId == 3 || PlayerId == 4);
     private PaddleVisuals paddleVisuals;
     public NetworkVariable<FixedString64Bytes> lobbyPlayerIdVar = new NetworkVariable<FixedString64Bytes>();
@@ -201,16 +201,16 @@ public class PaddleController : NetworkBehaviour
     }
     // This is called by the game manager to spawn buttons to represent players who aren't themselves.
     // These buttons will be used later as one of the boon effects.
-    public void SpawnPlayerSelectionUI()
-    {
-        Debug.Log($"[PaddleController] Attempting to SpawnPlayerSelectionUI (IsOwner: {IsOwner})"); // had to debug this system a lot...
-        if (!IsOwner) return;
-        // grabs list of other connected players to show in UI
-        List<PlayerInfo> otherPlayers = GameManager.Instance.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
-        GameObject ui = Instantiate(playerSelectionUIPrefab); 
-        //PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
-        //uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
-    }
+    // public void SpawnPlayerSelectionUI()
+    // {
+    //     Debug.Log($"[PaddleController] Attempting to SpawnPlayerSelectionUI (IsOwner: {IsOwner})"); // had to debug this system a lot...
+    //     if (!IsOwner) return;
+    //     // grabs list of other connected players to show in UI
+    //     List<PlayerInfo> otherPlayers = GameManager.Instance.GetOtherPlayers(NetworkManager.Singleton.LocalClientId);
+    //     GameObject ui = Instantiate(playerSelectionUIPrefab); 
+    //     //PlayerSelectionUI uiScript = ui.GetComponent<PlayerSelectionUI>();
+    //     //uiScript.InitializeUI(otherPlayers, NetworkManager.Singleton.LocalClientId, PlayerId); // passing playerId
+    // }
     private void Update()
     {
         if (!IsOwner) return;
