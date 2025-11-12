@@ -1670,7 +1670,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 875537067}
   m_Direction: 0
   m_Value: 1
-  m_Size: 0.9999996
+  m_Size: 0.9999751
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2421,7 +2421,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  playerSelectionUIPrefab: {fileID: 0}
   lobbyPlayerIdVar:
     m_InternalValue:
       utf8LengthInBytes: 0
@@ -3798,8 +3797,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2038874010}
   m_HandleRect: {fileID: 2038874009}
   m_Direction: 2
-  m_Value: 1.0000002
-  m_Size: 0.61
+  m_Value: 1.0000013
+  m_Size: 0.6099836
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3858,7 +3857,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &575908509
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3873,7 +3872,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PresetAsset: {fileID: 0}
   m_PresetReference:
-    rid: 65076872147370967
+    rid: 6966100226490237448
   m_Scenario:
     rid: -2
   m_IsScenarioSettingsFolded: 0
@@ -3883,7 +3882,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 65076872147370967
+    - rid: 6966100226490237448
       type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
       data:
         <Name>k__BackingField: 'Mobile 3.75G [HDSDPA+, H+, ''11]'
@@ -6277,7 +6276,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &991348317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6346,7 +6345,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -8.500055, y: -50.000027}
+  m_AnchoredPosition: {x: -8.500159, y: -50.000153}
   m_SizeDelta: {x: -16.999939, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1017740075
@@ -7768,7 +7767,7 @@ MonoBehaviour:
     UseCMBService: 0
     AutoSpawnPlayerPrefabClientSide: 1
     NetworkMessageMetrics: 1
-    NetworkProfilingMetrics: 1
+    NetworkProfilingMetrics: 0
     OldPrefabList: []
   RunInBackground: 1
   LogLevel: 1
@@ -7823,14 +7822,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1159546779}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98d9db9626104da59357651088226725, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_PresetAsset: {fileID: 0}
   m_PresetReference:
-    rid: 6845536966124503040
+    rid: 6966100226490237447
   m_Scenario:
     rid: -2
   m_IsScenarioSettingsFolded: 1
@@ -7840,7 +7839,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 6845536966124503040
+    - rid: 6966100226490237447
       type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
       data:
         <Name>k__BackingField: 'Home Cable [Optimal real-world scenario]'
@@ -10754,7 +10753,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1577190375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10767,7 +10766,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17737e0516da2445b9b0077ae2bd9b4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Visible: 1
+  m_Visible: 0
   m_MaxRefreshRate: 30
   <CustomStyleSheet>k__BackingField: {fileID: 0}
   <PanelSettingsOverride>k__BackingField: {fileID: 0}
