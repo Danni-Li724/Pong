@@ -51,6 +51,7 @@ public class PongSessionManager : MonoBehaviour
     private const float LobbyHeartbeatInterval = 15f; // how often host should ping to keep lobby alive
     private float lobbyRefreshInterval = 2f; // used to refresh the lobby on host's side so that they are up to date with lobby
     private float lobbyRefreshTimer = 0f;
+    private int lastKnownPlayerCount = 0;
     private async void Awake()
     {
         if (Instance != null && Instance != this)
@@ -241,17 +242,31 @@ public class PongSessionManager : MonoBehaviour
     }
 
     // refresh the lobby (UI) for host when clients join
+    private bool isRefreshing = false;
+
     private async void RefreshLobbyUpdate()
     {
+        if (isRefreshing) return; // drop the call if one is already in flight
+        isRefreshing = true;
+    
         try
         {
             var lobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
             currentLobby = lobby;
-            SessionUIManager.Instance?.UpdateLobbyUI();
+
+            if (lobby.Players.Count != lastKnownPlayerCount)
+            {
+                lastKnownPlayerCount = lobby.Players.Count;
+                SessionUIManager.Instance?.UpdateLobbyUI();
+            }
         }
         catch (Exception e)
         {
             Debug.LogWarning("refresh lobby failed: " + e.Message);
+        }
+        finally
+        {
+            isRefreshing = false;
         }
     }
 
@@ -266,7 +281,7 @@ public class PongSessionManager : MonoBehaviour
         {
             await LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
             // tells Unity servers the heart still beating (prevents lobby from timing out)
-            SessionUIManager.Instance?.UpdateLobbyUI();
+            // SessionUIManager.Instance?.UpdateLobbyUI();
         }
         catch (Exception e)
         {

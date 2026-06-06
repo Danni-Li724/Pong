@@ -395,13 +395,11 @@ public class SessionUIManager : MonoBehaviour
     void HandleLobbyCreated()
     {
         ShowLobbyPanel();
-        PopulatePlayerList();
     }
 
     void HandleLobbyJoined()
     {
         ShowLobbyPanel();
-        PopulatePlayerList();
     }
 
     void HandleLobbyLeft()
@@ -416,12 +414,15 @@ public class SessionUIManager : MonoBehaviour
 
     void PopulatePlayerList()
     {
+        var lobby = PongSessionManager.Instance.GetCurrentLobby();
+        Debug.Log($"[PopulatePlayerList] lobby.Players.Count = {lobby?.Players?.Count}");
+        foreach (var p in lobby?.Players)
+            Debug.Log($"[PopulatePlayerList] ID: {p.Id}");
         ClearPlayerList();
         if (!PongSessionManager.Instance.IsInLobby) return;
         string code = PongSessionManager.Instance.GetLobbyCode();
         lobbyCodeText.text = $"Lobby Code: {code}";
         var readyStates = sessionBridge.GetReadyStates();
-        var lobby = PongSessionManager.Instance.GetCurrentLobby();
         if (lobby == null) return;
         for (int i = 0; i < lobby.Players.Count; i++)
         {
@@ -452,7 +453,7 @@ public class SessionUIManager : MonoBehaviour
     {
         foreach (Transform child in playerListParent)
         {
-            Destroy(child.gameObject);
+            DestroyImmediate(child.gameObject);
         }
     }
 

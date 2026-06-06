@@ -1670,7 +1670,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 875537067}
   m_Direction: 0
   m_Value: 1
-  m_Size: 0.9999751
+  m_Size: 0.99999964
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3797,8 +3797,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2038874010}
   m_HandleRect: {fileID: 2038874009}
   m_Direction: 2
-  m_Value: 1.0000013
-  m_Size: 0.6099836
+  m_Value: 0.99999976
+  m_Size: 0.60999995
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -6345,7 +6345,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -8.500159, y: -50.000153}
+  m_AnchoredPosition: {x: -8.500024, y: -50.000008}
   m_SizeDelta: {x: -16.999939, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1017740075
@@ -7720,7 +7720,6 @@ GameObject:
   - component: {fileID: 1159546782}
   - component: {fileID: 1159546781}
   - component: {fileID: 1159546783}
-  - component: {fileID: 1159546784}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -7815,40 +7814,6 @@ MonoBehaviour:
     PacketDelayMS: 0
     PacketJitterMS: 0
     PacketDropRate: 0
---- !u!114 &1159546784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1159546779}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 98d9db9626104da59357651088226725, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_PresetAsset: {fileID: 0}
-  m_PresetReference:
-    rid: 6966100226490237447
-  m_Scenario:
-    rid: -2
-  m_IsScenarioSettingsFolded: 1
-  AutoRunScenario: 0
-  references:
-    version: 2
-    RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 6966100226490237447
-      type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
-      data:
-        <Name>k__BackingField: 'Home Cable [Optimal real-world scenario]'
-        <Description>k__BackingField: Optimal scenario for desktop and console platforms.
-          Very good ping, very good jitter and no packet loss.
-        <PacketDelayMs>k__BackingField: 25
-        <PacketJitterMs>k__BackingField: 5
-        <PacketLossInterval>k__BackingField: 0
-        <PacketLossPercent>k__BackingField: 0
 --- !u!1 &1166571401
 GameObject:
   m_ObjectHideFlags: 0
@@ -14576,7 +14541,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -30
+      value: -29.99997
       objectReference: {fileID: 0}
     - target: {fileID: 1516536881235035188, guid: c00214071ce1ecd499341ad8b3644132, type: 3}
       propertyPath: m_AnchoredPosition.y
